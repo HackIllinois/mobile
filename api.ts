@@ -15,6 +15,9 @@ class API {
       async (config) => {
         // inject jwt into headers before request is made
         const jwt = await SecureStore.getItemAsync("jwt");
+        if (jwt) {
+          config.headers.Authorization = jwt;
+        }
         return config;
       },
       (error) => Promise.reject(error),
