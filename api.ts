@@ -2,6 +2,11 @@ import axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from "axios";
 
 import * as SecureStore from "expo-secure-store";
 
+enum AuthenticationErrorType {
+  NoToken = "NoToken",
+  TokenInvalid = "TokenInvalid",
+  TokenExpired = "TokenExpired",
+}
 class API {
   private axiosInstance: AxiosInstance;
 
@@ -29,7 +34,17 @@ class API {
         // this runs if response status not in 200s
         if (error.response) {
           const data = error.response.data as any;
-          this.handleError(error.response.status, data?.error, data?.message);
+          // it is an authentication error, redirect to sign in
+          if (
+            (data.error && data.error === AuthenticationErrorType.NoToken) ||
+            data.error === AuthenticationErrorType.TokenInvalid ||
+            data.error === AuthenticationErrorType.TokenExpired
+          ) {
+            this.redirectToSignIn();
+          } else {
+            this.handleError(error.response.status, data?.error, data?.message);
+          }
+          // else just handle error normally
         }
         return Promise.reject(error);
       }
@@ -69,7 +84,6 @@ class API {
         error_message = "Bad Request: The request was invalid or malformed";
         break;
       case 401:
-        this.redirectToSignIn();
         error_message = "Unauthorized: Invalid or missing authentication";
         break;
       case 403:
