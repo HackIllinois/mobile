@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
+import StartupAnimation from './src/components/hackrocket/StartupAnimation';
 import { StyleSheet, Text, View, Button } from 'react-native';
-
 import QRScannerScreen from './screens/QRScannerScreen';
 
 const Stack = createNativeStackNavigator();
@@ -22,15 +22,26 @@ function HomeScreen({ navigation }: { navigation: any }) {
 }
 
 export default function App() {
-  return (
-    <NavigationContainer>
-      <Stack.Navigator>
-        <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen name="Scanner" component={QRScannerScreen} />
-      </Stack.Navigator>
-    </NavigationContainer>
-  );
-}
+  const [showAnimation, setShowAnimation] = useState(true);
+
+    useEffect(() => {
+
+    const timer = setTimeout(() => setShowAnimation(false), 2500);
+      return () => clearTimeout(timer);
+    }, []);
+
+    if (showAnimation) {
+      return <StartupAnimation />;
+    }
+    return (
+      <NavigationContainer>
+        <Stack.Navigator>
+          <Stack.Screen name="Home" component={HomeScreen} />
+          <Stack.Screen name="Scanner" component={QRScannerScreen} />
+        </Stack.Navigator>
+      </NavigationContainer>
+    );
+  }
 
 const styles = StyleSheet.create({
   container: {
