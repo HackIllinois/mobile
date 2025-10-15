@@ -9,11 +9,12 @@ import {
   Alert,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-
 import * as AuthSession from "expo-auth-session";
+import * as WebBrowser from "expo-web-browser";
 import * as SecureStore from "expo-secure-store";
 import api from "./api";
 
+WebBrowser.maybeCompleteAuthSession();
 
 export default function AuthScreen({ navigation }: any) {
   const [loading, setLoading] = useState(false);
@@ -22,49 +23,33 @@ export default function AuthScreen({ navigation }: any) {
     try {
       setLoading(true);
 
-      // 1️⃣ Redirect URI (must be whitelisted on backend)
-    //   const redirectUri = AuthSession.makeRedirectUri({
-    //     scheme: "hackillinois",
-    //     path: "auth",
-    //   });
+      const redirectUri = 'hackillinois://auth';
 
-        const redirectUri = AuthSession.makeRedirectUri({ useProxy: true } as any);
-
-
-        console.log("Generated redirect URI:", redirectUri);
-        console.log("Default return URL:", AuthSession.getDefaultReturnUrl());
-
-      const authorizationEndpoint = `https://adonix.hackillinois.org/auth/login/google?redirect=${encodeURIComponent(
+      const authUrl = `${api.axiosInstance.defaults.baseURL}/auth/login/google?redirect=${encodeURIComponent(
         redirectUri
       )}`;
 
-      const authRequest = new AuthSession.AuthRequest({
-        clientId: "dummy", 
-        redirectUri,
-        responseType: AuthSession.ResponseType.Token,
-      });
+      console.log("Redirect URI:", redirectUri);
+      const result = await WebBrowser.openAuthSessionAsync(
+        authUrl,
+        redirectUri
+      );
 
-      const discovery: AuthSession.AuthDiscoveryDocument = {
-        authorizationEndpoint,
-      };
+      if (result.type === "success" && result.url) {
+        const url = result.url;
+        const params = new URLSearchParams(url.split("#")[1]); 
+        const token = params.get("token") || params.get("jwt");
 
-      const result = await authRequest.promptAsync(
-        { authorizationEndpoint },
-        { redirectUri } as any
-        );
+        // if (!token) throw new Error("No token returned");
 
-      if (result.type !== "success") {
-        Alert.alert("Login canceled");
-        return;
+        // await SecureStore.setItemAsync("jwt", token);
+        Alert.alert("Login successful!");
+        navigation.replace("Main");
+      } else {
+        Alert.alert("Login canceled or failed");
       }
-
-      const { token } = await api.get<{ token: string }>("/auth/token");
-      await SecureStore.setItemAsync("jwt", token);
-
-      Alert.alert("Login successful!");
-      navigation.replace("Main");
-    } catch (error) {
-      console.error(error);
+    } catch (err) {
+      console.error(err);
       Alert.alert("Login failed", "Please try again.");
     } finally {
       setLoading(false);
@@ -78,7 +63,7 @@ export default function AuthScreen({ navigation }: any) {
     >
       <View style={styles.logoContainer}>
         <Image
-          source={require("./assets/Hack-Logo-png.png")} 
+          source={require("./assets/Hack-Logo-png.png")}
           style={styles.logo}
           resizeMode="contain"
         />
@@ -101,21 +86,9 @@ export default function AuthScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  logoContainer: {
-    alignItems: "center",
-    marginBottom: 120,
-  },
-  logo: {
-    width: 140,
-    height: 140,
-    marginBottom: 24,
-    tintColor: "#f5f5f5",
-  },
+  container: { flex: 1, justifyContent: "center", alignItems: "center" },
+  logoContainer: { alignItems: "center", marginBottom: 120 },
+  logo: { width: 140, height: 140, marginBottom: 24, tintColor: "#f5f5f5" },
   title: {
     textAlign: "center",
     fontSize: 28,
@@ -133,9 +106,5 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 6,
   },
-  buttonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "600",
-  },
+  buttonText: { color: "white", fontSize: 16, fontWeight: "600" },
 });
