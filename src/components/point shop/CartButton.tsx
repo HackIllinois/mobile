@@ -26,7 +26,7 @@ export default function CartButton({ onPress, itemCount }: CartButtonProps) {
 
 const styles = StyleSheet.create({
   button: {
-    backgroundColor: "#888",
+    backgroundColor: "#222",
     borderRadius: 24,
     paddingVertical: 10,
     paddingHorizontal: 28,

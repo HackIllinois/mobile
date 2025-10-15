@@ -14,6 +14,7 @@ import {
 import ShopItemCard from "../src/components/point shop/ShopItemCard";
 import PageIndicator from "../src/components/point shop/PageIndicator";
 import CartButton from "../src/components/point shop/CartButton";
+import CartModal from "../src/components/point shop/CartModal";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function PointShop() {
@@ -74,13 +75,19 @@ export default function PointShop() {
   const clearCart = () => {
     setCartIds([]);
   };
+  const openCartModal = () => {
+    setShowCartModal(true);
+  };
+  const closeCartModal = () => {
+    setShowCartModal(false);
+  };
 
   return (
     <View style={styles.container}>
       <View style={styles.topHalf}></View>
       <SafeAreaView>
         <View style={styles.cartButtonContainer}>
-          <CartButton itemCount={cartIds.length} />
+          <CartButton itemCount={cartIds.length} onPress={openCartModal} />
         </View>
         <ScrollView
           horizontal
@@ -133,6 +140,14 @@ export default function PointShop() {
         </ScrollView>
         <PageIndicator currentPage={currentPage} totalPages={pages.length} />
       </SafeAreaView>
+      <CartModal
+        visible={showCartModal}
+        onClose={closeCartModal}
+        cartIds={cartIds}
+        shopItemData={shopItemData}
+        onAddItem={addShopItemToCart}
+        onRemoveItem={removeShopItemFromCart}
+      />
     </View>
   );
 }
@@ -142,7 +157,6 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "flex-end",
-    backgroundColor: "lightgrey",
   },
   topHalf: {
     width: "100%",
