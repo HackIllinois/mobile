@@ -12,10 +12,13 @@ const Stack = createNativeStackNavigator();
 function HomeScreen({ navigation }: { navigation: any }) {
   return (
     <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
       <Button
         title="QR Scanner"
         onPress={() => navigation.navigate("Scanner")}
+      />
+      <Button
+        title="Point Shop"
+        onPress={() => navigation.navigate("Point Shop")}
       />
       <StatusBar style="auto" />
     </View>
@@ -23,7 +26,7 @@ function HomeScreen({ navigation }: { navigation: any }) {
 }
 
 export default function App() {
-  const [showAnimation, setShowAnimation] = useState(false);
+  const [showAnimation, setShowAnimation] = useState(true);
 
   useEffect(() => {
     const timer = setTimeout(() => setShowAnimation(false), 2500);
@@ -36,8 +39,8 @@ export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator>
-        <Stack.Screen name="PointShop" component={PointShop} />
         <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen name="Point Shop" component={PointShop} />
         <Stack.Screen name="Scanner" component={QRScannerScreen} />
       </Stack.Navigator>
     </NavigationContainer>
@@ -50,6 +53,5 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     alignItems: "center",
     justifyContent: "center",
-    gap: 10,
   },
 });

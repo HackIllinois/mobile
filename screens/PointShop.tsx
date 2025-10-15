@@ -10,6 +10,7 @@ import {
   NativeScrollEvent,
   NativeSyntheticEvent,
   Text,
+  Alert,
 } from "react-native";
 import ShopItemCard from "../src/components/point shop/ShopItemCard";
 import PageIndicator from "../src/components/point shop/PageIndicator";
@@ -81,6 +82,17 @@ export default function PointShop() {
   const closeCartModal = () => {
     setShowCartModal(false);
   };
+  const handlePurchase = () => {
+    Alert.alert("Purchase completed", "", [
+      {
+        text: "OK",
+        onPress: () => {
+          clearCart();
+          closeCartModal();
+        },
+      },
+    ]);
+  };
 
   return (
     <View style={styles.container}>
@@ -147,6 +159,7 @@ export default function PointShop() {
         shopItemData={shopItemData}
         onAddItem={addShopItemToCart}
         onRemoveItem={removeShopItemFromCart}
+        onPurchase={handlePurchase}
       />
     </View>
   );

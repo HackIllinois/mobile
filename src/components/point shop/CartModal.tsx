@@ -17,6 +17,7 @@ interface CartModalProps {
   shopItemData: ShopItem[];
   onAddItem: (itemId: string) => void;
   onRemoveItem: (itemId: string) => void;
+  onPurchase: () => void;
 }
 
 export default function CartModal({
@@ -26,6 +27,7 @@ export default function CartModal({
   shopItemData,
   onAddItem,
   onRemoveItem,
+  onPurchase,
 }: CartModalProps) {
   const calculateTotal = (): number => {
     return cartIds.reduce((total, itemId) => {
@@ -111,6 +113,7 @@ export default function CartModal({
                 isEmpty && styles.purchaseButtonDisabled,
               ]}
               disabled={isEmpty}
+              onPress={onPurchase}
             >
               <Text style={styles.purchaseButtonText}>COMPLETE PURCHASE</Text>
             </TouchableOpacity>
