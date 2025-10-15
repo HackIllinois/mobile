@@ -1,9 +1,9 @@
 import { View, Text, StyleSheet } from 'react-native';
 
-export function ShopScreen() {
+export default function ScanScreen() {
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>Shop Screen</Text>
+      <Text style={styles.text}>Scan Screen</Text>
     </View>
   );
 }
