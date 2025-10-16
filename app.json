@@ -3,6 +3,7 @@
     "name": "mobile",
     "slug": "mobile",
     "version": "1.0.0",
+    "scheme": "hackillinois",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -25,6 +26,5 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "main": "index.ts"
   }
 }

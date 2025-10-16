@@ -10,14 +10,6 @@ const { width } = Dimensions.get('window');
 const WIDTH = width;
 const TAB_BAR_HEIGHT = 130;
 
-// Cosmic color palette
-const COLORS = {
-  deepSpace: '#050816',
-  nebulaPurple: '#7B2CBF',
-  cosmicBlue: '#4361EE',
-  starWhite: '#FFFFFF',
-  moonGlow: '#E0AAFF',
-};
 
 const getSvgPath = (height: number) => {
   return `
@@ -88,7 +80,7 @@ function TabButton({ route, isFocused, options, onPress, onLongPress, buildHref 
               <View style={styles.tabFabInner}>
                 {options.tabBarIcon &&
                   options.tabBarIcon({
-                    color: COLORS.starWhite,
+                    color: "FFFFFF",
                     size: 26,
                     focused: isFocused,
                   })}
@@ -118,26 +110,26 @@ export function CurvedTabBar({ state, descriptors, navigation }: BottomTabBarPro
             <RadialGradient id="spaceGrad" cx="50%" cy="0%" r="100%">
               <Stop offset="0%" stopColor="#1a1a2e" stopOpacity="1" />
               <Stop offset="50%" stopColor="#0f0f1e" stopOpacity="0.98" />
-              <Stop offset="100%" stopColor={COLORS.deepSpace} stopOpacity="1" />
+              <Stop offset="100%" stopColor={"#050816"} stopOpacity="1" />
             </RadialGradient>
           </Defs>
           <Path d={svgPath} fill="url(#spaceGrad)" />
           
           {/* Decorative stars */}
-          <Circle cx={WIDTH * 0.10} cy={TAB_BAR_HEIGHT * 0.2} r="1" fill={COLORS.starWhite} opacity="0.5" />
-          <Circle cx={WIDTH * 0.15} cy={TAB_BAR_HEIGHT * 0.3} r="1.5" fill={COLORS.starWhite} opacity="0.8" />
-          <Circle cx={WIDTH * 0.22} cy={TAB_BAR_HEIGHT * 0.5} r="0.8" fill={COLORS.cosmicBlue} opacity="0.4" />
-          <Circle cx={WIDTH * 0.25} cy={TAB_BAR_HEIGHT * 0.6} r="1" fill={COLORS.moonGlow} opacity="0.6" />
-          <Circle cx={WIDTH * 0.33} cy={TAB_BAR_HEIGHT * 0.35} r="1.2" fill={COLORS.starWhite} opacity="0.7" />
-          <Circle cx={WIDTH * 0.40} cy={TAB_BAR_HEIGHT * 0.55} r="0.9" fill={COLORS.cosmicBlue} opacity="0.5" />
-          <Circle cx={WIDTH * 0.50} cy={TAB_BAR_HEIGHT * 0.3} r="1" fill={COLORS.moonGlow} opacity="0.6" />
-          <Circle cx={WIDTH * 0.60} cy={TAB_BAR_HEIGHT * 0.45} r="1.5" fill={COLORS.starWhite} opacity="0.7" />
-          <Circle cx={WIDTH * 0.70} cy={TAB_BAR_HEIGHT * 0.25} r="1.2" fill={COLORS.moonGlow} opacity="0.5" />
-          <Circle cx={WIDTH * 0.75} cy={TAB_BAR_HEIGHT * 0.4} r="1.5" fill={COLORS.starWhite} opacity="0.7" />
-          <Circle cx={WIDTH * 0.82} cy={TAB_BAR_HEIGHT * 0.6} r="1" fill={COLORS.cosmicBlue} opacity="0.5" />
-          <Circle cx={WIDTH * 0.85} cy={TAB_BAR_HEIGHT * 0.65} r="1" fill={COLORS.cosmicBlue} opacity="0.5" />
-          <Circle cx={WIDTH * 0.90} cy={TAB_BAR_HEIGHT * 0.3} r="1.1" fill={COLORS.starWhite} opacity="0.6" />
-          <Circle cx={WIDTH * 0.92} cy={TAB_BAR_HEIGHT * 0.25} r="1.2" fill={COLORS.moonGlow} opacity="0.6" />
+          <Circle cx={WIDTH * 0.10} cy={TAB_BAR_HEIGHT * 0.2} r="1" fill={"FFFFFF"} opacity="0.5" />
+          <Circle cx={WIDTH * 0.15} cy={TAB_BAR_HEIGHT * 0.3} r="1.5" fill={"FFFFFF"} opacity="0.8" />
+          <Circle cx={WIDTH * 0.22} cy={TAB_BAR_HEIGHT * 0.5} r="0.8" fill={"#4361EE"} opacity="0.4" />
+          <Circle cx={WIDTH * 0.25} cy={TAB_BAR_HEIGHT * 0.6} r="1" fill={"#E0AAFF"} opacity="0.6" />
+          <Circle cx={WIDTH * 0.33} cy={TAB_BAR_HEIGHT * 0.35} r="1.2" fill={"#FFFFFF"} opacity="0.7" />
+          <Circle cx={WIDTH * 0.40} cy={TAB_BAR_HEIGHT * 0.55} r="0.9" fill={"#4361EE"} opacity="0.5" />
+          <Circle cx={WIDTH * 0.50} cy={TAB_BAR_HEIGHT * 0.3} r="1" fill={"#E0AAFF"} opacity="0.6" />
+          <Circle cx={WIDTH * 0.60} cy={TAB_BAR_HEIGHT * 0.45} r="1.5" fill={"#FFFFFF"} opacity="0.7" />
+          <Circle cx={WIDTH * 0.70} cy={TAB_BAR_HEIGHT * 0.25} r="1.2" fill={"#E0AAFF"} opacity="0.5" />
+          <Circle cx={WIDTH * 0.75} cy={TAB_BAR_HEIGHT * 0.4} r="1.5" fill={"#FFFFFF"} opacity="0.7" />
+          <Circle cx={WIDTH * 0.82} cy={TAB_BAR_HEIGHT * 0.6} r="1" fill={"#4361EE"} opacity="0.5" />
+          <Circle cx={WIDTH * 0.85} cy={TAB_BAR_HEIGHT * 0.65} r="1" fill={"#4361EE"} opacity="0.5" />
+          <Circle cx={WIDTH * 0.90} cy={TAB_BAR_HEIGHT * 0.3} r="1.1" fill={"#FFFFFF"} opacity="0.6" />
+          <Circle cx={WIDTH * 0.92} cy={TAB_BAR_HEIGHT * 0.25} r="1.2" fill={"#E0AAFF"} opacity="0.6" />
         </Svg>
         
         {/* Cosmic glow line */}
@@ -211,9 +203,9 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 2,
-    backgroundColor: COLORS.cosmicBlue,
+    backgroundColor: "#4361EE",
     opacity: 0.4,
-    shadowColor: COLORS.cosmicBlue,
+    shadowColor: "#4361EE",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.8,
     shadowRadius: 8,
@@ -257,23 +249,23 @@ const styles = StyleSheet.create({
   tabOrbit1: {
     width: 80,
     height: 80,
-    borderColor: COLORS.nebulaPurple,
+    borderColor: "#7B2CBF",
     opacity: 0.2,
   },
   tabOrbit2: {
     width: 70,
     height: 70,
-    borderColor: COLORS.cosmicBlue,
+    borderColor: "#4361EE",
     opacity: 0.25,
   },
   tabOrbit3: {
     width: 60,
     height: 60,
-    borderColor: COLORS.moonGlow,
+    borderColor: "#E0AAFF",
     opacity: 0.3,
   },
   tabFabShadow: {
-    shadowColor: COLORS.nebulaPurple,
+    shadowColor: "#7B2CBF",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.6,
     shadowRadius: 16,
@@ -288,14 +280,14 @@ const styles = StyleSheet.create({
   tabFabGradient: {
     width: '100%',
     height: '100%',
-    backgroundColor: COLORS.deepSpace,
+    backgroundColor: "#050816",
     borderWidth: 2.5,
-    borderColor: COLORS.cosmicBlue,
+    borderColor: "#4361EE",
     borderRadius: 28,
   },
   tabFabActive: {
-    backgroundColor: COLORS.nebulaPurple,
-    borderColor: COLORS.moonGlow,
+    backgroundColor: "#7B2CBF",
+    borderColor: "#E0AAFF",
   },
   tabFabInner: {
     width: '100%',

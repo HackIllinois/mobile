@@ -14,7 +14,7 @@ export default function Layout() {
       tabBar={(props) => <CurvedTabBar {...props} />}
     >
       <Tabs.Screen
-        name="home"
+        name="Home"
         options={{
           tabBarIcon: ({ color, size }) => (
             <Image
@@ -26,7 +26,7 @@ export default function Layout() {
       />
       
       <Tabs.Screen
-        name="shop"
+        name="Shop"
         options={{
           tabBarIcon: ({ color, size }) => (
             <Image
@@ -37,7 +37,7 @@ export default function Layout() {
         }}
       />
       <Tabs.Screen
-        name="scan"
+        name="Scan"
         options={{
           tabBarIcon: ({ color, size }) => (
             <Image
@@ -48,7 +48,7 @@ export default function Layout() {
         }}
       />
       <Tabs.Screen
-        name="calendar"
+        name="Calendar"
         options={{
           tabBarIcon: ({ color, size }) => (
             <Image
@@ -59,7 +59,7 @@ export default function Layout() {
         }}
       />
       <Tabs.Screen
-        name="profile"
+        name="Profile"
         options={{
           tabBarIcon: ({ color, size }) => (
             <Image
