@@ -80,7 +80,7 @@ function TabButton({ route, isFocused, options, onPress, onLongPress, buildHref 
               <View style={styles.tabFabInner}>
                 {options.tabBarIcon &&
                   options.tabBarIcon({
-                    color: "FFFFFF",
+                    color: "#FFFFFF",
                     size: 26,
                     focused: isFocused,
                   })}
@@ -116,8 +116,8 @@ export function CurvedTabBar({ state, descriptors, navigation }: BottomTabBarPro
           <Path d={svgPath} fill="url(#spaceGrad)" />
           
           {/* Decorative stars */}
-          <Circle cx={WIDTH * 0.10} cy={TAB_BAR_HEIGHT * 0.2} r="1" fill={"FFFFFF"} opacity="0.5" />
-          <Circle cx={WIDTH * 0.15} cy={TAB_BAR_HEIGHT * 0.3} r="1.5" fill={"FFFFFF"} opacity="0.8" />
+          <Circle cx={WIDTH * 0.10} cy={TAB_BAR_HEIGHT * 0.2} r="1" fill={"#FFFFFF"} opacity="0.5" />
+          <Circle cx={WIDTH * 0.15} cy={TAB_BAR_HEIGHT * 0.3} r="1.5" fill={"#FFFFFF"} opacity="0.8" />
           <Circle cx={WIDTH * 0.22} cy={TAB_BAR_HEIGHT * 0.5} r="0.8" fill={"#4361EE"} opacity="0.4" />
           <Circle cx={WIDTH * 0.25} cy={TAB_BAR_HEIGHT * 0.6} r="1" fill={"#E0AAFF"} opacity="0.6" />
           <Circle cx={WIDTH * 0.33} cy={TAB_BAR_HEIGHT * 0.35} r="1.2" fill={"#FFFFFF"} opacity="0.7" />
