@@ -1,8 +1,10 @@
 {
   "expo": {
+    "scheme": "hackillinois",
     "name": "mobile",
     "slug": "mobile",
     "version": "1.0.0",
+    "scheme": "hackillinois",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -26,7 +28,8 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-barcode-scanner"
+      "expo-barcode-scanner",
+      "expo-router"
     ]
   }
 }

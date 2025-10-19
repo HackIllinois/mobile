@@ -1,3 +1,7 @@
+import { NavigationContainer } from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import AuthScreen from "./AuthScreen";
+import MainScreen from "./MainScreen";
 import React, { useState, useEffect } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
@@ -12,13 +16,10 @@ const Stack = createNativeStackNavigator();
 function HomeScreen({ navigation }: { navigation: any }) {
   return (
     <View style={styles.container}>
+      <Text>Open up App.tsx to start working on your app!</Text>
       <Button
         title="QR Scanner"
         onPress={() => navigation.navigate("Scanner")}
-      />
-      <Button
-        title="Point Shop"
-        onPress={() => navigation.navigate("Point Shop")}
       />
       <StatusBar style="auto" />
     </View>
@@ -40,7 +41,6 @@ export default function App() {
     <NavigationContainer>
       <Stack.Navigator>
         <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen name="Point Shop" component={PointShop} />
         <Stack.Screen name="Scanner" component={QRScannerScreen} />
       </Stack.Navigator>
     </NavigationContainer>
@@ -53,5 +53,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     alignItems: "center",
     justifyContent: "center",
+    gap: 10,
   },
 });
