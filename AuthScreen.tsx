@@ -24,7 +24,7 @@ export default function AuthScreen({ navigation }: any) {
   const handleLogin = async () => {
     try {
       setLoading(true);
-      
+
       const redirectUri = "hackillinois://auth";
       console.log("Redirect URI:", redirectUri);
 
@@ -44,7 +44,7 @@ export default function AuthScreen({ navigation }: any) {
 
         await SecureStore.setItemAsync("jwt", token);
         Alert.alert("Login successful!");
-        console.log("JWT Token:", token);
+        // console.log("JWT Token:", token);
         navigation.replace("Main");
       } else {
         Alert.alert("Login canceled or failed");
