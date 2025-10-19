@@ -8,7 +8,7 @@ enum AuthenticationErrorType {
   TokenExpired = "TokenExpired",
 }
 class API {
-  private axiosInstance: AxiosInstance;
+  public axiosInstance: AxiosInstance;
 
   constructor() {
     this.axiosInstance = axios.create({
