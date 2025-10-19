@@ -1,5 +1,3 @@
-// app/_layout.tsx
-import React from "react";
 import { Tabs } from "expo-router";
 import { Image } from "react-native";
 import { CurvedTabBar } from "../../components/CurvedTabBar";
