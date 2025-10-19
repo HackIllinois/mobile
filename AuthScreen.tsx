@@ -9,9 +9,11 @@ import {
   Alert,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import * as AuthSession from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
 import * as SecureStore from "expo-secure-store";
+import { makeRedirectUri, } from "expo-auth-session";
+import * as AuthSession from "expo-auth-session";
+
 import api from "./api";
 
 WebBrowser.maybeCompleteAuthSession();
@@ -22,28 +24,27 @@ export default function AuthScreen({ navigation }: any) {
   const handleLogin = async () => {
     try {
       setLoading(true);
-
-      const redirectUri = 'hackillinois://auth';
+      
+      const redirectUri = "hackillinois://auth";
+      console.log("Redirect URI:", redirectUri);
 
       const authUrl = `${api.axiosInstance.defaults.baseURL}/auth/login/google?redirect=${encodeURIComponent(
         redirectUri
       )}`;
+      console.log("Auth URL:", authUrl);
 
-      console.log("Redirect URI:", redirectUri);
-      const result = await WebBrowser.openAuthSessionAsync(
-        authUrl,
-        redirectUri
-      );
+      const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
+      console.log("Auth Result:", result);
 
       if (result.type === "success" && result.url) {
-        const url = result.url;
-        const params = new URLSearchParams(url.split("#")[1]); 
+        const params = new URLSearchParams(result.url.split("?")[1]);
         const token = params.get("token") || params.get("jwt");
 
-        // if (!token) throw new Error("No token returned");
+        if (!token) throw new Error("No token returned");
 
-        // await SecureStore.setItemAsync("jwt", token);
+        await SecureStore.setItemAsync("jwt", token);
         Alert.alert("Login successful!");
+        console.log("JWT Token:", token);
         navigation.replace("Main");
       } else {
         Alert.alert("Login canceled or failed");
