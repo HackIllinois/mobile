@@ -4,11 +4,35 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Stack } from "expo-router";
 import StartupAnimation from "../src/components/hackrocket/StartupAnimation";
 import OnboardingScreens from "../src/components/onboarding/OnboardingScreen";
+// Simulate Login
+import * as SecureStore from 'expo-secure-store';
+
+/**
+ * Global developer hook to auto-login with a mock JWT.
+ */
+function SimulateLogin() {
+  useEffect(() => {
+    if (__DEV__) {
+      const mockToken = process.env.EXPO_PUBLIC_MOCK_JWT;
+      if (mockToken) {
+        SecureStore.getItemAsync("jwt").then(existingToken => {
+          if (!existingToken) {
+            SecureStore.setItemAsync("jwt", mockToken);
+            console.log("DEV: Mock JWT saved to SecureStore!");
+          }
+        });
+      }
+    }
+  }, []);
+}
+
 
 export default function RootLayout() {
   const [showAnimation, setShowAnimation] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null);
   const fadeAnim = useRef(new Animated.Value(1)).current;
+
+  SimulateLogin();
   
   useEffect(() => {
     const checkOnboardingStatus = async () => {
