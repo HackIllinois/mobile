@@ -13,19 +13,40 @@ import * as WebBrowser from "expo-web-browser";
 import * as SecureStore from "expo-secure-store";
 import { makeRedirectUri, } from "expo-auth-session";
 import * as AuthSession from "expo-auth-session";
+import { useRouter } from "expo-router";
 
-import api from "./api";
+import api from "../api";
 
 WebBrowser.maybeCompleteAuthSession();
 
 export default function AuthScreen({ navigation }: any) {
-  const [loading, setLoading] = useState(false);
+  const [loadingGoogle, setLoadingGoogle] = useState(false);
+  const [loadingGitHub, setLoadingGitHub] = useState(false);
+  const router = useRouter();
 
-  const handleLogin = async () => {
+
+  const redirectUri = "hackillinois://auth";
+
+  const handleAuthResult = async (result: any) => {
+    console.log("Auth Result:", result);
+    if (result.type === "success" && result.url) {
+      const params = new URLSearchParams(result.url.split("?")[1]);
+      const token = params.get("token") || params.get("jwt");
+
+      if (!token) throw new Error("No token returned");
+
+      await SecureStore.setItemAsync("jwt", token);
+      Alert.alert("Login successful!");
+      router.replace("/(tabs)/Home");
+    } else {
+      Alert.alert("Login canceled or failed");
+    }
+  };
+  
+  const handleGoogleLogin = async () => {
     try {
-      setLoading(true);
+      setLoadingGoogle(true);
 
-      const redirectUri = "hackillinois://auth";
       console.log("Redirect URI:", redirectUri);
 
       const authUrl = `${api.axiosInstance.defaults.baseURL}/auth/login/google?redirect=${encodeURIComponent(
@@ -36,24 +57,29 @@ export default function AuthScreen({ navigation }: any) {
       const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
       console.log("Auth Result:", result);
 
-      if (result.type === "success" && result.url) {
-        const params = new URLSearchParams(result.url.split("?")[1]);
-        const token = params.get("token") || params.get("jwt");
-
-        if (!token) throw new Error("No token returned");
-
-        await SecureStore.setItemAsync("jwt", token);
-        Alert.alert("Login successful!");
-        // console.log("JWT Token:", token);
-        navigation.replace("Main");
-      } else {
-        Alert.alert("Login canceled or failed");
-      }
+      await handleAuthResult(result);
     } catch (err) {
       console.error(err);
       Alert.alert("Login failed", "Please try again.");
     } finally {
-      setLoading(false);
+      setLoadingGoogle(false);
+    }
+  };
+
+  const handleGitHubLogin = async () => {
+    try {
+      setLoadingGitHub(true);
+      const authUrl = `${api.axiosInstance.defaults.baseURL}/auth/login/github?redirect=${encodeURIComponent(
+        redirectUri
+      )}`;
+      console.log("GitHub Auth URL:", authUrl);
+      const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
+      await handleAuthResult(result);
+    } catch (err) {
+      console.error(err);
+      Alert.alert("GitHub login failed", "Please try again.");
+    } finally {
+      setLoadingGitHub(false);
     }
   };
 
@@ -64,7 +90,7 @@ export default function AuthScreen({ navigation }: any) {
     >
       <View style={styles.logoContainer}>
         <Image
-          source={require("./assets/Hack-Logo-png.png")}
+          source={require("../assets/Hack-Logo-png.png")}
           style={styles.logo}
           resizeMode="contain"
         />
@@ -73,15 +99,29 @@ export default function AuthScreen({ navigation }: any) {
 
       <TouchableOpacity
         style={styles.button}
-        onPress={handleLogin}
-        disabled={loading}
+        onPress={handleGoogleLogin}
+        disabled={loadingGoogle || loadingGitHub}
       >
-        {loading ? (
+        {loadingGoogle ? (
           <ActivityIndicator color="#fff" />
         ) : (
           <Text style={styles.buttonText}>Sign in with Google</Text>
         )}
       </TouchableOpacity>
+
+        <View style={{ height: 20 }} />
+        <TouchableOpacity
+            style={[styles.button, { backgroundColor: "#24292e" }]}
+            onPress={handleGitHubLogin}
+            disabled={loadingGoogle || loadingGitHub}
+        >
+            {loadingGitHub ? (
+            <ActivityIndicator color="#fff" />
+            ) : (
+            <Text style={styles.buttonText}>Sign in with GitHub</Text>
+            )}
+        </TouchableOpacity>
+
     </LinearGradient>
   );
 }
