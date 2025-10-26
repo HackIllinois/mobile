@@ -22,7 +22,7 @@ export default function Layout() {
           ),
         }}
       />
-      
+
       <Tabs.Screen
         name="Shop"
         options={{

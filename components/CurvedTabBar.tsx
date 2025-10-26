@@ -1,15 +1,27 @@
-import React, { useEffect, useRef } from 'react';
-import { View, TouchableOpacity, StyleSheet, Dimensions, Platform, Animated } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Path, Defs, RadialGradient, Stop, Circle } from 'react-native-svg';
-import { useLinkBuilder } from '@react-navigation/native';
-import { PlatformPressable } from '@react-navigation/elements';
-import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import React, { useEffect, useRef } from "react";
+import {
+  View,
+  TouchableOpacity,
+  StyleSheet,
+  Dimensions,
+  Platform,
+  Animated,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Svg, {
+  Path,
+  Defs,
+  RadialGradient,
+  Stop,
+  Circle,
+} from "react-native-svg";
+import { useLinkBuilder } from "@react-navigation/native";
+import { PlatformPressable } from "@react-navigation/elements";
+import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 
-const { width } = Dimensions.get('window');
+const { width } = Dimensions.get("window");
 const WIDTH = width;
-const TAB_BAR_HEIGHT = 130;
-
+const TAB_BAR_HEIGHT = 100;
 
 const getSvgPath = (height: number) => {
   return `
@@ -32,7 +44,14 @@ interface TabButtonProps {
   buildHref: (name: string, params?: any) => string;
 }
 
-function TabButton({ route, isFocused, options, onPress, onLongPress, buildHref }: TabButtonProps) {
+function TabButton({
+  route,
+  isFocused,
+  options,
+  onPress,
+  onLongPress,
+  buildHref,
+}: TabButtonProps) {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const rotateAnim = useRef(new Animated.Value(0)).current;
 
@@ -70,13 +89,11 @@ function TabButton({ route, isFocused, options, onPress, onLongPress, buildHref 
         onLongPress={onLongPress}
         style={styles.tabButton}
       >
-        <Animated.View
-          style={[
-            styles.tabFabShadow,
-          ]}
-        >
+        <Animated.View style={[styles.tabFabShadow]}>
           <View style={styles.tabFab}>
-            <View style={[styles.tabFabGradient, isFocused && styles.tabFabActive]}>
+            <View
+              style={[styles.tabFabGradient, isFocused && styles.tabFabActive]}
+            >
               <View style={styles.tabFabInner}>
                 {options.tabBarIcon &&
                   options.tabBarIcon({
@@ -93,19 +110,29 @@ function TabButton({ route, isFocused, options, onPress, onLongPress, buildHref 
   );
 }
 
-export function CurvedTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+export function CurvedTabBar({
+  state,
+  descriptors,
+  navigation,
+}: BottomTabBarProps) {
   const { buildHref } = useLinkBuilder();
   const insets = useSafeAreaInsets();
-  
-  const bottomPadding = Platform.OS === 'android' ? Math.max(insets.bottom, 0) : insets.bottom;
+
+  const bottomPadding =
+    Platform.OS === "android" ? Math.max(insets.bottom, 0) : insets.bottom;
   const totalHeight = TAB_BAR_HEIGHT + bottomPadding;
-  const svgPath = getSvgPath(TAB_BAR_HEIGHT);
+  const svgPath = getSvgPath(totalHeight);
 
   return (
-    <View style={[styles.container, { height: totalHeight, paddingBottom: bottomPadding }]}>
+    <View
+      style={[
+        styles.container,
+        { height: totalHeight, paddingBottom: bottomPadding },
+      ]}
+    >
       {/* Background with stars effect */}
-      <View style={styles.backgroundWrapper}>
-        <Svg width={WIDTH} height={TAB_BAR_HEIGHT} style={styles.svg}>
+      <View style={[styles.backgroundWrapper, { height: totalHeight }]}>
+        <Svg width={WIDTH} height={totalHeight} style={styles.svg}>
           <Defs>
             <RadialGradient id="spaceGrad" cx="50%" cy="0%" r="100%">
               <Stop offset="0%" stopColor="#1a1a2e" stopOpacity="1" />
@@ -114,24 +141,108 @@ export function CurvedTabBar({ state, descriptors, navigation }: BottomTabBarPro
             </RadialGradient>
           </Defs>
           <Path d={svgPath} fill="url(#spaceGrad)" />
-          
+
           {/* Decorative stars */}
-          <Circle cx={WIDTH * 0.10} cy={TAB_BAR_HEIGHT * 0.2} r="1" fill={"#FFFFFF"} opacity="0.5" />
-          <Circle cx={WIDTH * 0.15} cy={TAB_BAR_HEIGHT * 0.3} r="1.5" fill={"#FFFFFF"} opacity="0.8" />
-          <Circle cx={WIDTH * 0.22} cy={TAB_BAR_HEIGHT * 0.5} r="0.8" fill={"#4361EE"} opacity="0.4" />
-          <Circle cx={WIDTH * 0.25} cy={TAB_BAR_HEIGHT * 0.6} r="1" fill={"#E0AAFF"} opacity="0.6" />
-          <Circle cx={WIDTH * 0.33} cy={TAB_BAR_HEIGHT * 0.35} r="1.2" fill={"#FFFFFF"} opacity="0.7" />
-          <Circle cx={WIDTH * 0.40} cy={TAB_BAR_HEIGHT * 0.55} r="0.9" fill={"#4361EE"} opacity="0.5" />
-          <Circle cx={WIDTH * 0.50} cy={TAB_BAR_HEIGHT * 0.3} r="1" fill={"#E0AAFF"} opacity="0.6" />
-          <Circle cx={WIDTH * 0.60} cy={TAB_BAR_HEIGHT * 0.45} r="1.5" fill={"#FFFFFF"} opacity="0.7" />
-          <Circle cx={WIDTH * 0.70} cy={TAB_BAR_HEIGHT * 0.25} r="1.2" fill={"#E0AAFF"} opacity="0.5" />
-          <Circle cx={WIDTH * 0.75} cy={TAB_BAR_HEIGHT * 0.4} r="1.5" fill={"#FFFFFF"} opacity="0.7" />
-          <Circle cx={WIDTH * 0.82} cy={TAB_BAR_HEIGHT * 0.6} r="1" fill={"#4361EE"} opacity="0.5" />
-          <Circle cx={WIDTH * 0.85} cy={TAB_BAR_HEIGHT * 0.65} r="1" fill={"#4361EE"} opacity="0.5" />
-          <Circle cx={WIDTH * 0.90} cy={TAB_BAR_HEIGHT * 0.3} r="1.1" fill={"#FFFFFF"} opacity="0.6" />
-          <Circle cx={WIDTH * 0.92} cy={TAB_BAR_HEIGHT * 0.25} r="1.2" fill={"#E0AAFF"} opacity="0.6" />
+          <Circle
+            cx={WIDTH * 0.1}
+            cy={TAB_BAR_HEIGHT * 0.2}
+            r="1"
+            fill={"#FFFFFF"}
+            opacity="0.5"
+          />
+          <Circle
+            cx={WIDTH * 0.15}
+            cy={TAB_BAR_HEIGHT * 0.3}
+            r="1.5"
+            fill={"#FFFFFF"}
+            opacity="0.8"
+          />
+          <Circle
+            cx={WIDTH * 0.22}
+            cy={TAB_BAR_HEIGHT * 0.5}
+            r="0.8"
+            fill={"#4361EE"}
+            opacity="0.4"
+          />
+          <Circle
+            cx={WIDTH * 0.25}
+            cy={TAB_BAR_HEIGHT * 0.6}
+            r="1"
+            fill={"#E0AAFF"}
+            opacity="0.6"
+          />
+          <Circle
+            cx={WIDTH * 0.33}
+            cy={TAB_BAR_HEIGHT * 0.35}
+            r="1.2"
+            fill={"#FFFFFF"}
+            opacity="0.7"
+          />
+          <Circle
+            cx={WIDTH * 0.4}
+            cy={TAB_BAR_HEIGHT * 0.55}
+            r="0.9"
+            fill={"#4361EE"}
+            opacity="0.5"
+          />
+          <Circle
+            cx={WIDTH * 0.5}
+            cy={TAB_BAR_HEIGHT * 0.3}
+            r="1"
+            fill={"#E0AAFF"}
+            opacity="0.6"
+          />
+          <Circle
+            cx={WIDTH * 0.6}
+            cy={TAB_BAR_HEIGHT * 0.45}
+            r="1.5"
+            fill={"#FFFFFF"}
+            opacity="0.7"
+          />
+          <Circle
+            cx={WIDTH * 0.7}
+            cy={TAB_BAR_HEIGHT * 0.25}
+            r="1.2"
+            fill={"#E0AAFF"}
+            opacity="0.5"
+          />
+          <Circle
+            cx={WIDTH * 0.75}
+            cy={TAB_BAR_HEIGHT * 0.4}
+            r="1.5"
+            fill={"#FFFFFF"}
+            opacity="0.7"
+          />
+          <Circle
+            cx={WIDTH * 0.82}
+            cy={TAB_BAR_HEIGHT * 0.6}
+            r="1"
+            fill={"#4361EE"}
+            opacity="0.5"
+          />
+          <Circle
+            cx={WIDTH * 0.85}
+            cy={TAB_BAR_HEIGHT * 0.65}
+            r="1"
+            fill={"#4361EE"}
+            opacity="0.5"
+          />
+          <Circle
+            cx={WIDTH * 0.9}
+            cy={TAB_BAR_HEIGHT * 0.3}
+            r="1.1"
+            fill={"#FFFFFF"}
+            opacity="0.6"
+          />
+          <Circle
+            cx={WIDTH * 0.92}
+            cy={TAB_BAR_HEIGHT * 0.25}
+            r="1.2"
+            fill={"#E0AAFF"}
+            opacity="0.6"
+          />
         </Svg>
-        
+
         {/* Cosmic glow line */}
         <View style={styles.cosmicGlowLine} />
       </View>
@@ -144,7 +255,7 @@ export function CurvedTabBar({ state, descriptors, navigation }: BottomTabBarPro
 
           const onPress = () => {
             const event = navigation.emit({
-              type: 'tabPress',
+              type: "tabPress",
               target: route.key,
               canPreventDefault: true,
             });
@@ -156,7 +267,7 @@ export function CurvedTabBar({ state, descriptors, navigation }: BottomTabBarPro
 
           const onLongPress = () => {
             navigation.emit({
-              type: 'tabLongPress',
+              type: "tabLongPress",
               target: route.key,
             });
           };
@@ -169,7 +280,7 @@ export function CurvedTabBar({ state, descriptors, navigation }: BottomTabBarPro
               options={options}
               onPress={onPress}
               onLongPress={onLongPress}
-              buildHref={(name, params) => buildHref(name, params) ?? ''}
+              buildHref={(name, params) => buildHref(name, params) ?? ""}
             />
           );
         })}
@@ -178,27 +289,26 @@ export function CurvedTabBar({ state, descriptors, navigation }: BottomTabBarPro
   );
 }
 
-
-
 const styles = StyleSheet.create({
   container: {
-    position: 'absolute',
+    position: "relative",
     bottom: 0,
     left: 0,
     right: 0,
+    borderRadius: 20,
   },
   backgroundWrapper: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
   },
   svg: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 0,
   },
   cosmicGlowLine: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
@@ -211,40 +321,40 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
   },
   tabContainer: {
-    flexDirection: 'row',
-    height: TAB_BAR_HEIGHT+60,
-    alignItems: 'center',
+    flexDirection: "row",
+    height: TAB_BAR_HEIGHT + 60,
+    alignItems: "center",
     paddingHorizontal: 12,
   },
   tabButtonWrapper: {
     flex: 1,
     height: TAB_BAR_HEIGHT,
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
+    justifyContent: "center",
+    alignItems: "center",
+    position: "relative",
   },
   tabButton: {
     width: 60,
     height: 60,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   tabOrbitContainer: {
-    position: 'absolute',
+    position: "absolute",
     width: 80,
     height: 80,
-    justifyContent: 'center',
-    alignItems: 'center',
-    top: '50%',
-    left: '50%',
+    justifyContent: "center",
+    alignItems: "center",
+    top: "50%",
+    left: "50%",
     marginLeft: -40,
     marginTop: -40,
   },
   tabOrbit: {
-    position: 'absolute',
+    position: "absolute",
     borderWidth: 1,
     borderRadius: 999,
-    borderStyle: 'dashed',
+    borderStyle: "dashed",
   },
   tabOrbit1: {
     width: 80,
@@ -275,11 +385,11 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   tabFabGradient: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
     backgroundColor: "#050816",
     borderWidth: 2.5,
     borderColor: "#4361EE",
@@ -290,10 +400,10 @@ const styles = StyleSheet.create({
     borderColor: "#E0AAFF",
   },
   tabFabInner: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'transparent',
+    width: "100%",
+    height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "transparent",
   },
 });
