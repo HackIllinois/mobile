@@ -7,6 +7,7 @@ enum AuthenticationErrorType {
   TokenInvalid = "TokenInvalid",
   TokenExpired = "TokenExpired",
 }
+
 class API {
   public axiosInstance: AxiosInstance;
 

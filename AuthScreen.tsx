@@ -11,10 +11,10 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import * as WebBrowser from "expo-web-browser";
 import * as SecureStore from "expo-secure-store";
-import { makeRedirectUri, } from "expo-auth-session";
+import { makeRedirectUri } from "expo-auth-session";
 import * as AuthSession from "expo-auth-session";
 
-import api from "./api";
+import api from "./lib/api";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -28,12 +28,15 @@ export default function AuthScreen({ navigation }: any) {
       const redirectUri = "hackillinois://auth";
       console.log("Redirect URI:", redirectUri);
 
-      const authUrl = `${api.axiosInstance.defaults.baseURL}/auth/login/google?redirect=${encodeURIComponent(
-        redirectUri
-      )}`;
+      const authUrl = `${
+        api.axiosInstance.defaults.baseURL
+      }/auth/login/google?redirect=${encodeURIComponent(redirectUri)}`;
       console.log("Auth URL:", authUrl);
 
-      const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
+      const result = await WebBrowser.openAuthSessionAsync(
+        authUrl,
+        redirectUri
+      );
       console.log("Auth Result:", result);
 
       if (result.type === "success" && result.url) {

@@ -2,18 +2,25 @@ import { useEffect, useRef, useState } from "react";
 import { Animated } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Stack } from "expo-router";
+import * as Notifications from "expo-notifications";
 import StartupAnimation from "../src/components/hackrocket/StartupAnimation";
 import OnboardingScreens from "../src/components/onboarding/OnboardingScreen";
+import {
+  getAndSendExpoPushToken,
+  setupNotificationListeners,
+} from "../lib/notifications";
 
 export default function RootLayout() {
   const [showAnimation, setShowAnimation] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null);
   const fadeAnim = useRef(new Animated.Value(1)).current;
-  
+
   useEffect(() => {
     const checkOnboardingStatus = async () => {
       try {
-        const hasCompleted = await AsyncStorage.getItem("hasCompletedOnboarding");
+        const hasCompleted = await AsyncStorage.getItem(
+          "hasCompletedOnboarding"
+        );
         setShowOnboarding(!hasCompleted);
       } catch (e) {
         console.error("Error checking onboarding status:", e);
@@ -36,9 +43,26 @@ export default function RootLayout() {
     return () => clearTimeout(timer);
   }, []);
 
+  useEffect(() => {
+    const cleanup = setupNotificationListeners(
+      (notification: Notifications.Notification) => {
+        console.log("notification received in foreground:", notification);
+      },
+      (response: Notifications.NotificationResponse) => {
+        console.log("user interacted with notification:", response);
+        const data = response.notification.request.content.data;
+        // TODO: add notification interaction logic
+      }
+    );
+    // returning the cleanup function causes it to run when the component unmounts/rerenders
+    // saves us from duplicate listeners and mem leaks
+    return cleanup;
+  }, []);
+
   const handleOnboardingFinish = async () => {
     try {
       await AsyncStorage.setItem("hasCompletedOnboarding", "true");
+      await getAndSendExpoPushToken();
       setShowOnboarding(false);
     } catch (e) {
       console.error("Error saving onboarding status:", e);
