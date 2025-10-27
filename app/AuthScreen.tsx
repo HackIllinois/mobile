@@ -14,10 +14,16 @@ import * as SecureStore from "expo-secure-store";
 import { makeRedirectUri, } from "expo-auth-session";
 import * as AuthSession from "expo-auth-session";
 import { useRouter } from "expo-router";
+import { AxiosResponse } from "axios";
 
 import api from "../api";
 
 WebBrowser.maybeCompleteAuthSession();
+
+interface AuthRolesResponse {
+  id: string;
+  roles: string[];
+}
 
 export default function AuthScreen({ navigation }: any) {
   const [loadingGoogle, setLoadingGoogle] = useState(false);
@@ -30,14 +36,38 @@ export default function AuthScreen({ navigation }: any) {
   const handleAuthResult = async (result: any) => {
     console.log("Auth Result:", result);
     if (result.type === "success" && result.url) {
+      try {
       const params = new URLSearchParams(result.url.split("?")[1]);
       const token = params.get("token") || params.get("jwt");
 
       if (!token) throw new Error("No token returned");
 
       await SecureStore.setItemAsync("jwt", token);
+
+      // Caching User Roles 
+      const roleResponse = await api.get<AxiosResponse<AuthRolesResponse>>(
+        "/auth/roles/",
+        {
+          headers: {
+            Authorization: token, // Pass the token directly to avoid a race condition
+          },
+        }
+      );
+        
+      if (!roleResponse.data || !roleResponse.data.roles) {
+        throw new Error("Role data not found in response");
+      }
+
+      const roles = roleResponse.data.roles; 
+      await SecureStore.setItemAsync("userRoles", JSON.stringify(roles));
+      // console.log("Roles cached:", roles);
+
+
       Alert.alert("Login successful!");
       router.replace("/(tabs)/Home");
+      } catch (err) {
+        throw err; 
+      }
     } else {
       Alert.alert("Login canceled or failed");
     }
@@ -60,6 +90,8 @@ export default function AuthScreen({ navigation }: any) {
       await handleAuthResult(result);
     } catch (err) {
       console.error(err);
+      await SecureStore.deleteItemAsync("jwt");
+      await SecureStore.deleteItemAsync("userRoles");
       Alert.alert("Login failed", "Please try again.");
     } finally {
       setLoadingGoogle(false);
@@ -77,6 +109,8 @@ export default function AuthScreen({ navigation }: any) {
       await handleAuthResult(result);
     } catch (err) {
       console.error(err);
+      await SecureStore.deleteItemAsync("jwt");
+      await SecureStore.deleteItemAsync("userRoles");
       Alert.alert("GitHub login failed", "Please try again.");
     } finally {
       setLoadingGitHub(false);

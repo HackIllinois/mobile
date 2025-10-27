@@ -21,7 +21,7 @@ class API {
         // inject jwt into headers before request is made
         const jwt = await SecureStore.getItemAsync("jwt");
         if (jwt) {
-          config.headers.Authorization = jwt;
+          config.headers.Authorization = jwt.replace(/#$/, '');
         }
         return config;
       },
