@@ -5,6 +5,7 @@ interface EventCardProps {
   event: Event;
   index: number;
   onPress: (event: Event) => void;
+  handleSave: (eventId: string) => void;
 }
 
 const formatTime = (timestamp: number): string => {
@@ -24,8 +25,9 @@ const formatDate = (timestamp: number): string => {
   });
 };
 
-export function EventCard({ event, index, onPress }: EventCardProps) {
+export function EventCard({ event, index, onPress, handleSave }: EventCardProps) {
   const handlePress = () => onPress(event);
+  const handleSavePress = () => handleSave(event.eventId);
   {/*When actual design is sent out create actual press animations*/}
   return (
     
@@ -38,7 +40,7 @@ export function EventCard({ event, index, onPress }: EventCardProps) {
     >
       <View style={styles.header}>
         <Text style={styles.title}>{event.name}</Text>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={handleSavePress}>
           {/* Once png is converted to svg we can add fill to red on click */}
           <Image style={styles.date} source={require('../../assets/event/Bookmark.png')}/>
         </TouchableOpacity>

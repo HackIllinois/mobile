@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface FullScreenModalProps {
   visible: boolean;
-  event: Event;
+  event: Event | null;
   onClose: () => void;
 }
 
@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 25,
-    paddingTop: 60, // space for buttons
+    paddingTop: 60, 
     alignItems: 'flex-start',
     paddingBottom: 40,
   },
