@@ -1,6 +1,7 @@
 import { StyleSheet } from 'react-native';
 
 export const styles = StyleSheet.create({
+
     // --- View 2 Styles ---
     menuContainer: {
       flex: 1,
@@ -52,12 +53,17 @@ export const styles = StyleSheet.create({
       fontSize: 18,
       fontWeight: '500',
       color: 'black',
+      textAlign: 'center',
     },
     menuButtonArrow: {
       fontSize: 24,
       fontWeight: 'bold',
       color: '#000000',
     },
+
+
+
+
   
     // --- View 1 Styles  ---
     container: {
@@ -190,7 +196,11 @@ export const styles = StyleSheet.create({
       borderTopWidth: 0,
     },
   
-    // Modal Styles
+
+
+
+
+    // --- Modal Styles  --- 
     scanHelpText: {
       fontSize: 16,
       color: 'white',
@@ -286,4 +296,5 @@ export const styles = StyleSheet.create({
       fontWeight: 'bold',
       textAlign: 'center',
     }
+    
   });

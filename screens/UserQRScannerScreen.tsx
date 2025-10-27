@@ -6,11 +6,9 @@ import axios, { AxiosResponse } from 'axios';
 import api from '../api';
 import { styles } from './styles/QRScannerScreen.styles';
 
-// TODO:
-  // Do we need the API call for event details? If so, handle errors
-
 interface ScanSuccessData {
   points: number;
+  eventName: string;
   success?: boolean;
 }
 
@@ -46,7 +44,7 @@ type ScanResult = {
   pointsEarned?: number; 
 };
 
-export default function QRScannerScreen() {
+export default function UserQRScannerScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -66,19 +64,13 @@ export default function QRScannerScreen() {
     try {
       // console.log('QR Scanner: Starting API calls');
       
-      // TODO: Handle Errors if this API is required
-      const eventDetailsResponse = await api.get<EventDetails>(
-        `/event/${scannedData}`
-      );
-  
-      const eventName = (eventDetailsResponse as any).data.name; 
-      
       const response = await api.put<ScanSuccessData>(
-        '/user/scan-event/',     
+        'user/scan-event/',     
         { eventId: scannedData } 
       );
   
       const points = (response as any).data.points || 0;
+      const eventName = (response as any).data.eventName || 'Event';
       
       setScanResult({
         status: 'success',
@@ -189,7 +181,7 @@ export default function QRScannerScreen() {
               Align the QR code with the frame to scan!
             </Text>
             <TouchableOpacity style={styles.chooseImageButton}>
-              <Text style={styles.chooseImageButtonText}>Choose image</Text>
+              <Text style={styles.chooseImageButtonText}>Choose image (Placeholder)</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -236,15 +228,15 @@ export default function QRScannerScreen() {
   // View 2: (Default) Scanner Menu 
   return (
     <SafeAreaView style={styles.menuContainer}>
-      <Text style={styles.menuTitle}>Scanner</Text>
+      <Text style={styles.menuTitle}>User Scanner</Text>
       
       <TouchableOpacity style={styles.menuButton} onPress={handleScanPress}>
-        <Text style={styles.menuButtonText}>Scan QR Code</Text>
+        <Text style={styles.menuButtonText}>Event Check-in</Text>
         <Text style={styles.menuButtonArrow}>{">"}</Text>
       </TouchableOpacity>
       
       <TouchableOpacity style={styles.menuButtonSecondary}>
-        <Text style={styles.menuButtonText}>Placeholder</Text>
+        <Text style={styles.menuButtonText}>Mentor Check-in (Placeholder)</Text>
       </TouchableOpacity>
       
       <TouchableOpacity style={styles.menuButtonSecondary}>
