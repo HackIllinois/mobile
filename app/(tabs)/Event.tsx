@@ -183,7 +183,7 @@ export default function EventScreen() {
       )}
       <SafeAreaView style={styles.background}>
         {renderContent()}
-        <EventDetailModal visible={modalVisible} event={selectedEvent} onClose={() => setModalVisible(false)} />
+        {selectedEvent && <EventDetailModal visible={modalVisible} event={selectedEvent} onClose={() => setModalVisible(false)} handleSave={handleSave} />}
         
       </SafeAreaView> 
     </SafeAreaView>

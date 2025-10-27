@@ -4,8 +4,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface FullScreenModalProps {
   visible: boolean;
-  event: Event | null;
+  event: Event;
   onClose: () => void;
+  handleSave: (eventId: string) => void;
 }
 
 const formatTime = (timestamp: number): string => {
@@ -17,8 +18,8 @@ const formatTime = (timestamp: number): string => {
   });
 };
 
-export default function FullScreenModal({ visible, event, onClose }: FullScreenModalProps) {
-
+export default function FullScreenModal({ visible, event, onClose, handleSave }: FullScreenModalProps) {
+  const handlePressSave = () => handleSave(event.eventId);
   return (
     <Modal
       visible={visible}
@@ -37,7 +38,7 @@ export default function FullScreenModal({ visible, event, onClose }: FullScreenM
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
             <Text style={styles.closeText}>X</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={onClose} style={styles.saveButton}>
+          <TouchableOpacity onPress={handlePressSave} style={styles.saveButton}>
             <Image source={require('../../assets/event/Bookmark.png')} />
           </TouchableOpacity>
           <Text style={styles.title}>{event?.name}</Text>
