@@ -9,10 +9,12 @@ import {
   getAndSendExpoPushToken,
   setupNotificationListeners,
 } from "../lib/notifications";
+import * as SecureStore from "expo-secure-store";
 
 export default function RootLayout() {
   const [showAnimation, setShowAnimation] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
@@ -21,6 +23,8 @@ export default function RootLayout() {
         const hasCompleted = await AsyncStorage.getItem(
           "hasCompletedOnboarding"
         );
+        const jwt = await SecureStore.getItemAsync("jwt");
+        setIsLoggedIn(!!jwt);
         setShowOnboarding(!hasCompleted);
       } catch (e) {
         console.error("Error checking onboarding status:", e);
@@ -87,10 +91,14 @@ export default function RootLayout() {
   if (showOnboarding) {
     return <OnboardingScreens onFinish={handleOnboardingFinish} />;
   }
-
+  console.log("showOnboarding:", showOnboarding, "isLoggedIn:", isLoggedIn);
   return (
-    <Stack>
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+    <Stack screenOptions={{ headerShown: false }}>
+      {!isLoggedIn ? (
+        <Stack.Screen name="AuthScreen" />
+      ) : (
+        <Stack.Screen name="(tabs)" />
+      )}
     </Stack>
   );
 }
