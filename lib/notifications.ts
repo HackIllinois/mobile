@@ -73,25 +73,20 @@ export async function registerForPushNotificationsAsync(): Promise<
  * sends the expo push token to adonix
  */
 export const getAndSendExpoPushToken = async (): Promise<string | null> => {
-  try {
-    const token = await registerForPushNotificationsAsync();
-    if (token) {
-      const response: AxiosResponse = await api.post("/notification", {
-        deviceToken: token,
-      });
+  const token = await registerForPushNotificationsAsync();
+  if (token) {
+    const response: AxiosResponse = await api.post("/notification", {
+      deviceToken: token,
+    });
 
-      if (response.data["success"] === false) {
-        console.error(
-          "There was a server-side error with sending the Expo push token"
-        );
-      }
-
-      return token;
+    if (response.data["success"] === false) {
+      console.error(
+        "There was a server-side error with sending the Expo push token"
+      );
     }
-  } catch (error) {
-    console.error("Error getting or sending Expo push token:", error);
-  }
 
+    return token;
+  }
   return null;
 };
 
