@@ -54,11 +54,8 @@ export default function RootLayout() {
   // saves us from duplicate listeners and mem leaks
   useEffect(() => {
     const cleanup = setupNotificationListeners(
-      (notification: Notifications.Notification) => {
-        console.log("notification received in foreground:", notification);
-      },
+      (notification: Notifications.Notification) => {},
       (response: Notifications.NotificationResponse) => {
-        console.log("user interacted with notification:", response);
         const data = response.notification.request.content.data;
         // TODO: add notification interaction logic
       }
@@ -68,7 +65,8 @@ export default function RootLayout() {
 
   // sends the expo push token to axonix IF:
   // 1) we have notifications permissions
-  // 2) we haven't already sent token
+  // 2) we have jwt
+  // 2) we have not already sent token
   useEffect(() => {
     const subscription = AppState.addEventListener(
       "change",
@@ -78,11 +76,12 @@ export default function RootLayout() {
           const hasRegisteredToken = await AsyncStorage.getItem(
             "hasRegisteredPushToken"
           );
-          if (status === "granted" && !hasRegisteredToken) {
+          const jwt = await SecureStore.getItemAsync("jwt");
+          if (jwt && status === "granted" && !hasRegisteredToken) {
             const token = await getAndSendExpoPushToken();
             if (token) {
               await AsyncStorage.setItem("hasRegisteredPushToken", "true");
-              console.log("Push token registered after permission change");
+              console.log("device push token registered");
             }
           }
         }
