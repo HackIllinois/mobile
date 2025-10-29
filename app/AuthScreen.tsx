@@ -11,11 +11,11 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import * as WebBrowser from "expo-web-browser";
 import * as SecureStore from "expo-secure-store";
-import { makeRedirectUri, } from "expo-auth-session";
+import { makeRedirectUri } from "expo-auth-session";
 import * as AuthSession from "expo-auth-session";
 import { useRouter } from "expo-router";
 
-import api from "../api";
+import api from "../lib/api";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -23,7 +23,6 @@ export default function AuthScreen({ navigation }: any) {
   const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [loadingGitHub, setLoadingGitHub] = useState(false);
   const router = useRouter();
-
 
   const redirectUri = "hackillinois://auth";
 
@@ -42,20 +41,23 @@ export default function AuthScreen({ navigation }: any) {
       Alert.alert("Login canceled or failed");
     }
   };
-  
+
   const handleGoogleLogin = async () => {
     try {
       setLoadingGoogle(true);
 
       console.log("Redirect URI:", redirectUri);
 
-      const authUrl = `${api.axiosInstance.defaults.baseURL}/auth/login/google?redirect=${encodeURIComponent(
-        redirectUri
-      )}`;
+      const authUrl = `${
+        api.axiosInstance.defaults.baseURL
+      }/auth/login/google?redirect=${encodeURIComponent(redirectUri)}`;
       console.log("Auth URL:", authUrl);
 
-      const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
-    //   console.log("Auth Result:", result);
+      const result = await WebBrowser.openAuthSessionAsync(
+        authUrl,
+        redirectUri
+      );
+      console.log("Auth Result:", result);
 
       await handleAuthResult(result);
     } catch (err) {
@@ -69,11 +71,14 @@ export default function AuthScreen({ navigation }: any) {
   const handleGitHubLogin = async () => {
     try {
       setLoadingGitHub(true);
-      const authUrl = `${api.axiosInstance.defaults.baseURL}/auth/login/github?redirect=${encodeURIComponent(
-        redirectUri
-      )}`;
+      const authUrl = `${
+        api.axiosInstance.defaults.baseURL
+      }/auth/login/github?redirect=${encodeURIComponent(redirectUri)}`;
       console.log("GitHub Auth URL:", authUrl);
-      const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
+      const result = await WebBrowser.openAuthSessionAsync(
+        authUrl,
+        redirectUri
+      );
       await handleAuthResult(result);
     } catch (err) {
       console.error(err);
@@ -109,19 +114,18 @@ export default function AuthScreen({ navigation }: any) {
         )}
       </TouchableOpacity>
 
-        <View style={{ height: 20 }} />
-        <TouchableOpacity
-            style={[styles.button, { backgroundColor: "#24292e" }]}
-            onPress={handleGitHubLogin}
-            disabled={loadingGoogle || loadingGitHub}
-        >
-            {loadingGitHub ? (
-            <ActivityIndicator color="#fff" />
-            ) : (
-            <Text style={styles.buttonText}>Sign in with GitHub</Text>
-            )}
-        </TouchableOpacity>
-
+      <View style={{ height: 20 }} />
+      <TouchableOpacity
+        style={[styles.button, { backgroundColor: "#24292e" }]}
+        onPress={handleGitHubLogin}
+        disabled={loadingGoogle || loadingGitHub}
+      >
+        {loadingGitHub ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.buttonText}>Sign in with GitHub</Text>
+        )}
+      </TouchableOpacity>
     </LinearGradient>
   );
 }
