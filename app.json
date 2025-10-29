@@ -15,7 +15,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.yaseenhalabi.mobile"
+      "bundleIdentifier": "com.hackillinois.mobile"
     },
     "android": {
       "adaptiveIcon": {
@@ -24,7 +24,7 @@
       },
       "edgeToEdgeEnabled": true,
       "permissions": ["android.permission.CAMERA"],
-      "package": "com.yaseenhalabi.mobile"
+      "package": "com.hackillinois.mobile"
     },
     "web": {
       "favicon": "./assets/favicon.png"
