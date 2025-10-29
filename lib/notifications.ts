@@ -19,7 +19,7 @@ Notifications.setNotificationHandler({
 export async function registerForPushNotificationsAsync(): Promise<
   string | undefined
 > {
-  // Set up Android notification channel
+  // set up android notification channel
   if (Platform.OS === "android") {
     await Notifications.setNotificationChannelAsync("default", {
       name: "default",
@@ -61,7 +61,6 @@ export async function registerForPushNotificationsAsync(): Promise<
         projectId,
       })
     ).data;
-    console.log("Expo Push Token:", pushTokenString);
     return pushTokenString;
   } catch (e: unknown) {
     console.error("Error getting push token:", e);
@@ -69,9 +68,7 @@ export async function registerForPushNotificationsAsync(): Promise<
   }
 }
 
-/**
- * sends the expo push token to adonix
- */
+// sends the expo push token to adonix
 export const getAndSendExpoPushToken = async (): Promise<string | null> => {
   const token = await registerForPushNotificationsAsync();
   if (token) {
@@ -90,10 +87,8 @@ export const getAndSendExpoPushToken = async (): Promise<string | null> => {
   return null;
 };
 
-/**
- * sets up notification listeners for when notifications are received and interacted with
- * returns cleanup function to remove listeners
- */
+// sets up notification listeners that occur on notification received and interacted with
+// returns cleanup function to remove listeners
 export function setupNotificationListeners(
   onNotificationReceived: (notification: Notifications.Notification) => void,
   onNotificationResponse: (response: Notifications.NotificationResponse) => void

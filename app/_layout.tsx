@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Animated } from "react-native";
+import { Animated, AppState } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Stack } from "expo-router";
 import * as Notifications from "expo-notifications";
@@ -17,6 +17,7 @@ export default function RootLayout() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
+  // check if we have onboarded yet
   useEffect(() => {
     const checkOnboardingStatus = async () => {
       try {
@@ -34,6 +35,7 @@ export default function RootLayout() {
     checkOnboardingStatus();
   }, []);
 
+  // load animation
   useEffect(() => {
     const timer = setTimeout(() => {
       Animated.timing(fadeAnim, {
@@ -47,6 +49,9 @@ export default function RootLayout() {
     return () => clearTimeout(timer);
   }, []);
 
+  // notification listeners
+  // by returning the cleanup function, that function will run when app unmounts/rerenders
+  // saves us from duplicate listeners and mem leaks
   useEffect(() => {
     const cleanup = setupNotificationListeners(
       (notification: Notifications.Notification) => {
@@ -58,9 +63,33 @@ export default function RootLayout() {
         // TODO: add notification interaction logic
       }
     );
-    // returning the cleanup function causes it to run when the component unmounts/rerenders
-    // saves us from duplicate listeners and mem leaks
     return cleanup;
+  }, []);
+
+  // sends the expo push token to axonix IF:
+  // 1) we have notifications permissions
+  // 2) we haven't already sent token
+  useEffect(() => {
+    const subscription = AppState.addEventListener(
+      "change",
+      async (nextAppState) => {
+        if (nextAppState === "active") {
+          const { status } = await Notifications.getPermissionsAsync();
+          const hasRegisteredToken = await AsyncStorage.getItem(
+            "hasRegisteredPushToken"
+          );
+          if (status === "granted" && !hasRegisteredToken) {
+            const token = await getAndSendExpoPushToken();
+            if (token) {
+              await AsyncStorage.setItem("hasRegisteredPushToken", "true");
+              console.log("Push token registered after permission change");
+            }
+          }
+        }
+      }
+    );
+
+    return () => subscription.remove();
   }, []);
 
   const handleOnboardingFinish = async () => {
