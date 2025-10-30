@@ -1,10 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Text, View, StyleSheet, Modal, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { Text, View, StyleSheet, Modal, ActivityIndicator, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import axios, { AxiosResponse } from 'axios';
 import api from '../api';
 import { styles } from './styles/QRScannerScreen.styles';
+
+const MEAL_EVENTS = [
+  { label: 'Day 1: Dinner', id: '8fb5e860a6c3618a949d20312865f934' },
+  { label: 'Day 1: Midnight Snacks', id: '9e7a833f024f1a94eb7ea3751d479df9' },
+  { label: 'Day 2: Lunch', id: 'e7a8602f7fa155ac16372eab68f1d47a' },
+  { label: 'Day 2: Dinner', id: '0344d5b31ada88451a9e5d89058ee03c' },
+  { label: 'Day 2: Late Night Snacks', id: 'eca6f0305ef18533fe61697acd3e7c3e' },
+  { label: 'Day 3: Brunch', id: 'f37f12ba934043acb7bd599d5cd16a2f' },
+];
 
 interface StaffAttendanceSuccessData {
   success?: boolean;
@@ -30,6 +39,8 @@ export default function StaffQRScannerScreen() {
     const [isLoading, setIsLoading] = useState(false);
     const [scanResult, setScanResult] = useState<ScanResult | null>(null);
     const [isScanning, setIsScanning] = useState(false);
+    const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+    const [isEventModalVisible, setIsEventModalVisible] = useState(false);
 
     const [scanMode, setScanMode] = useState<'attendance' | 'attendeeCheckin' | null>(null);
   
@@ -89,15 +100,22 @@ export default function StaffQRScannerScreen() {
 
     const submitAttendeeScan = async (scannedData: string) => {
         setIsLoading(true);
-  
-        // TODO: Hardcode All Meal Event IDs
-        const eventId = 'Placeholder_Meal_Event_ID'; 
+
+        if (!selectedEventId) {
+          console.error("No event selected for attendee scan.");
+          setScanResult({ 
+            status: 'error', 
+            message: 'No event selected. Please go back to the menu and select a meal event.' 
+          });
+          setIsLoading(false);
+          return;
+        }
         
         try {
           const response = await api.put<AxiosResponse<StaffAttendeeSuccessData>>(
               'staff/scan-attendee/',     
               { 
-                eventId: eventId, 
+                eventId: selectedEventId, 
                 attendeeQRCode: scannedData
               } 
           );
@@ -118,7 +136,6 @@ export default function StaffQRScannerScreen() {
               const errorType = data?.error;
               const message = data?.message;
       
-              // Handle errors from the screenshot
               if (status === 400 && errorType === "QRExpired") {
                 setScanResult({ status: 'error', message: message || "QR Code has expired." });
               } else if (status === 400 && errorType === "QRInvalid") {
@@ -151,6 +168,7 @@ export default function StaffQRScannerScreen() {
         submitAttendeeScan(data);
       } else {
         console.error("Unknown scan mode");
+        setScanResult({ status: 'error', message: 'Unknown scan mode. Please try again.' });
       }
     };
   
@@ -158,6 +176,8 @@ export default function StaffQRScannerScreen() {
       setScanResult(null);
       setScanned(false);
       setScanMode(null);
+      setSelectedEventId(null);
+      setIsScanning(false);
     };
     
     const handleScanPress = () => {
@@ -170,6 +190,12 @@ export default function StaffQRScannerScreen() {
       }
     };
     
+    const handleEventSelected = (eventId: string) => {
+      setSelectedEventId(eventId);
+      setIsEventModalVisible(false);
+      handleScanPress(); // Now, open the camera
+    };
+
   // Rendering logic
   if (!permission) { // Camera permissions are yet to load
     return <View />;
@@ -277,9 +303,16 @@ export default function StaffQRScannerScreen() {
         <Text style={styles.menuButtonText}>Meeting Attendance</Text>
         <Text style={styles.menuButtonArrow}>{">"}</Text>
       </TouchableOpacity>
-      
-      <TouchableOpacity style={styles.menuButtonSecondary}>
+
+      <TouchableOpacity 
+        style={styles.menuButton} 
+        onPress={() => {
+            setScanMode('attendeeCheckin');
+            setIsEventModalVisible(true); 
+        }}
+      >
         <Text style={styles.menuButtonText}>Attendee Check-in</Text>
+        <Text style={styles.menuButtonArrow}>{">"}</Text>
       </TouchableOpacity>
       
       <TouchableOpacity 
@@ -295,6 +328,37 @@ export default function StaffQRScannerScreen() {
       <TouchableOpacity style={styles.menuButtonBottom}>
         <Text style={styles.menuButtonText}>Placeholder</Text>
       </TouchableOpacity>
+
+
+      <Modal
+        transparent={true}
+        visible={isEventModalVisible}
+        animationType="fade"
+        onRequestClose={() => setIsEventModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Select Event</Text>
+            <ScrollView style={styles.eventListContainer}>
+                {MEAL_EVENTS.map((event) => (
+                    <TouchableOpacity
+                        key={event.id}
+                        style={styles.eventModalButton}
+                        onPress={() => handleEventSelected(event.id)}
+                    >
+                        <Text style={styles.eventModalButtonText}>{event.label}</Text>
+                    </TouchableOpacity>
+                ))}
+            </ScrollView>
+            <TouchableOpacity 
+                style={styles.cancelButton} 
+                onPress={() => setIsEventModalVisible(false)}
+            >
+              <Text style={styles.okButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }

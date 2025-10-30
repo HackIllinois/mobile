@@ -60,6 +60,36 @@ export const styles = StyleSheet.create({
       fontWeight: 'bold',
       color: '#000000',
     },
+    eventListContainer: {
+      width: '100%',
+      maxHeight: 300, 
+      marginVertical: 20,
+      borderTopWidth: 1,
+      borderBottomWidth: 1,
+      borderColor: '#eee',
+    },
+    eventModalButton: {
+      paddingVertical: 15,
+      paddingHorizontal: 10,
+      borderBottomWidth: 1,
+      borderBottomColor: '#f0f0f0', 
+      width: '100%',
+    },
+    eventModalButtonText: {
+      fontSize: 16,
+      color: '#007AFF', 
+      textAlign: 'center',
+      fontWeight: '500',
+    },
+    cancelButton: {
+      backgroundColor: '#8E8E93',
+      paddingVertical: 12,
+      paddingHorizontal: 30,
+      borderRadius: 25,
+      marginTop: 10,
+      width: '80%',
+      alignItems: 'center',
+    },
 
 
 
