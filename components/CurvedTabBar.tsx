@@ -7,7 +7,7 @@ import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 
 const { width, height } = Dimensions.get('window');
 const WIDTH = width;
-const TAB_BAR_HEIGHT = Math.max(height * 0.10, 55); // Slightly reduced but with minimum height
+const TAB_BAR_HEIGHT = Math.max(height * 0.125, 55); // Slightly reduced but with minimum height
 const BUTTON_HIT_SLOP = { top: 15, bottom: 15, left: 15, right: 15 };
 
 const getSvgPath = (height: number) => `
@@ -108,7 +108,7 @@ export function CurvedTabBar({ state, descriptors, navigation }: BottomTabBarPro
   const svgPath = getSvgPath(TAB_BAR_HEIGHT);
 
   return (
-    <View style={[styles.container, { height: totalHeight, paddingBottom: bottomPadding }]}>
+    <View style={styles.container}>
       {/* SVG background */}
       <View style={styles.svgWrapper}>
         <Svg
@@ -179,12 +179,13 @@ export function CurvedTabBar({ state, descriptors, navigation }: BottomTabBarPro
 const styles = StyleSheet.create({
   container: {
     position: 'relative',
-    backgroundColor: '#000000ff',
+    backgroundColor: 'black',
+    height: TAB_BAR_HEIGHT,
   },
   svgWrapper: {
     position: 'relative',
     width: '100%',
-    height: TAB_BAR_HEIGHT+22,
+    height: TAB_BAR_HEIGHT,
   },
   svg: {
     position: 'absolute',
@@ -203,9 +204,10 @@ const styles = StyleSheet.create({
   },
   tabButtonWrapper: {
     flex: 1,
-    height: TAB_BAR_HEIGHT,
+    height: TAB_BAR_HEIGHT, 
     justifyContent: 'center',
     alignItems: 'center',
+    paddingBottom: 60
   },
   pressableArea: {
     padding: 12,
