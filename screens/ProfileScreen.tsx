@@ -9,14 +9,16 @@ import {
   ActivityIndicator,
   Alert,
   Switch,
+  StyleSheet
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context'; 
 import { useFocusEffect, useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store'; 
 import api from '../api'; 
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
 import { Ionicons } from '@expo/vector-icons';
 import { styles } from './styles/ProfileScreen.styles';
+import QRCode from 'react-native-qrcode-svg';
 
 // TODO: 
   // Avatar Upload using Expo ImagePicker and API upload endpoint
@@ -33,6 +35,11 @@ interface UserProfile {
   foodWave: number;
 }
 
+interface QrCodeResponse {
+  userId: string;
+  qrInfo: string;
+}
+
 export default function ProfileScreen() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -42,6 +49,8 @@ export default function ProfileScreen() {
   // Form fields
   const [displayName, setDisplayName] = useState('');
   const [discordTag, setDiscordTag] = useState('');
+  const [qrCode, setQrInfo] = useState<string | null>(null);
+  const [qrLoading, setQrLoading] = useState(false);
   
   // Settings Components
   const [isDarkMode, setIsDarkMode] = useState(true);
@@ -63,7 +72,7 @@ export default function ProfileScreen() {
 
     setIsLoading(true);
     try {
-      const response: any = await api.get<UserProfile>('/profile');
+      const response: any = await api.get<UserProfile>('profile');
       const data = response.data;
       setProfile(data);
       setDisplayName(data.displayName);
@@ -75,6 +84,44 @@ export default function ProfileScreen() {
       setIsLoading(false);
     }
   };
+
+  const fetchQrCode = useCallback(async (showLoadingSpinner = false) => {
+    if (showLoadingSpinner) setQrLoading(true);
+
+    const token = await SecureStore.getItemAsync("jwt");
+    if (!token) {
+      return;
+    }
+
+    try {
+      const response = await api.get<AxiosResponse<QrCodeResponse>>('user/qr');
+      setQrInfo(response.data.qrInfo);
+    } catch (error) {
+      console.error("Failed to fetch QR code:", error);
+    } finally {
+      if (showLoadingSpinner) setQrLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      let intervalId: NodeJS.Timeout | null = null;
+
+      if (profile) {
+        fetchQrCode(true); 
+
+        intervalId = setInterval(() => {
+          fetchQrCode(false);
+        }, 15000); 
+      }
+
+      return () => {
+        if (intervalId) {
+          clearInterval(intervalId);
+        }
+      };
+    }, [profile, fetchQrCode]) 
+  );
 
   const handleSave = async () => {
     if (!profile) return;
@@ -91,7 +138,7 @@ export default function ProfileScreen() {
         discordTag: discordTag,
       };
       
-      const response: any = await api.put<UserProfile>('/profile', updatedProfile);
+      const response: any = await api.put<UserProfile>('profile', updatedProfile);
       const data = response.data;
       
       setProfile(data);
@@ -112,6 +159,8 @@ export default function ProfileScreen() {
 
   const handleLogout = async () => {
     await SecureStore.deleteItemAsync("jwt");
+    setProfile(null); 
+    setQrInfo(null);  
     Alert.alert("Logged out", "You have been logged out successfully.");
     router.replace("/AuthScreen"); 
   };
@@ -240,6 +289,38 @@ export default function ProfileScreen() {
         <Text style={styles.points}>
           {profile.points.toLocaleString()} PTS
         </Text>
+
+        {/* QR Code */}
+        <View style={styles.qrSection}>
+          <Text style={styles.qrHelpText}>
+          </Text>
+          <View style={styles.qrContainer}>
+            {qrCode ? (
+              <QRCode
+                value={qrCode}
+                size={220} 
+                backgroundColor="#FFFFFF"
+                color="#000000"
+              />
+            ) : (
+              <View style={styles.qrPlaceholder}>
+                <ActivityIndicator size="large" color="#9A6AFF" />
+                <Text style={styles.qrPlaceholderText}>Loading QR Code...</Text>
+              </View>
+            )}
+          </View>
+          <TouchableOpacity
+            style={[styles.button, styles.refreshButton, qrLoading && styles.buttonDisabled]}
+            onPress={() => fetchQrCode(true)}
+            disabled={qrLoading}
+          >
+            {qrLoading ? (
+              <ActivityIndicator color="#FFF" />
+            ) : (
+              <Text style={styles.buttonText}>Refresh QR</Text>
+            )}
+          </TouchableOpacity>
+        </View>
 
         {/* Other Fields */}
         <View style={styles.infoContainer}>

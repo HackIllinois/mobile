@@ -172,4 +172,42 @@ export const styles = StyleSheet.create({
     fontSize: 18,
     marginBottom: 20,
   },
+  qrSection: {
+    width: '100%',
+    alignItems: 'center',
+    marginTop: 20,
+    paddingHorizontal: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#333', // A light separator
+    paddingTop: 20,
+  },
+  qrHelpText: {
+    color: '#AAA',
+    fontSize: 12,
+    marginBottom: 15,
+  },
+  qrContainer: {
+    backgroundColor: '#FFFFFF', // QR codes need a light background
+    padding: 15,
+    borderRadius: 10,
+    width: 250, // Container width (220 size + 15 padding * 2)
+    height: 250, // Container height
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  qrPlaceholder: {
+    width: 220,
+    height: 220,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  qrPlaceholderText: {
+    color: '#555',
+    marginTop: 10,
+  },
+  refreshButton: {
+    marginTop: 15, 
+    backgroundColor: '#333', 
+    width: '80%', 
+  },
 });
