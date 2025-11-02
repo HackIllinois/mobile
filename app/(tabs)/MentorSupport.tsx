@@ -13,6 +13,9 @@ import {
   Platform
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
+import { db } from "../../src/firebase/firebaseConfig";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { uploadImageAsync } from "../../src/firebase/uploadImage";
 
 export default function SupportRequestScreen() {
   const [name, setName] = useState("");
@@ -46,8 +49,36 @@ export default function SupportRequestScreen() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validateInputs()) return;
+
+    try {
+      let imageUrl = null;
+      if (image) imageUrl = await uploadImageAsync(image);
+
+      if (db) {
+        
+        await addDoc(collection(db, "requests"), {
+          name,
+          description,
+          track,
+          imageUrl,
+          status: "Pending",
+          timestamp: serverTimestamp(),
+        });
+      } else {
+        // Firebase not yet configured — local fallback
+        console.log("Firebase not connected. Using local storage.");
+      }
+
+      Alert.alert("Submitted!", "Your request has been recorded.");
+      setDescription("");
+      setTrack("");
+
+    } catch (err) {
+      console.error("Error submitting request:", err);
+      Alert.alert("Error", "Something went wrong submitting your request.");
+    }
 
     const dummyRequest = {
       id: submittedRequests.length + 1,
