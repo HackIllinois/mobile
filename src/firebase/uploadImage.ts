@@ -4,8 +4,11 @@ import * as FileSystem from "expo-file-system";
 
 
 
-export async function uploadImageAsync(uri) {
-  return uri || "https://placehold.co/200x200?text=Image+Preview";
+export async function uploadImageAsync(uri: string | null) {
+  if (!uri) return null;
+
+  console.log("Firebase Storage disabled (Spark plan) — using placeholder image instead.");
+  return "https://placehold.co/400x300?text=Uploaded+Image";
 }
 
 // export async function uploadImageAsync(uri) {

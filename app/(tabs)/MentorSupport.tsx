@@ -17,7 +17,7 @@ import { db } from "../../src/firebase/firebaseConfig";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { uploadImageAsync } from "../../src/firebase/uploadImage";
 
-export default function SupportRequestScreen() {
+export default function MentorSupport() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [track, setTrack] = useState("");
