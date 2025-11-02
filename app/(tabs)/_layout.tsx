@@ -67,6 +67,17 @@ export default function Layout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="MentorSupport"
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Image
+              source={require("../../assets/profile.png")}
+              style={{ width: size, height: size, tintColor: color }}
+            />
+          ),
+        }}
+      />
     </Tabs>
   );
 }

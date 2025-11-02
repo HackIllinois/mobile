@@ -2,6 +2,7 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import AuthScreen from "./AuthScreen";
 import MainScreen from "./MainScreen";
+import "dotenv/config";
 
 const Stack = createNativeStackNavigator();
 
