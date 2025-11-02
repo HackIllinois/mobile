@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
         textAlign: "center",
         fontSize: 16,
         color: "#000000",
-        lineHeight: 13, 
+        lineHeight: 15, 
         letterSpacing: 0
     },
     skipButton: {
