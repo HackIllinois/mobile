@@ -21,7 +21,7 @@ export default function EventScreen() {
   };
 
   const onRefresh = useCallback(async () => {
-    setIsRefreshing(true);
+    setIsRefreshing(true)
     await refetch();
     setIsRefreshing(false);
   }, [refetch]);
