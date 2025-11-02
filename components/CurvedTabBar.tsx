@@ -1,39 +1,24 @@
-import React, { useEffect, useRef } from "react";
-import {
-  View,
-  TouchableOpacity,
-  StyleSheet,
-  Dimensions,
-  Platform,
-  Animated,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Svg, {
-  Path,
-  Defs,
-  RadialGradient,
-  Stop,
-  Circle,
-} from "react-native-svg";
-import { useLinkBuilder } from "@react-navigation/native";
-import { PlatformPressable } from "@react-navigation/elements";
-import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
+import React, { useEffect, useRef } from 'react';
+import { View, StyleSheet, Dimensions, Platform, Animated, Pressable } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Svg, { Path, Defs, RadialGradient, Stop, Circle } from 'react-native-svg';
+import { useLinkBuilder } from '@react-navigation/native';
+import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 
-const { width } = Dimensions.get("window");
+const { width, height } = Dimensions.get('window');
 const WIDTH = width;
-const TAB_BAR_HEIGHT = 100;
+const TAB_BAR_HEIGHT = Math.max(height * 0.125, 55); // Slightly reduced but with minimum height
+const BUTTON_HIT_SLOP = { top: 15, bottom: 15, left: 15, right: 15 };
 
-const getSvgPath = (height: number) => {
-  return `
-    M 0 ${height}
-    L 0 20
-    Q 0 0 20 0
-    L ${WIDTH - 20} 0
-    Q ${WIDTH} 0 ${WIDTH} 20
-    L ${WIDTH} ${height}
-    Z
-  `;
-};
+const getSvgPath = (height: number) => `
+  M 0 ${height}
+  L 0 20
+  Q 0 0 20 0
+  L ${WIDTH - 20} 0
+  Q ${WIDTH} 0 ${WIDTH} 20
+  L ${WIDTH} ${height}
+  Z
+`;
 
 interface TabButtonProps {
   route: any;
@@ -50,62 +35,67 @@ function TabButton({
   options,
   onPress,
   onLongPress,
-  buildHref,
+  buildHref
 }: TabButtonProps) {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const rotateAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.spring(scaleAnim, {
-        toValue: isFocused ? 1.15 : 1,
-        tension: 50,
-        friction: 7,
-        useNativeDriver: true,
-      }),
+    Animated.spring(scaleAnim, {
+      toValue: isFocused ? 1.15 : 1,
+      tension: 50,
+      friction: 7,
+      useNativeDriver: true,
+    }).start();
+
+    if (isFocused) {
       Animated.timing(rotateAnim, {
-        toValue: isFocused ? 1 : 0,
+        toValue: 1,
         duration: 400,
         useNativeDriver: true,
-      }),
-    ]).start();
-  }, [isFocused]);
+      }).start();
+    } else {
+      rotateAnim.setValue(0);
+    }
+  }, [isFocused, scaleAnim, rotateAnim]);
 
   return (
     <View style={styles.tabButtonWrapper}>
-      {/* Orbital rings for each tab */}
-      <View style={styles.tabOrbitContainer}>
-        <View style={[styles.tabOrbit, styles.tabOrbit1]} />
-        <View style={[styles.tabOrbit, styles.tabOrbit2]} />
-        <View style={[styles.tabOrbit, styles.tabOrbit3]} />
-      </View>
-
-      <PlatformPressable
-        href={buildHref(route.name, route.params)}
+      <Pressable
+        accessibilityRole="button"
         accessibilityState={isFocused ? { selected: true } : {}}
         accessibilityLabel={options.tabBarAccessibilityLabel}
-        testID={options.tabBarButtonTestID}
+        testID={options.tabBarTestID}
         onPress={onPress}
         onLongPress={onLongPress}
-        style={styles.tabButton}
+        hitSlop={BUTTON_HIT_SLOP}
+        style={styles.pressableArea}
       >
-        <Animated.View style={[styles.tabFabShadow]}>
-          <View style={styles.tabFab}>
-            <View
-              style={[styles.tabFabGradient, isFocused && styles.tabFabActive]}
+        <Animated.View
+          style={[
+            styles.tabFab,
+            isFocused && styles.tabFabShadow,
+            {
+              transform: [{ scale: scaleAnim }],
+            },
+          ]}
+        >
+          <View style={[styles.tabFabGradient, isFocused && styles.tabFabActive]}>
+            <Animated.View
+              style={[
+                styles.tabFabInner,
+              ]}
             >
-              <View style={styles.tabFabInner}>
-                {options.tabBarIcon &&
-                  options.tabBarIcon({
-                    color: "#FFFFFF",
-                    size: 26,
-                    focused: isFocused,
-                  })}
-              </View>
-            </View>
+              {options.tabBarIcon &&
+                options.tabBarIcon({
+                  color: "#FFFFFF",
+                  size: 26,
+                  focused: isFocused
+                })}
+            </Animated.View>
           </View>
         </Animated.View>
-      </PlatformPressable>
+      </Pressable>
     </View>
   );
 }
@@ -117,138 +107,39 @@ export function CurvedTabBar({
 }: BottomTabBarProps) {
   const { buildHref } = useLinkBuilder();
   const insets = useSafeAreaInsets();
-
-  const bottomPadding =
-    Platform.OS === "android" ? Math.max(insets.bottom, 0) : insets.bottom;
+  const bottomPadding = Platform.OS === 'android' ? Math.max(insets.bottom, 8) : insets.bottom;
   const totalHeight = TAB_BAR_HEIGHT + bottomPadding;
   const svgPath = getSvgPath(totalHeight);
 
   return (
-    <View
-      style={[
-        styles.container,
-        { height: totalHeight, paddingBottom: bottomPadding },
-      ]}
-    >
-      {/* Background with stars effect */}
-      <View style={[styles.backgroundWrapper, { height: totalHeight }]}>
-        <Svg width={WIDTH} height={totalHeight} style={styles.svg}>
+    <View style={styles.container}>
+      {/* SVG background */}
+      <View style={styles.svgWrapper}>
+        <Svg
+          width={WIDTH}
+          height={TAB_BAR_HEIGHT}
+          style={styles.svg}
+        >
           <Defs>
-            <RadialGradient id="spaceGrad" cx="50%" cy="0%" r="100%">
-              <Stop offset="0%" stopColor="#1a1a2e" stopOpacity="1" />
-              <Stop offset="50%" stopColor="#0f0f1e" stopOpacity="0.98" />
-              <Stop offset="100%" stopColor={"#050816"} stopOpacity="1" />
+            <RadialGradient
+              id="grad"
+              cx="50%"
+              cy="50%"
+              r="50%"
+              fx="50%"
+              fy="50%"
+            >
+              <Stop offset="0%" stopColor="#1a0033" stopOpacity="1" />
+              <Stop offset="100%" stopColor="#050816" stopOpacity="1" />
             </RadialGradient>
           </Defs>
-          <Path d={svgPath} fill="url(#spaceGrad)" />
-
-          {/* Decorative stars */}
-          <Circle
-            cx={WIDTH * 0.1}
-            cy={TAB_BAR_HEIGHT * 0.2}
-            r="1"
-            fill={"#FFFFFF"}
-            opacity="0.5"
-          />
-          <Circle
-            cx={WIDTH * 0.15}
-            cy={TAB_BAR_HEIGHT * 0.3}
-            r="1.5"
-            fill={"#FFFFFF"}
-            opacity="0.8"
-          />
-          <Circle
-            cx={WIDTH * 0.22}
-            cy={TAB_BAR_HEIGHT * 0.5}
-            r="0.8"
-            fill={"#4361EE"}
-            opacity="0.4"
-          />
-          <Circle
-            cx={WIDTH * 0.25}
-            cy={TAB_BAR_HEIGHT * 0.6}
-            r="1"
-            fill={"#E0AAFF"}
-            opacity="0.6"
-          />
-          <Circle
-            cx={WIDTH * 0.33}
-            cy={TAB_BAR_HEIGHT * 0.35}
-            r="1.2"
-            fill={"#FFFFFF"}
-            opacity="0.7"
-          />
-          <Circle
-            cx={WIDTH * 0.4}
-            cy={TAB_BAR_HEIGHT * 0.55}
-            r="0.9"
-            fill={"#4361EE"}
-            opacity="0.5"
-          />
-          <Circle
-            cx={WIDTH * 0.5}
-            cy={TAB_BAR_HEIGHT * 0.3}
-            r="1"
-            fill={"#E0AAFF"}
-            opacity="0.6"
-          />
-          <Circle
-            cx={WIDTH * 0.6}
-            cy={TAB_BAR_HEIGHT * 0.45}
-            r="1.5"
-            fill={"#FFFFFF"}
-            opacity="0.7"
-          />
-          <Circle
-            cx={WIDTH * 0.7}
-            cy={TAB_BAR_HEIGHT * 0.25}
-            r="1.2"
-            fill={"#E0AAFF"}
-            opacity="0.5"
-          />
-          <Circle
-            cx={WIDTH * 0.75}
-            cy={TAB_BAR_HEIGHT * 0.4}
-            r="1.5"
-            fill={"#FFFFFF"}
-            opacity="0.7"
-          />
-          <Circle
-            cx={WIDTH * 0.82}
-            cy={TAB_BAR_HEIGHT * 0.6}
-            r="1"
-            fill={"#4361EE"}
-            opacity="0.5"
-          />
-          <Circle
-            cx={WIDTH * 0.85}
-            cy={TAB_BAR_HEIGHT * 0.65}
-            r="1"
-            fill={"#4361EE"}
-            opacity="0.5"
-          />
-          <Circle
-            cx={WIDTH * 0.9}
-            cy={TAB_BAR_HEIGHT * 0.3}
-            r="1.1"
-            fill={"#FFFFFF"}
-            opacity="0.6"
-          />
-          <Circle
-            cx={WIDTH * 0.92}
-            cy={TAB_BAR_HEIGHT * 0.25}
-            r="1.2"
-            fill={"#E0AAFF"}
-            opacity="0.6"
-          />
+          <Path d={svgPath} fill="url(#grad)" />
+          <Circle cx={WIDTH / 2} cy={TAB_BAR_HEIGHT / 2} r="4" fill="#7B2CBF" opacity="0.3" />
         </Svg>
-
-        {/* Cosmic glow line */}
-        <View style={styles.cosmicGlowLine} />
       </View>
 
-      {/* Tab Buttons */}
-      <View style={styles.tabContainer}>
+      {/* Tab buttons */}
+      <View style={styles.buttonOverlay}>
         {state.routes.map((route, index) => {
           const { options } = descriptors[route.key];
           const isFocused = state.index === index;
@@ -267,8 +158,8 @@ export function CurvedTabBar({
 
           const onLongPress = () => {
             navigation.emit({
-              type: "tabLongPress",
-              target: route.key,
+              type: 'tabLongPress',
+              target: route.key
             });
           };
 
@@ -291,88 +182,41 @@ export function CurvedTabBar({
 
 const styles = StyleSheet.create({
   container: {
-    position: "relative",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    borderRadius: 20,
+    position: 'relative',
+    backgroundColor: 'black',
+    height: TAB_BAR_HEIGHT,
   },
-  backgroundWrapper: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
+  svgWrapper: {
+    position: 'relative',
+    width: '100%',
+    height: TAB_BAR_HEIGHT,
   },
   svg: {
     position: "absolute",
     bottom: 0,
   },
-  cosmicGlowLine: {
-    position: "absolute",
-    top: 0,
+  buttonOverlay: {
+    position: 'absolute',
+    top: 21,
     left: 0,
     right: 0,
-    height: 2,
-    backgroundColor: "#4361EE",
-    opacity: 0.4,
-    shadowColor: "#4361EE",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 8,
-  },
-  tabContainer: {
-    flexDirection: "row",
-    height: TAB_BAR_HEIGHT + 60,
-    alignItems: "center",
-    paddingHorizontal: 12,
+    height: TAB_BAR_HEIGHT,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    zIndex: 10,
   },
   tabButtonWrapper: {
     flex: 1,
-    height: TAB_BAR_HEIGHT,
-    justifyContent: "center",
-    alignItems: "center",
-    position: "relative",
+    height: TAB_BAR_HEIGHT, 
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingBottom: 60
   },
-  tabButton: {
-    width: 60,
-    height: 60,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  tabOrbitContainer: {
-    position: "absolute",
-    width: 80,
-    height: 80,
-    justifyContent: "center",
-    alignItems: "center",
-    top: "50%",
-    left: "50%",
-    marginLeft: -40,
-    marginTop: -40,
-  },
-  tabOrbit: {
-    position: "absolute",
-    borderWidth: 1,
-    borderRadius: 999,
-    borderStyle: "dashed",
-  },
-  tabOrbit1: {
-    width: 80,
-    height: 80,
-    borderColor: "#7B2CBF",
-    opacity: 0.2,
-  },
-  tabOrbit2: {
-    width: 70,
-    height: 70,
-    borderColor: "#4361EE",
-    opacity: 0.25,
-  },
-  tabOrbit3: {
-    width: 60,
-    height: 60,
-    borderColor: "#E0AAFF",
-    opacity: 0.3,
+  pressableArea: {
+    padding: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   tabFabShadow: {
     shadowColor: "#7B2CBF",

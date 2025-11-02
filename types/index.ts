@@ -9,5 +9,5 @@ import {
 // npx openapi-typescript https://adonix.hackillinois.org/docs/json -o types/generated-types.ts
 
 export type AdmissionDecision = components["schemas"]["AdmissionDecision"];
-export type ShopItem = components["schemas"]["ShopItem"];
+export type Event = components["schemas"]["Event"]''
 // ... add types as needed
