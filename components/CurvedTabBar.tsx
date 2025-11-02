@@ -100,12 +100,16 @@ function TabButton({
   );
 }
 
-export function CurvedTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+export function CurvedTabBar({
+  state,
+  descriptors,
+  navigation,
+}: BottomTabBarProps) {
   const { buildHref } = useLinkBuilder();
   const insets = useSafeAreaInsets();
   const bottomPadding = Platform.OS === 'android' ? Math.max(insets.bottom, 8) : insets.bottom;
   const totalHeight = TAB_BAR_HEIGHT + bottomPadding;
-  const svgPath = getSvgPath(TAB_BAR_HEIGHT);
+  const svgPath = getSvgPath(totalHeight);
 
   return (
     <View style={styles.container}>
@@ -142,7 +146,7 @@ export function CurvedTabBar({ state, descriptors, navigation }: BottomTabBarPro
 
           const onPress = () => {
             const event = navigation.emit({
-              type: 'tabPress',
+              type: "tabPress",
               target: route.key,
               canPreventDefault: true,
             });
@@ -167,7 +171,7 @@ export function CurvedTabBar({ state, descriptors, navigation }: BottomTabBarPro
               options={options}
               onPress={onPress}
               onLongPress={onLongPress}
-              buildHref={(name, params) => buildHref(name, params) ?? ''}
+              buildHref={(name, params) => buildHref(name, params) ?? ""}
             />
           );
         })}
@@ -188,7 +192,7 @@ const styles = StyleSheet.create({
     height: TAB_BAR_HEIGHT,
   },
   svg: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 0,
   },
   buttonOverlay: {
@@ -225,11 +229,11 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   tabFabGradient: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
     backgroundColor: "#050816",
     borderWidth: 2.5,
     borderColor: "#4361EE",
@@ -240,10 +244,10 @@ const styles = StyleSheet.create({
     borderColor: "#E0AAFF",
   },
   tabFabInner: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'transparent',
+    width: "100%",
+    height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "transparent",
   },
 });
