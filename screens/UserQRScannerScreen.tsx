@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Text, View, StyleSheet, Modal, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { Text, View, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { CameraView, useCameraPermissions } from 'expo-camera';
-import axios, { AxiosResponse } from 'axios';
+import { useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
+import axios from 'axios';
 import api from '../api';
-import { styles } from './styles/QRScannerScreen.styles';
+
+import CameraScannerView from '../src/components/qr scanner/CameraScanner';
+import { ScanResultModal, ScanResult } from '../src/components/qr scanner/ScanModals';
 
 interface ScanSuccessData {
   points: number;
@@ -37,20 +39,11 @@ interface EventDetails {
   exp: number;
 }
 
-type ScanResult = {
-  status: 'success' | 'error';
-  message: string;
-  eventName?: string; 
-  pointsEarned?: number; 
-};
-
 export default function UserQRScannerScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
-  
-  // Controls which view is visible
   const [isScanning, setIsScanning] = useState(false);
 
   useEffect(() => {
@@ -59,11 +52,10 @@ export default function UserQRScannerScreen() {
     }
   }, []);
 
+  // API Logic
   const submitScanData = async (scannedData: string) => {
     setIsLoading(true);
     try {
-      // console.log('QR Scanner: Starting API calls');
-      
       const response = await api.put<ScanSuccessData>(
         'user/scan-event/',     
         { eventId: scannedData } 
@@ -109,16 +101,20 @@ export default function UserQRScannerScreen() {
     }
   };
 
-  const handleQRCodeScanned = ({ data }: { data: string }) => {
+  // Handlers
+  const handleQRCodeScanned = ({ data }: BarcodeScanningResult) => {
     if (scanned || isLoading) return;
-    // console.log('Scanned QR Code Data: ', data);
     setScanned(true);
     submitScanData(data);
   };
 
   const closeModalAndReset = () => {
     setScanResult(null);
-    setScanned(false);
+    
+    // Cooldown before allowing another scan
+    setTimeout(() => {
+      setScanned(false); 
+    }, 2000);
   };
   
   const handleScanPress = () => {
@@ -131,97 +127,27 @@ export default function UserQRScannerScreen() {
     }
   };
 
-  // Rendering logic
-  if (!permission) { // Camera permissions are yet to load
+  // Rendering Logic
+  if (!permission) {
     return <View />;
   }
 
-  if (!permission.granted) { 
-    // View 2 will be visible by default, but a re-request is triggered
-  }
-
-  // View 1: Camera Scanner 
+  // View 1: Camera Scanner
   if (isScanning) {
     return (
-      <View style={styles.container}>
-        <CameraView
-          onBarcodeScanned={scanned ? undefined : handleQRCodeScanned}
-          barcodeScannerSettings={{
-            barcodeTypes: ["qr"],
-          }}
-          style={StyleSheet.absoluteFillObject}
+      <>
+        <CameraScannerView
+          onScanned={handleQRCodeScanned}
+          onClose={() => setIsScanning(false)}
+          isLoading={isLoading}
+          isScanned={scanned}
         />
-
-        <View style={styles.topBar}>
-          <TouchableOpacity style={styles.topBarButton} onPress={() => setIsScanning(false)}>
-            <Text style={styles.topBarButtonText}>{"<"}</Text> 
-          </TouchableOpacity>
-          <View style={styles.topBarTitle} />
-          <View style={{ width: 40 }} /> 
-        </View>
-
-        {/* Overlay for transparent effect */}
-        <View style={styles.maskContainer}>
-          <View style={styles.maskTop} />
-
-          {/* QR Scan Window Frame */}
-          <View style={styles.maskMiddle}>
-            <View style={styles.maskSide} />
-            <View style={styles.scanWindow}>
-              <View style={[styles.corner, styles.cornerTopLeft]} />
-              <View style={[styles.corner, styles.cornerTopRight]} />
-              <View style={[styles.corner, styles.cornerBottomLeft]} />
-              <View style={[styles.corner, styles.cornerBottomRight]} />
-            </View>
-            <View style={styles.maskSide} />
-          </View>
-
-          <View style={styles.maskBottom}>
-            <Text style={styles.scanHelpText}>
-              Align the QR code with the frame to scan!
-            </Text>
-            <TouchableOpacity style={styles.chooseImageButton}>
-              <Text style={styles.chooseImageButtonText}>Choose image (Placeholder)</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {isLoading && (
-          <View style={styles.loadingOverlay}>
-            <ActivityIndicator size="large" color="#ffffff" />
-            <Text style={styles.loadingText}>Verifying Permissions...</Text>
-          </View>
-        )}
-
-        {/* Success / Error Modal */}
-        <Modal
-          transparent={true}
+        <ScanResultModal
           visible={!!scanResult}
-          animationType="fade"
-          onRequestClose={closeModalAndReset}
-        >
-          <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
-              {scanResult?.status === 'success' ? (
-                <View style={styles.successContent}>
-                  <Text style={styles.checkMark}>✓</Text>
-                  <Text style={styles.modalEventName}>{scanResult.eventName || 'Event'}</Text>
-                  <Text style={styles.modalTitle}>Check-in Successful!</Text>
-                  <Text style={styles.pointsEarned}>{scanResult.pointsEarned || 0} pts earned</Text>
-                </View>
-              ) : (
-                <View>
-                  <Text style={styles.modalTitle}>Error</Text>
-                  <Text style={styles.modalMessage}>{scanResult?.message}</Text>
-                </View>
-              )}
-              <TouchableOpacity style={styles.okButton} onPress={closeModalAndReset}>
-                <Text style={styles.okButtonText}>OK</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
-      </View>
+          onClose={closeModalAndReset}
+          result={scanResult}
+        />
+      </>
     );
   }
 
@@ -249,3 +175,65 @@ export default function UserQRScannerScreen() {
     </SafeAreaView>
   );
 }
+
+// View 2 Styles
+const styles = StyleSheet.create({
+  menuContainer: {
+    flex: 1,
+    backgroundColor: 'white',
+    paddingVertical: 20,
+    paddingHorizontal: 30,
+    paddingBottom: 100, 
+  },
+  menuTitle: {
+    fontSize: 40,
+    fontWeight: 'bold',
+    color: 'black',
+    marginTop: 20,
+    marginBottom: 40,
+  },
+  menuButton: {
+    backgroundColor: '#D9D9D9',
+    padding: 20,
+    borderRadius: 15,
+    width: 300,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+    alignSelf: 'center',
+  },
+  menuButtonSecondary: {
+    backgroundColor: '#D9D9D9',
+    padding: 10,
+    marginBottom: 50,
+    borderRadius: 15,
+    alignItems: 'center', 
+    marginTop: 60,
+    width: 150,
+    height: 70,
+    justifyContent: 'center',
+    alignSelf: 'center',
+  },
+  menuButtonBottom: {
+    backgroundColor: '#ADADAD',
+    alignItems: 'center', 
+    height: 60,
+    width: 200,
+    justifyContent: 'center',
+    marginTop: 'auto', 
+    marginBottom: 20,
+    alignSelf: 'center', 
+  },
+  menuButtonText: {
+    fontSize: 18,
+    fontWeight: '500',
+    color: 'black',
+    textAlign: 'center',
+  },
+  menuButtonArrow: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#000000',
+  },
+});
