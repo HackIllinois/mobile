@@ -19,7 +19,7 @@ export default function RootLayout() {
         const hasCompleted = await AsyncStorage.getItem("hasCompletedOnboarding");
         const jwt = await SecureStore.getItemAsync("jwt");
         setIsLoggedIn(!!jwt);
-        setShowOnboarding(true);
+        setShowOnboarding(!hasCompleted);
       } catch (e) {
         console.error("Error checking onboarding status:", e);
         setShowOnboarding(true);

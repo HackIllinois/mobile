@@ -1,4 +1,7 @@
-import { View, Text, StyleSheet, Pressable, Image, TouchableOpacity } from 'react-native';
+import { useState } from 'react';
+import { View, Text, StyleSheet, Pressable, TouchableOpacity } from 'react-native';
+import NotSaved from "../../assets/event/NotSaved.svg"
+import Saved from "../../assets/event/Saved.svg"
 import { Event } from '../../types';
 
 interface EventCardProps {
@@ -6,6 +9,7 @@ interface EventCardProps {
   index: number;
   onPress: (event: Event) => void;
   handleSave: (eventId: string) => void;
+  saved: boolean;
 }
 
 const formatTime = (timestamp: number): string => {
@@ -17,17 +21,11 @@ const formatTime = (timestamp: number): string => {
   });
 };
 
-const formatDate = (timestamp: number): string => {
-  const date = new Date(timestamp * 1000);
-  return date.toLocaleDateString('en-US', { 
-    month: 'short', 
-    day: 'numeric' 
-  });
-};
-
-export function EventCard({ event, index, onPress, handleSave }: EventCardProps) {
+export function EventCard({ event, index, onPress, handleSave, saved }: EventCardProps) {
   const handlePress = () => onPress(event);
-  const handleSavePress = () => handleSave(event.eventId);
+  const handleSavePress = () => {
+    handleSave(event.eventId);
+  }
   {/*When actual design is sent out create actual press animations*/}
   return (
     
@@ -40,10 +38,14 @@ export function EventCard({ event, index, onPress, handleSave }: EventCardProps)
     >
       <View style={styles.header}>
         <Text style={styles.title}>{event.name}</Text>
-        <TouchableOpacity onPress={handleSavePress}>
-          {/* Once png is converted to svg we can add fill to red on click */}
-          <Image style={styles.date} source={require('../../assets/event/Bookmark.png')}/>
-        </TouchableOpacity>
+          <TouchableOpacity onPress={handleSavePress}>
+            {saved ? (
+              <Saved width={22} height={22} />
+            ) : (
+              <NotSaved width={22} height={22} />
+            )}
+          </TouchableOpacity>
+
       </View>
       <Text style={styles.time}>
         {formatTime(event.startTime)} - {formatTime(event.endTime)}
@@ -87,10 +89,6 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     width: 200
   },
-  date: {
-    tintColor: '#ff0000ff',
-  },
-  
   time: {
     fontSize: 14,
     color: '#444',

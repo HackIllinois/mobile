@@ -1,12 +1,16 @@
-import { View, Text, StyleSheet, TouchableOpacity, Modal, Image, ScrollView } from 'react-native';
+import { useState } from 'react';
+import { Text, StyleSheet, TouchableOpacity, Modal, Image, ScrollView, View, Platform } from 'react-native';
 import { Event } from '../../types';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import Saved from "../../assets/event/Saved.svg";
+import NotSaved from "../../assets/event/NotSaved.svg";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface FullScreenModalProps {
   visible: boolean;
   event: Event;
   onClose: () => void;
   handleSave: (eventId: string) => void;
+  saved: boolean;
 }
 
 const formatTime = (timestamp: number): string => {
@@ -18,8 +22,14 @@ const formatTime = (timestamp: number): string => {
   });
 };
 
-export default function FullScreenModal({ visible, event, onClose, handleSave }: FullScreenModalProps) {
-  const handlePressSave = () => handleSave(event.eventId);
+export default function FullScreenModal({ visible, event, onClose, handleSave, saved }: FullScreenModalProps) {
+  const insets = useSafeAreaInsets(); // ✅ ensures proper padding even inside Modal
+
+  const handlePressSave = () => {
+    console.log(saved);
+    handleSave(event.eventId);
+  };
+
   return (
     <Modal
       visible={visible}
@@ -28,9 +38,15 @@ export default function FullScreenModal({ visible, event, onClose, handleSave }:
       statusBarTranslucent
       onRequestClose={onClose}
     >
-      <SafeAreaView style={styles.overlay}>
-        
-
+      <View
+        style={[
+          styles.overlay,
+          {
+            paddingTop: insets.top || (Platform.OS === 'android' ? 20 : 0),
+            paddingBottom: insets.bottom || 0,
+          },
+        ]}
+      >
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
@@ -38,13 +54,22 @@ export default function FullScreenModal({ visible, event, onClose, handleSave }:
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
             <Text style={styles.closeText}>X</Text>
           </TouchableOpacity>
+
           <TouchableOpacity onPress={handlePressSave} style={styles.saveButton}>
-            <Image source={require('../../assets/event/Bookmark.png')} />
+            {saved ? (
+              <Saved width={22} height={22} />
+            ) : (
+              <NotSaved width={22} height={22} />
+            )}
           </TouchableOpacity>
+
           <Text style={styles.title}>{event?.name}</Text>
-          <Text style={styles.body}>{formatTime(event?.startTime)} - {formatTime(event?.endTime)}.</Text>
+          <Text style={styles.body}>
+            {formatTime(event?.startTime)} - {formatTime(event?.endTime)}.
+          </Text>
           {event?.sponsor && <Text style={styles.body}>{event?.sponsor}</Text>}
           <Text style={styles.body}>{event?.locations[0]?.description || 'TBA'}</Text>
+
           {event?.mapImageUrl && event.mapImageUrl.trim() !== '' && (
             <Image
               source={{ uri: event.mapImageUrl }}
@@ -54,21 +79,20 @@ export default function FullScreenModal({ visible, event, onClose, handleSave }:
           )}
           <Text style={styles.body}>{event?.description?.trim()}</Text>
         </ScrollView>
-      </SafeAreaView>
+      </View>
     </Modal>
   );
 }
-
 
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: '#1a0033',
-    paddingTop: 20,
+    paddingHorizontal: 10,
   },
   scrollContent: {
     paddingHorizontal: 25,
-    paddingTop: 60, 
+    paddingTop: 60,
     alignItems: 'flex-start',
     paddingBottom: 40,
   },
@@ -89,11 +113,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#fff',
   },
-  content: {
-    alignItems: 'flex-start',
-    paddingHorizontal: 30,
-    top: 80,
-  },
   title: {
     fontSize: 22,
     fontWeight: '600',
@@ -104,17 +123,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#ccc',
     textAlign: 'left',
-    marginBottom:10
+    marginBottom: 10,
   },
   map: {
-    width: 300, 
+    width: 300,
     height: 300,
-    backgroundColor: "#FFFFFF",
-    marginBottom: 15
+    backgroundColor: '#FFFFFF',
+    marginBottom: 15,
   },
   container: {
-    borderColor: "#6b3982ff", 
-    borderRadius: 10,         
-    borderWidth: 7,           
-  }
+    borderColor: "#6b3982ff",
+    borderRadius: 10,
+    borderWidth: 7,
+  },
 });
