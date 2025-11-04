@@ -12,6 +12,7 @@ export default function ScreenOne() {
 
 const styles = StyleSheet.create({
     background: {
+        height: '100%',
         backgroundColor: '#FFFFFF'
     },
     logoTop: {

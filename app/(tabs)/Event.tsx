@@ -88,6 +88,7 @@ export default function EventScreen() {
       index={index}
       onPress={handleEventPress}
       handleSave={handleSave}
+      saved={savedEventIds.has(item.eventId)}
     />
   );
 
@@ -183,7 +184,7 @@ export default function EventScreen() {
       )}
       <SafeAreaView style={styles.background}>
         {renderContent()}
-        {selectedEvent && <EventDetailModal visible={modalVisible} event={selectedEvent} onClose={() => setModalVisible(false)} handleSave={handleSave} />}
+        {selectedEvent && <EventDetailModal visible={modalVisible} event={selectedEvent} onClose={() => setModalVisible(false)} handleSave={handleSave} saved={savedEventIds.has(selectedEvent.eventId)} />}
         
       </SafeAreaView> 
     </SafeAreaView>
