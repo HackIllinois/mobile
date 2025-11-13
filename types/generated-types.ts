@@ -1069,6 +1069,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/event/attendance/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Gets attendance per user
+         * @description **Required role: null**
+         *
+         *     The events returned are filtered based on what the currently authenticated user can access.
+         *     For example, if the currently authenticated user is not staff, staff events will not be shown.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["schemas"]["UserId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description List of mandatory events in which the user is absent, present, and excused */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["EventAttendance"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/event/attendees-info/{id}/": {
         parameters: {
             query?: never;
@@ -1242,12 +1286,11 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put?: never;
         /**
-         * Mark a user as excused for an event
+         * Updates a user's excused status for an event
          * @description **Required role: STAFF**
          */
-        post: {
+        put: {
             parameters: {
                 query?: never;
                 header?: never;
@@ -1260,11 +1303,12 @@ export interface paths {
                 content: {
                     "application/json": {
                         userId: string;
+                        excused: boolean;
                     };
                 };
             };
             responses: {
-                /** @description Successfully marked user as excused */
+                /** @description Successfully updated user's excused status */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -1292,6 +1336,7 @@ export interface paths {
                 };
             };
         };
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1987,6 +2032,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/notification/send/self": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sends a test notification to the currently authenticated user
+         * @description **Required role: STAFF**
+         *
+         *     Useful for testing if your device token is registered correctly and notifications are working.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        title: string;
+                        body: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description The result of the test notification */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["NotificationSend"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/profile/": {
         parameters: {
             query?: never;
@@ -2547,7 +2640,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["RegistrationApplication"];
+                        "application/json": components["schemas"]["RegistrationApplicationDraft"];
                     };
                 };
                 /** @description Couldn't find registration information (make sure you create it first!) */
@@ -2580,7 +2673,7 @@ export interface paths {
             };
             requestBody?: {
                 content: {
-                    "application/json": components["schemas"]["RegistrationApplicationRequest"];
+                    "application/json": components["schemas"]["RegistrationApplicationDraftRequest"];
                 };
             };
             responses: {
@@ -2590,7 +2683,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["RegistrationApplicationRequest"];
+                        "application/json": components["schemas"]["RegistrationApplicationDraftRequest"];
                     };
                 };
                 /** @description Registration is already submitted, cannot update anymore */
@@ -2801,10 +2894,16 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["RegistrationApplicationRequest"];
+                        "application/json": components["schemas"]["RegistrationApplicationSubmittedRequest"];
                     };
                 };
-                /** @description Registration is already submitted, cannot update anymore */
+                /**
+                 * @description One of:
+                 *     - AlreadySubmitted: Registration is already submitted, cannot update anymore
+                 *     - IncompleteApplication: Your application is incomplete. Please fill out all required fields before submitting.
+                 *
+                 *     **See examples dropdown below**
+                 */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -2815,6 +2914,11 @@ export interface paths {
                             error: "AlreadySubmitted";
                             /** @enum {string} */
                             message: "You've already submitted your registration!";
+                        } | {
+                            /** @enum {string} */
+                            error: "IncompleteApplication";
+                            /** @enum {string} */
+                            message: "Your application is incomplete. Please fill out all required fields before submitting.";
                         };
                     };
                 };
@@ -2885,7 +2989,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["RegistrationApplication"];
+                        "application/json": components["schemas"]["RegistrationApplicationDraft"];
                     };
                 };
                 /** @description Couldn't find registration information (make sure you create it first!) */
@@ -4525,7 +4629,7 @@ export interface paths {
         get?: never;
         /**
          * Checks in the currently authenticated user and marks their attendance
-         * @description **Required role: USER**
+         * @description **Required role: ATTENDEE**
          */
         put: {
             parameters: {
@@ -5051,6 +5155,23 @@ export interface components {
             isMandatory?: boolean;
             isPro: boolean;
         };
+        EventAttendance: {
+            present: [
+                string,
+                number,
+                number
+            ][];
+            excused: [
+                string,
+                number,
+                number
+            ][];
+            absent: [
+                string,
+                number,
+                number
+            ][];
+        };
         EventAttendees: {
             eventId: components["schemas"]["EventId"];
             attendees: components["schemas"]["UserId"][];
@@ -5306,13 +5427,11 @@ export interface components {
          *       "hackOutreach": [
          *         "Instagram"
          *       ],
-         *       "userId": "github1234",
-         *       "hasSubmitted": false
+         *       "userId": "github1234"
          *     }
          */
-        RegistrationApplication: components["schemas"]["RegistrationApplicationRequest"] & {
+        RegistrationApplicationDraft: components["schemas"]["RegistrationApplicationDraftRequest"] & {
             userId: components["schemas"]["UserId"];
-            hasSubmitted: boolean;
         };
         /**
          * @example {
@@ -5346,7 +5465,62 @@ export interface components {
          *       ]
          *     }
          */
-        RegistrationApplicationRequest: {
+        RegistrationApplicationDraftRequest: {
+            preferredName: string;
+            legalName: string;
+            emailAddress: string | "";
+            gender: components["schemas"]["Gender"];
+            race?: components["schemas"]["Race"][];
+            resumeFileName?: string;
+            requestedTravelReimbursement?: boolean;
+            location?: string;
+            degree?: components["schemas"]["Degree"];
+            major?: string;
+            minor?: string;
+            university?: string;
+            gradYear?: number;
+            hackInterest?: components["schemas"]["HackInterest"][];
+            hackOutreach?: components["schemas"]["HackOutreach"][];
+            dietaryRestrictions?: string[];
+            hackEssay1?: string;
+            hackEssay2?: string;
+            optionalEssay?: string;
+            proEssay?: string;
+            considerForGeneral?: boolean;
+        };
+        /**
+         * @example {
+         *       "preferredName": "Ronakin",
+         *       "legalName": "Ronakin Kanandini",
+         *       "emailAddress": "rpak@gmail.org",
+         *       "university": "University of Illinois Urbana-Champaign",
+         *       "hackEssay1": "I love hack",
+         *       "hackEssay2": "I love hack",
+         *       "optionalEssay": "",
+         *       "resumeFileName": "https://www.google.com",
+         *       "location": "Urbana",
+         *       "gender": "Prefer Not To Answer",
+         *       "degree": "Associates' Degree",
+         *       "major": "Computer Science",
+         *       "gradYear": 0,
+         *       "proEssay": "I wanna be a Knight",
+         *       "considerForGeneral": true,
+         *       "requestedTravelReimbursement": false,
+         *       "dietaryRestrictions": [
+         *         "Vegetarian"
+         *       ],
+         *       "race": [
+         *         "Prefer Not To Answer"
+         *       ],
+         *       "hackInterest": [
+         *         "Meeting new people"
+         *       ],
+         *       "hackOutreach": [
+         *         "Instagram"
+         *       ]
+         *     }
+         */
+        RegistrationApplicationSubmittedRequest: {
             preferredName: string;
             legalName: string;
             emailAddress: string | "";
@@ -5473,6 +5647,7 @@ export interface components {
             /** @enum {boolean} */
             success: true;
             userId: components["schemas"]["UserId"];
+            eventName: string;
             /**
              * @example [
              *       "Vegan",
@@ -5492,6 +5667,7 @@ export interface components {
         ScanEvent: {
             /** @enum {boolean} */
             success: true;
+            eventName: string;
             /**
              * @description Points added from checking into the event
              * @example 5

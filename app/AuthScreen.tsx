@@ -85,7 +85,7 @@ export default function AuthScreen({ navigation }: any) {
       console.log("Auth URL:", authUrl);
 
       const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
-      console.log("Auth Result:", result);
+    //   console.log("Auth Result:", result);
 
       await handleAuthResult(result);
     } catch (err) {
