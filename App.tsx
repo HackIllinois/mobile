@@ -6,7 +6,7 @@ import React, { useState, useEffect } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { StatusBar } from "expo-status-bar";
-import StartupAnimation from "./src/components/hackrocket/StartupAnimation";
+import StartupAnimation from "./components/hackrocket/StartupAnimation";
 import { StyleSheet, Text, View, Button } from "react-native";
 import QRScannerScreen from "./screens/QRScannerScreen";
 import PointShop from "./screens/PointShop";
