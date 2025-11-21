@@ -4,6 +4,7 @@ import { useCallback, useState, useMemo } from 'react';
 import { useEvents } from '../../lib/fetchEvents';
 import { EventCard } from '../../components/eventScreen/EventCard';
 import EventDetailModal from '../../components/eventScreen/EventDetailModal';
+import MenuModal from '../../components/eventScreen/MenuModal';
 import { Event } from '../../types';
 
 export default function EventScreen() {
@@ -14,10 +15,17 @@ export default function EventScreen() {
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [selectedSave, setSaveValue] = useState<boolean>(false);
   const [savedEventIds, setSavedEventIds] = useState<Set<string>>(new Set());
+  const [menuModalVisible, setMenuModalVisible] = useState(false);
+  const [selectedEventForMenu, setSelectedEventForMenu] = useState<Event | null>(null);
 
   const handleEventPress = (event: Event) => {
     setSelectedEvent(event);
     setModalVisible(true);
+  };
+
+  const handleShowMenu = (event: Event) => {
+    setSelectedEventForMenu(event);
+    setMenuModalVisible(true);
   };
 
   const onRefresh = useCallback(async () => {
@@ -88,6 +96,7 @@ export default function EventScreen() {
       index={index}
       onPress={handleEventPress}
       handleSave={handleSave}
+      onShowMenu={handleShowMenu}
     />
   );
 
@@ -184,7 +193,7 @@ export default function EventScreen() {
       <SafeAreaView style={styles.background}>
         {renderContent()}
         {selectedEvent && <EventDetailModal visible={modalVisible} event={selectedEvent} onClose={() => setModalVisible(false)} handleSave={handleSave} />}
-        
+        <MenuModal visible={menuModalVisible} event={selectedEventForMenu} onClose={() => setMenuModalVisible(false)} />
       </SafeAreaView> 
     </SafeAreaView>
   );

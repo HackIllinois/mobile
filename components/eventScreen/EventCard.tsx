@@ -6,6 +6,7 @@ interface EventCardProps {
   index: number;
   onPress: (event: Event) => void;
   handleSave: (eventId: string) => void;
+  onShowMenu: (event: Event) => void;
 }
 
 const formatTime = (timestamp: number): string => {
@@ -17,9 +18,10 @@ const formatTime = (timestamp: number): string => {
   });
 };
 
-export function EventCard({ event, index, onPress, handleSave }: EventCardProps) {
+export function EventCard({ event, index, onPress, handleSave, onShowMenu }: EventCardProps) {
   const handlePress = () => onPress(event);
   const handleSavePress = () => handleSave(event.eventId);
+  const handleShowMenuPress = () => onShowMenu(event);
   {/*When actual design is sent out create actual press animations*/}
   return (
     
@@ -33,7 +35,7 @@ export function EventCard({ event, index, onPress, handleSave }: EventCardProps)
       <View style={styles.header}>
         <Text style={styles.title}>{event.name}</Text>
         {event.eventType == "MEAL" && (
-          <TouchableOpacity style={styles.startButton}>
+          <TouchableOpacity style={styles.startButton} onPress={handleShowMenuPress}>
             <Text style={{color: "#000000ff", fontWeight: "600", textAlign: "center", marginTop: 12}}>Show Menu</Text>
           </TouchableOpacity>
         )}
