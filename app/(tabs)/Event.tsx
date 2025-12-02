@@ -1,4 +1,4 @@
-import { Image, View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator, RefreshControl, Pressable } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator, RefreshControl, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useCallback, useState, useMemo } from 'react';
 import { useEvents } from '../../lib/fetchEvents';
@@ -34,7 +34,15 @@ export default function EventScreen() {
     setIsRefreshing(false);
   }, [refetch]);
 
-  // Get unique dates from events and create day buttons dynamically
+  const isToday = (d: Date) => {
+    const today = new Date();
+    return (
+      d.getFullYear() === today.getFullYear() &&
+      d.getMonth() === today.getMonth() &&
+      d.getDate() === today.getDate()
+    );
+  };
+
   const uniqueDays = (() => {
     if (!events.length) return [];
 
@@ -49,15 +57,20 @@ export default function EventScreen() {
       }
     });
 
-    // Sort dates chronologically
     return Array.from(dateMap.entries())
       .sort(([, dateA], [, dateB]) => dateA.getTime() - dateB.getTime())
-      .map(([dateKey, date]) => ({
-        id: dateKey,
-        label: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        date,
-        image: require("../../assets/event/planet.png")
-      }));
+      .map(([dateKey, date]) => {
+        
+        const dayNum = date.getDate().toString().padStart(2, '0');
+        const weekDay = date.toLocaleDateString('en-US', { weekday: 'short' });
+        
+        return {
+          id: dateKey,
+          label: `${dayNum} - ${weekDay}`,
+          date,
+          image: require("../../assets/event/planet.png")
+        };
+      });
   })();
 
 
@@ -77,7 +90,6 @@ export default function EventScreen() {
   })();
 
   const handleDayPress = (dayId: string) => {
-    // Toggle: if same day is pressed, show all events
     setSelectedDay(selectedDay === dayId ? null : dayId);
   };
 
@@ -90,6 +102,11 @@ export default function EventScreen() {
     });
   };
 
+  const currentEvent = useMemo(() => {
+    const now = Math.floor(Date.now() / 1000);
+    return events.find(event => now >= event.startTime && now < event.endTime);
+  }, [events]);
+
   const renderEvent = ({ item, index }: { item: Event; index: number }) => (
     <EventCard
       event={item}
@@ -97,6 +114,7 @@ export default function EventScreen() {
       onPress={handleEventPress}
       handleSave={handleSave}
       onShowMenu={handleShowMenu}
+      saved={savedEventIds.has(item.eventId)}
     />
   );
 
@@ -153,59 +171,65 @@ export default function EventScreen() {
   
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.tabs}>
-          <TouchableOpacity onPress={() => setSaveValue(false)}>
-            <Text style={[styles.text, !selectedSave && styles.activeText]}>SCHEDULE</Text>
+  <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+    
+    <View style={[styles.header, { paddingHorizontal: 30, flexDirection: 'column', alignItems: 'flex-start' }]}>
+      <Text style={[styles.text, {color: 'black'}]}>{currentEvent ? "Current Event:" : "No Events Running"}</Text>
+      {
+        currentEvent && (
+          <Text style={[styles.text, {color: 'black'}]}>{currentEvent.name}</Text>
+        )
+      }
+    </View>
+
+    {uniqueDays.length > 0 && (
+      <View style={[styles.tabs, { padding: 0, paddingHorizontal: 30, marginBottom: 10 }]}>
+        {uniqueDays.map((day) => (
+          <TouchableOpacity
+            key={day.id} 
+            style={[
+              styles.dayButton,
+              (selectedDay === day.id) && { backgroundColor: "#000000"}
+            ]} 
+            onPress={() => handleDayPress(day.id)}
+          >
+            <Text style={[styles.dayButtonText, (selectedDay === day.id) && { color: "white" }]}>{isToday(day.date) ? 'Today' : day.label}</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={{ marginLeft: 25 }} onPress={() => setSaveValue(true)}>
-            <Text style={[styles.text, selectedSave && styles.activeText]}>SAVED</Text>
-          </TouchableOpacity>
-        </View>
+        ))}
       </View>
-      {/* Day filter buttons - dynamically generated from events */}
-      {uniqueDays.length > 0 && (
-        <View style={[styles.tabs, {padding: 0}]}>
-          {uniqueDays.map((day) => (
-            <Pressable 
-              key={day.id} 
-              onPress={() => handleDayPress(day.id)}
-              style={styles.dayButtonContainer}
-            >
-              <Image 
-                style={[
-                  styles.eventDay,
-                  selectedDay === day.id && styles.selectedEventDay
-                ]} 
-                source={day.image} 
-              />
-              <Text style={[
-                styles.dayLabel,
-                selectedDay === day.id && styles.selectedDayLabel
-              ]}>
-                {day.label}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-      )}
-      <SafeAreaView style={styles.background}>
-        {renderContent()}
-        {selectedEvent && <EventDetailModal visible={modalVisible} event={selectedEvent} onClose={() => setModalVisible(false)} handleSave={handleSave} />}
-        <MenuModal visible={menuModalVisible} event={selectedEventForMenu} onClose={() => setMenuModalVisible(false)} />
-      </SafeAreaView> 
-    </SafeAreaView>
-  );
+    )}
+    <View style={{ padding: 0, paddingHorizontal: 30, marginBottom: 10, alignItems: 'flex-end' }}>
+      <TouchableOpacity onPress={() => setSaveValue(!selectedSave)}>
+        <Text style={[styles.text, {color: 'black', fontSize: 18, textAlign: 'right'}]}>{selectedSave ? "Close Reminders" : "Show Reminders"}</Text>
+      </TouchableOpacity>
+    </View>
+
+    {renderContent()}
+
+    {selectedEvent && (
+        <EventDetailModal 
+            visible={modalVisible} 
+            event={selectedEvent} 
+            onClose={() => setModalVisible(false)} 
+            handleSave={handleSave} 
+            saved={savedEventIds.has(selectedEvent.eventId)} 
+        />
+    )}
+    <MenuModal 
+        visible={menuModalVisible} 
+        event={selectedEventForMenu} 
+        onClose={() => setMenuModalVisible(false)} 
+    />
+
+  </SafeAreaView>
+);
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: '#FFFFFF', 
     paddingTop: 30,
-    paddingHorizontal: 30,
-    paddingBottom: 250
   },
   header: {
     flexDirection: 'row',
@@ -215,6 +239,7 @@ const styles = StyleSheet.create({
   tabs: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     gap: 10,
     padding: 20
   },
@@ -230,8 +255,24 @@ const styles = StyleSheet.create({
     textDecorationStyle: 'solid',
   },
   dayButtonContainer: {
-    alignItems: 'center',
+    alignItems: 'stretch',
     opacity: 0.6,
+  },
+  dayButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 100,
+    backgroundColor: 'transparent',
+    borderColor: '#000000',
+    borderWidth: 1.5,
+    marginTop: 10, 
+    alignSelf: 'flex-start',
+  },
+  dayButtonText: {
+    color: '#000000',
+    fontWeight: '600',
+    textAlign: 'center',
+    fontSize: 14,
   },
   eventDay: {
     width: 100,
@@ -254,7 +295,9 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   listContent: {
-    paddingBottom: 10,
+    paddingTop: 20,
+    paddingBottom: 120,
+    width: '100%',
   },
   background: {
     padding: 5,
