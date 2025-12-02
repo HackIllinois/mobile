@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Event } from "../components/eventScreen/EventCard";
+import { Event } from "../types";
 
 async function fetchEvents(): Promise<Event[]> {
   const res = await fetch("https://adonix.hackillinois.org/event/");
@@ -8,8 +8,6 @@ async function fetchEvents(): Promise<Event[]> {
   }
 
   const data = await res.json();
-  console.log("HackIllinois API raw response:", data);
-
   if (data && Array.isArray(data.events)) {
     return data.events as Event[];
   }
@@ -20,8 +18,6 @@ async function fetchEvents(): Promise<Event[]> {
   if (data && data.data && Array.isArray(data.data.events)) {
     return data.data.events as Event[];
   }
-
-  console.warn("Unexpected API response shape, returning empty array.", data);
   return [];
 }
 
