@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Text, StyleSheet, TouchableOpacity, Modal, Image, ScrollView, View, Pressable } from 'react-native';
 import { Event } from '../../types';
 import { PillButton } from './PillButton';

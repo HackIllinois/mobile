@@ -1,7 +1,5 @@
 import { View, Text, StyleSheet, Pressable, TouchableOpacity } from 'react-native';
 import { PillButton } from './PillButton';
-import NotSaved from "../../assets/event/NotSaved.svg"
-import Saved from "../../assets/event/Saved.svg"
 import { Event } from '../../types';
 
 interface EventCardProps {
