@@ -28,6 +28,17 @@ export default function Layout() {
             ),
           }}
         />
+        <Tabs.Screen
+          name="DuelAndroid"
+          options={{
+            tabBarIcon: ({ color, size }) => (
+              <Image
+                source={require("../../assets/qr.png")}
+                style={{ width: size, height: size, tintColor: color }}
+              />
+            ),
+          }}
+        />
         {/* Other screens hidden for testing */}
         <Tabs.Screen
           name="Home"
