@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android", "web"],
+  "apple": {
+    "modules": ["LocalConnectionModule"]
+  },
+  "android": {
+    "modules": ["expo.modules.localconnection.LocalConnectionModule"]
+  }
+}

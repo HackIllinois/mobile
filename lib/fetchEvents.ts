@@ -8,7 +8,6 @@ async function fetchEvents(): Promise<Event[]> {
   }
 
   const data = await res.json();
-  console.log("HackIllinois API raw response:", data);
 
   if (data && Array.isArray(data.events)) {
     return data.events as Event[];
@@ -26,12 +25,7 @@ async function fetchEvents(): Promise<Event[]> {
 }
 
 export function useEvents() {
-  const {
-    data,
-    isLoading,
-    error,
-    refetch,
-  } = useQuery<Event[]>({
+  const { data, isLoading, error, refetch } = useQuery<Event[]>({
     queryKey: ["events"],
     queryFn: fetchEvents,
     staleTime: 5 * 60 * 1000,

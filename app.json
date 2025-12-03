@@ -4,7 +4,6 @@
     "name": "mobile",
     "slug": "mobile",
     "version": "1.0.0",
-    "scheme": "hackillinois",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -15,21 +14,24 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.yaseenhalabi.mobile",
+      "infoPlist": {
+        "NSLocalNetworkUsageDescription": "For peer to peer connection for local gameplay",
+        "NSBonjourServices": ["_shooter-game._tcp", "_shooter-game._udp"]
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.yaseenhalabi.mobile"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": [
-      "expo-barcode-scanner",
-      "expo-router"
-    ]
+    "plugins": ["expo-router"]
   }
 }

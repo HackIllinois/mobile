@@ -11,7 +11,7 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import * as WebBrowser from "expo-web-browser";
 import * as SecureStore from "expo-secure-store";
-import { makeRedirectUri, } from "expo-auth-session";
+import { makeRedirectUri } from "expo-auth-session";
 import * as AuthSession from "expo-auth-session";
 import { useRouter } from "expo-router";
 import { AxiosResponse } from "axios";
@@ -30,62 +30,63 @@ export default function AuthScreen({ navigation }: any) {
   const [loadingGitHub, setLoadingGitHub] = useState(false);
   const router = useRouter();
 
-
   const redirectUri = "hackillinois://auth";
 
   const handleAuthResult = async (result: any) => {
     console.log("Auth Result:", result);
     if (result.type === "success" && result.url) {
       try {
-      const params = new URLSearchParams(result.url.split("?")[1]);
-      const token = params.get("token") || params.get("jwt");
+        const params = new URLSearchParams(result.url.split("?")[1]);
+        const token = params.get("token") || params.get("jwt");
 
-      if (!token) throw new Error("No token returned");
+        if (!token) throw new Error("No token returned");
 
-      await SecureStore.setItemAsync("jwt", token);
+        await SecureStore.setItemAsync("jwt", token);
 
-      // Caching User Roles 
-      const roleResponse = await api.get<AxiosResponse<AuthRolesResponse>>(
-        "/auth/roles/",
-        {
-          headers: {
-            Authorization: token, // Pass the token directly to avoid a race condition
-          },
+        // Caching User Roles
+        const roleResponse = await api.get<AxiosResponse<AuthRolesResponse>>(
+          "/auth/roles/",
+          {
+            headers: {
+              Authorization: token, // Pass the token directly to avoid a race condition
+            },
+          }
+        );
+
+        if (!roleResponse.data || !roleResponse.data.roles) {
+          throw new Error("Role data not found in response");
         }
-      );
-        
-      if (!roleResponse.data || !roleResponse.data.roles) {
-        throw new Error("Role data not found in response");
-      }
 
-      const roles = roleResponse.data.roles; 
-      await SecureStore.setItemAsync("userRoles", JSON.stringify(roles));
-      // console.log("Roles cached:", roles);
+        const roles = roleResponse.data.roles;
+        await SecureStore.setItemAsync("userRoles", JSON.stringify(roles));
+        // console.log("Roles cached:", roles);
 
-
-      Alert.alert("Login successful!");
-      router.replace("/(tabs)/Home");
+        Alert.alert("Login successful!");
+        router.replace("/(tabs)/Home");
       } catch (err) {
-        throw err; 
+        throw err;
       }
     } else {
       Alert.alert("Login canceled or failed");
     }
   };
-  
+
   const handleGoogleLogin = async () => {
     try {
       setLoadingGoogle(true);
 
       console.log("Redirect URI:", redirectUri);
 
-      const authUrl = `${api.axiosInstance.defaults.baseURL}/auth/login/google?redirect=${encodeURIComponent(
-        redirectUri
-      )}`;
+      const authUrl = `${
+        api.axiosInstance.defaults.baseURL
+      }/auth/login/google?redirect=${encodeURIComponent(redirectUri)}`;
       console.log("Auth URL:", authUrl);
 
-      const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
-    //   console.log("Auth Result:", result);
+      const result = await WebBrowser.openAuthSessionAsync(
+        authUrl,
+        redirectUri
+      );
+      //   console.log("Auth Result:", result);
 
       await handleAuthResult(result);
     } catch (err) {
@@ -101,11 +102,14 @@ export default function AuthScreen({ navigation }: any) {
   const handleGitHubLogin = async () => {
     try {
       setLoadingGitHub(true);
-      const authUrl = `${api.axiosInstance.defaults.baseURL}/auth/login/github?redirect=${encodeURIComponent(
-        redirectUri
-      )}`;
+      const authUrl = `${
+        api.axiosInstance.defaults.baseURL
+      }/auth/login/github?redirect=${encodeURIComponent(redirectUri)}`;
       console.log("GitHub Auth URL:", authUrl);
-      const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
+      const result = await WebBrowser.openAuthSessionAsync(
+        authUrl,
+        redirectUri
+      );
       await handleAuthResult(result);
     } catch (err) {
       console.error(err);
@@ -143,19 +147,18 @@ export default function AuthScreen({ navigation }: any) {
         )}
       </TouchableOpacity>
 
-        <View style={{ height: 20 }} />
-        <TouchableOpacity
-            style={[styles.button, { backgroundColor: "#24292e" }]}
-            onPress={handleGitHubLogin}
-            disabled={loadingGoogle || loadingGitHub}
-        >
-            {loadingGitHub ? (
-            <ActivityIndicator color="#fff" />
-            ) : (
-            <Text style={styles.buttonText}>Sign in with GitHub</Text>
-            )}
-        </TouchableOpacity>
-
+      <View style={{ height: 20 }} />
+      <TouchableOpacity
+        style={[styles.button, { backgroundColor: "#24292e" }]}
+        onPress={handleGitHubLogin}
+        disabled={loadingGoogle || loadingGitHub}
+      >
+        {loadingGitHub ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.buttonText}>Sign in with GitHub</Text>
+        )}
+      </TouchableOpacity>
     </LinearGradient>
   );
 }

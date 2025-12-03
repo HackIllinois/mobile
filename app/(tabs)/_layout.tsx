@@ -10,15 +10,29 @@ export default function Layout() {
   return (
     <QueryClientProvider client={queryClient}>
       <Tabs
+        initialRouteName="Duel"
         screenOptions={{
           headerShown: false,
           tabBarShowLabel: false,
+          tabBarStyle: { display: "none" }, // Hide tab bar
         }}
-        tabBar={(props) => <CurvedTabBar {...props} />}
       >
+        <Tabs.Screen
+          name="Duel"
+          options={{
+            tabBarIcon: ({ color, size }) => (
+              <Image
+                source={require("../../assets/qr.png")}
+                style={{ width: size, height: size, tintColor: color }}
+              />
+            ),
+          }}
+        />
+        {/* Other screens hidden for testing */}
         <Tabs.Screen
           name="Home"
           options={{
+            href: null, // Hide from tabs
             tabBarIcon: ({ color, size }) => (
               <Image
                 source={require("../../assets/house.png")}
@@ -27,10 +41,11 @@ export default function Layout() {
             ),
           }}
         />
-        
+
         <Tabs.Screen
           name="Shop"
           options={{
+            href: null, // Hide from tabs
             tabBarIcon: ({ color, size }) => (
               <Image
                 source={require("../../assets/cart.png")}
@@ -42,6 +57,7 @@ export default function Layout() {
         <Tabs.Screen
           name="Scan"
           options={{
+            href: null, // Hide from tabs
             tabBarIcon: ({ color, size }) => (
               <Image
                 source={require("../../assets/qr.png")}
@@ -53,6 +69,7 @@ export default function Layout() {
         <Tabs.Screen
           name="Event"
           options={{
+            href: null, // Hide from tabs
             tabBarIcon: ({ color, size }) => (
               <Image
                 source={require("../../assets/calendar.png")}
@@ -64,6 +81,7 @@ export default function Layout() {
         <Tabs.Screen
           name="Profile"
           options={{
+            href: null, // Hide from tabs
             tabBarIcon: ({ color, size }) => (
               <Image
                 source={require("../../assets/profile.png")}
