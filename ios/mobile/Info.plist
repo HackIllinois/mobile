@@ -39,7 +39,7 @@
         <key>CFBundleURLSchemes</key>
         <array>
           <string>hackillinois</string>
-          <string>com.hackillinois.ios</string>
+          <string>org.hackillinois.ios</string>
         </array>
       </dict>
     </array>

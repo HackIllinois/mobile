@@ -15,7 +15,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.hackillinois.ios"
+      "bundleIdentifier": "org.hackillinois.ios"
     },
     "android": {
       "adaptiveIcon": {
