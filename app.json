@@ -3,7 +3,7 @@
     "scheme": "hackillinois",
     "name": "mobile",
     "slug": "mobile",
-    "version": "2026.0.0",
+    "version": "2026.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -29,12 +29,7 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      [
-        "expo-router",
-        {
-          "origin": "expo"
-        }
-      ]
+      "expo-router"
     ],
     "extra": {
       "router": {},
