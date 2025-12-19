@@ -1,21 +1,16 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { StyleSheet } from "react-native";
-import { useRouter } from "expo-router";
-import ScreenOne from "./ScreenOne";
-import ScreenTwo from "./ScreenTwo";
-import ScreenThree from "./ScreenThree";
-import ScreenFour from "./ScreenFour";
-import ScreenFive from "./ScreenFive";
-import ScreenSix from "./ScreenSix";
-import ScreenSeven from "./ScreenSeven";
-import RocketLoad from "./RocketLoad";
+import ScreenThree from "./Overview";
+import ScreenFour from "./Schedule";
+import ScreenFive from "./Scanner";
+import ScreenSix from "./PointsShop";
+import ScreenSeven from "./Profile";
 
 type OnboardingProps = {
   onFinish: () => void; 
 };
 
 export default function OnboardingScreens({ onFinish }: OnboardingProps) {
-    const router = useRouter();
     const [currentScreen, setCurrentScreen] = useState(0);
 
     const onSkip = () => {
@@ -26,34 +21,19 @@ export default function OnboardingScreens({ onFinish }: OnboardingProps) {
         setCurrentScreen((prev) => prev + 1);
     }
 
-    useEffect(() => {
-        if (currentScreen === 0) {
-            const timer = setTimeout(() => {
-                setCurrentScreen(1);
-            }, 1000); 
-            return () => clearTimeout(timer);
-        }
-    }, [currentScreen]);
-
     switch (currentScreen) {
         case 0:
-            return <ScreenOne />;
-        case 1:
-            return <ScreenTwo onFinish={onSkip} onStart={onNext} />;
-        case 2:
-            return <RocketLoad onFinish={onNext}/>;
-        case 3:
             return <ScreenThree onFinish={onSkip} onStart={onNext} />;
-        case 4:
+        case 1:
             return <ScreenFour onFinish={onSkip} onStart={onNext} />;
-        case 5:
+        case 2:
             return <ScreenFive onFinish={onSkip} onStart={onNext} />;
-        case 6:
+        case 3:
             return <ScreenSix onFinish={onSkip} onStart={onNext} />;
-        case 7:
+        case 4:
             return <ScreenSeven onFinish={onSkip} onStart={onSkip} />;
         default:
-            return <ScreenOne />;
+            return <ScreenThree onFinish={onSkip} onStart={onNext} />;
     }
 }
 
