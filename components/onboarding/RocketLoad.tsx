@@ -1,22 +1,24 @@
 import { useEffect, useRef } from "react";
 import { View, Animated, Easing, StyleSheet } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import HackRocket from "../../assets/onboarding/hack-rocket.svg";
+import Clouds from "../../assets/onboarding/loading/clouds.svg";
+import TinyStars from "../../assets/onboarding/loading/tiny stars.svg";
 
 type RocketLoadProps = {
     onFinish: () => void;
 }
 
+const AnimatedHackRocket = Animated.createAnimatedComponent(HackRocket);
+
 export default function RocketLoad({onFinish}: RocketLoadProps) {
   const translateY = useRef(new Animated.Value(0)).current;
   const rotate = useRef(new Animated.Value(0)).current;
-  const shade = useRef(new Animated.Value(0)).current;
+  const cloudX1 = useRef(new Animated.Value(0)).current;
+  const cloudX2 = useRef(new Animated.Value(0)).current;
+  const starOpacity = useRef(new Animated.Value(0.8)).current;
 
   useEffect(() => {
-    Animated.timing(shade, {
-        toValue: 1,
-        duration: 2000,
-        useNativeDriver: false, 
-    }).start();
-
     // Native-driven shake animation
     const shake = Animated.loop(
         Animated.sequence([
@@ -26,7 +28,60 @@ export default function RocketLoad({onFinish}: RocketLoadProps) {
         ])
     );
 
-    shake.start(); // start shaking
+    shake.start(); 
+
+    // Cloud animations
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(cloudX1, {
+          toValue: 30,
+          duration: 8000,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(cloudX1, {
+          toValue: 0,
+          duration: 8000,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(cloudX2, {
+          toValue: 40,
+          duration: 10000,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(cloudX2, {
+          toValue: 0,
+          duration: 10000,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+
+    // Star twinkling animation
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(starOpacity, {
+          toValue: 0.4,
+          duration: 1000,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(starOpacity, {
+          toValue: 0.8,
+          duration: 1000,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
 
     // Fly up animation
     Animated.timing(translateY, {
@@ -35,8 +90,8 @@ export default function RocketLoad({onFinish}: RocketLoadProps) {
         easing: Easing.out(Easing.quad),
         useNativeDriver: true,
     }).start(() => {
-        shake.stop();       
-        onFinish();         
+        shake.stop();
+        onFinish();
     });
   }, []);
 
@@ -46,33 +101,70 @@ export default function RocketLoad({onFinish}: RocketLoadProps) {
     outputRange: ["-10deg", "0deg", "10deg"],
   });
 
-  const colorInterpolate = shade.interpolate({
-    inputRange: [0, 1],
-    outputRange: ["#cccccc", "#333333"],
-  });
-
   return (
-    <View style={styles.background}>
-      <Animated.Image
-        source={require("../../assets/onboarding/large_rocket.png")}
-        style={{
-          width: 600,
-          height: 600,
-          transform: [{ translateY }, { rotate: rotateInterpolate }],
-          tintColor: colorInterpolate,
-        }}
-        resizeMode="contain"
-      />
-    </View>
+    <LinearGradient
+      colors={['#11104A', '#721984']}
+      style={styles.background}
+    >
+      {/* Background clouds */}
+      <Animated.View
+        style={[
+          styles.cloudsContainer,
+          { transform: [{ translateX: cloudX1 }] },
+        ]}
+      >
+        <Clouds width={669.17} height={720.11} />
+      </Animated.View>
+
+      {/* Second cloud layer */}
+      <Animated.View
+        style={[
+          styles.cloudsContainer,
+          { opacity: 0.5, transform: [{ translateX: cloudX2 }] },
+        ]}
+      >
+        <Clouds width={669.17} height={720.11} />
+      </Animated.View>
+
+      {/* Stars */}
+      <Animated.View
+        style={[styles.starsContainer, { opacity: starOpacity }]}
+      >
+        <TinyStars width={499.59} height={614} />
+      </Animated.View>
+
+      {/* Rocket */}
+      <View style={styles.rocketContainer}>
+        <AnimatedHackRocket
+          width={600}
+          height={600}
+          style={{
+            transform: [{ translateY }, { rotate: rotateInterpolate }],
+          }}
+        />
+      </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   background: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
     alignItems: "center",
-    justifyContent: "center", 
-    paddingHorizontal: 24,
+    justifyContent: "center",
+  },
+  cloudsContainer: {
+    position: "absolute",
+    top: 60,
+    left: -154,
+  },
+  starsContainer: {
+    position: "absolute",
+    top: 30,
+    left: -46.51,
+  },
+  rocketContainer: {
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

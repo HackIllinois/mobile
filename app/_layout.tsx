@@ -2,26 +2,38 @@ import { useEffect, useRef, useState } from "react";
 import { Animated } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Stack } from "expo-router";
+import { useFonts } from "expo-font";
 import StartupAnimation from "../components/hackrocket/StartupAnimation";
 import OnboardingScreens from "../components/onboarding/OnboardingScreen";
+import LoadingScreen from "../src/components/loading/LoadingScreen";
+import WelcomePage from "../components/onboarding/WelcomePage";
 import * as SecureStore from "expo-secure-store";
-import { useFonts } from 'expo-font';
+
+// Onboarding testing: 
+// true = show onboarding every reload
+// false = normal behavior
+const TESTING_MODE = false;
 
 export default function RootLayout() {
-  const [showAnimation, setShowAnimation] = useState(true);
+  const [showLoading, setShowLoading] = useState(true);
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [showAnimation, setShowAnimation] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const fadeAnim = useRef(new Animated.Value(1)).current;
+  const welcomeFadeAnim = useRef(new Animated.Value(0)).current;
+  const onboardingContentFadeAnim = useRef(new Animated.Value(0)).current;
 
   const [fontsLoaded] = useFonts({
-    'Tsukimi Rounded': require('../assets/fonts/Tsukimi_Rounded/TsukimiRounded-Bold.ttf'),
-    'Montserrat': require('../assets/fonts/Montserrat/Montserrat-Italic-VariableFont_wght.ttf'),
+    'Tsukimi-Rounded-Bold': require('../assets/fonts/TsukimiRounded-Bold.ttf'),
   });
 
   useEffect(() => {
     const checkOnboardingStatus = async () => {
       try {
-        const hasCompleted = await AsyncStorage.getItem("hasCompletedOnboarding");
+        const hasCompleted = TESTING_MODE
+          ? false
+          : await AsyncStorage.getItem("hasCompletedOnboarding");
         const jwt = await SecureStore.getItemAsync("jwt");
         setIsLoggedIn(!!jwt);
         setShowOnboarding(!hasCompleted);
@@ -33,18 +45,55 @@ export default function RootLayout() {
     checkOnboardingStatus();
   }, []);
 
+  const handleLoadingFinish = () => {
+    setShowLoading(false);
+    if (showOnboarding) {
+      setShowWelcome(true);
+    }
+  };
+
   useEffect(() => {
-    const timer = setTimeout(() => {
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 800,
+    if (showWelcome) {
+      Animated.timing(welcomeFadeAnim, {
+        toValue: 1,
+        duration: 600,
         useNativeDriver: true,
-      }).start(() => {
-        setShowAnimation(false);
-      });
-    }, 1800);
-    return () => clearTimeout(timer);
-  }, []);
+      }).start();
+    }
+  }, [showWelcome]);
+
+  const handleWelcomeStart = () => {
+    setShowAnimation(true);
+    // Fade out welcome page as rocket goes up
+    Animated.timing(welcomeFadeAnim, {
+      toValue: 0,
+      duration: 1500, 
+      useNativeDriver: true,
+    }).start(() => {
+      setShowWelcome(false);
+    });
+  };
+
+  useEffect(() => {
+    if (showAnimation) {
+      fadeAnim.setValue(1);
+
+      // Show onboarding content immediately when animation starts
+      onboardingContentFadeAnim.setValue(1);
+
+      // Fade out animation to reveal onboarding content 
+      const timer = setTimeout(() => {
+        Animated.timing(fadeAnim, {
+          toValue: 0,
+          duration: 800,
+          useNativeDriver: true,
+        }).start(() => {
+          setShowAnimation(false);
+        });
+      }, 1800);
+      return () => clearTimeout(timer);
+    }
+  }, [showAnimation]);
 
   const handleOnboardingFinish = async () => {
     try {
@@ -55,29 +104,69 @@ export default function RootLayout() {
     }
   };
 
-  if (showOnboarding === null) return null;
-
-  if (showAnimation) {
-    return (
-      <Animated.View
-        style={{
-          flex: 1,
-          opacity: fadeAnim,
-        }}
-      >
-        <StartupAnimation />
-      </Animated.View>
-    );
+  if (!fontsLoaded || showOnboarding === null) {
+    return null;
   }
 
-  if (!fontsLoaded) {
-    return null; // maybe change to loading screen?
+  if (showLoading) {
+    return <LoadingScreen onFinish={handleLoadingFinish} />;
+  }
+
+  if (showWelcome || showAnimation) {
+    return (
+      <>
+        {showAnimation && (
+          <Animated.View
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              opacity: onboardingContentFadeAnim,
+            }}
+          >
+            <OnboardingScreens onFinish={handleOnboardingFinish} />
+          </Animated.View>
+        )}
+        {/* Welcome page layer */}
+        {showWelcome && (
+          <Animated.View
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              opacity: welcomeFadeAnim,
+            }}
+          >
+            <WelcomePage onFinish={handleOnboardingFinish} onStart={handleWelcomeStart} />
+          </Animated.View>
+        )}
+        {/* Animation layer on top */}
+        {showAnimation && (
+          <Animated.View
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              opacity: fadeAnim,
+            }}
+          >
+            <StartupAnimation />
+          </Animated.View>
+        )}
+      </>
+    );
   }
 
   if (showOnboarding) {
     return <OnboardingScreens onFinish={handleOnboardingFinish} />;
   }
-  console.log("showOnboarding:", showOnboarding, "isLoggedIn:", isLoggedIn);
+
   return (
      <Stack screenOptions={{ headerShown: false }}>
       {!isLoggedIn ? (
