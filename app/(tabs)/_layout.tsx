@@ -27,7 +27,7 @@ export default function Layout() {
             ),
           }}
         />
-        
+
         <Tabs.Screen
           name="Shop"
           options={{
@@ -39,6 +39,7 @@ export default function Layout() {
             ),
           }}
         />
+
         <Tabs.Screen
           name="Scan"
           options={{
@@ -50,6 +51,7 @@ export default function Layout() {
             ),
           }}
         />
+
         <Tabs.Screen
           name="Event"
           options={{
@@ -61,8 +63,21 @@ export default function Layout() {
             ),
           }}
         />
+
         <Tabs.Screen
           name="Profile"
+          options={{
+            tabBarIcon: ({ color, size }) => (
+              <Image
+                source={require("../../assets/profile.png")}
+                style={{ width: size, height: size, tintColor: color }}
+              />
+            ),
+          }}
+        />
+
+        <Tabs.Screen
+          name="MentorSupport"
           options={{
             tabBarIcon: ({ color, size }) => (
               <Image
