@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { SafeAreaView, View, Text, StyleSheet, Dimensions } from "react-native";
+import { View, Text, StyleSheet, Dimensions, Animated, Easing } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import EventOrbit from "../../components/home/EventOrbit";
 import OrbitItem from "../../components/home/OrbitItem";
 import { getTimeRemaining } from "../../components/home/countdown";
@@ -34,17 +35,8 @@ type EventItem = OrbitEvent | FixedEvent;
 export default function HomeScreen() {
   const targetDate = new Date("2026-02-20T09:00:00");
   const [timeLeft, setTimeLeft] = useState(getTimeRemaining(targetDate));
+  // const rotation = React.useRef(new Animated.Value(0)).current;
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft(getTimeRemaining(targetDate));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const formatTime = (num: number) => String(num).padStart(2, "0");
-
- 
   const anchorX = width / 2;
   const anchorY = height * 0.25; // vertical position for Closing Ceremony
   const orbitGap = width * 0.17; // spacing between orbits
@@ -59,18 +51,51 @@ export default function HomeScreen() {
     centerY: anchorY,
   }));
 
-  
   const items: EventItem[] = [
     { label: "closing   ceremony", x: anchorX, y: anchorY, size: 80, fixed: true },
     { label: "hacking!", orbit: orbits[0], angle: 110, size: 50, textAngle: 140 },
     { label: "project showcase", orbit: orbits[1], angle: 80, size: 50, textAngle: 100 },
     { label: "opening ceremony", orbit: orbits[2], angle: 100, size: 50, textAngle: 110 },
     { label: "scavenger hunt", orbit: orbits[3], angle: 80, size: 50, textAngle: 100 },
-    { label: "check-in", orbit: orbits[4], angle: 100, size: 50, textAngle: 140 },
+    { label: "check-in", orbit: orbits[4], angle: 90, size: 50, textAngle: 140 },
   ];
 
+  const orbitAnimations = React.useRef(
+    items.map(() => new Animated.Value(0))
+  ).current;
+  
+  useEffect(() => {
+    orbitAnimations.forEach((anim, i) => {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(anim, {
+            toValue: 1,
+            duration: 6000 + i * 900,      // each orbit has different speed
+            easing: Easing.inOut(Easing.sin),
+            useNativeDriver: true,
+          }),
+          Animated.timing(anim, {
+            toValue: 0,
+            duration: 6000 + i * 900,
+            easing: Easing.inOut(Easing.sin),
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    });
+  }, []);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft(getTimeRemaining(targetDate));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const formatTime = (num: number) => String(num).padStart(2, "0");
+
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
       {/* Countdown */}
       <View style={styles.header}>
         <Text style={styles.timerLabel}>T-minus Liftoff</Text>
@@ -115,6 +140,9 @@ export default function HomeScreen() {
             radius={item.orbit.radius}
             centerY={item.orbit.centerY}
             angle={item.angle}
+            animatedRotation={orbitAnimations[i]}
+            speed={2.5 - i * 0.2}
+            amplitude={0.3 + i * 0.3}
             size={item.size}
             textAngle={item.textAngle ?? 0}
           />

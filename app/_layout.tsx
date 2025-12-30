@@ -3,16 +3,16 @@ import { Animated } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Stack } from "expo-router";
 import { useFonts } from "expo-font";
-import StartupAnimation from "../src/components/hackrocket/StartupAnimation";
-import OnboardingScreens from "../src/components/onboarding/OnboardingScreen";
+import StartupAnimation from "../components/hackrocket/StartupAnimation";
+import OnboardingScreens from "../components/onboarding/OnboardingScreen";
 import LoadingScreen from "../src/components/loading/LoadingScreen";
-import WelcomePage from "../src/components/onboarding/WelcomePage";
+import WelcomePage from "../components/onboarding/WelcomePage";
 import * as SecureStore from "expo-secure-store";
 
 // Onboarding testing: 
 // true = show onboarding every reload
 // false = normal behavior
-const TESTING_MODE = false;
+const TESTING_MODE = true;
 
 export default function RootLayout() {
   const [showLoading, setShowLoading] = useState(true);

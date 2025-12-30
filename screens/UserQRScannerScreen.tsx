@@ -5,8 +5,8 @@ import { useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
 import axios from 'axios';
 import api from '../api';
 
-import CameraScannerView from '../src/components/qr scanner/CameraScanner';
-import { ScanResultModal, ScanResult } from '../src/components/qr scanner/ScanModals';
+import CameraScannerView from '../components/qr scanner/CameraScanner';
+import { ScanResultModal, ScanResult } from '../components/qr scanner/ScanModals';
 
 interface ScanSuccessData {
   points: number;

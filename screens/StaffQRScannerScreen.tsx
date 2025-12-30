@@ -9,12 +9,12 @@ import api from '../api';
   // Test Attendee Check-in
   // Test Points Shop
 
-import CameraScannerView from '../src/components/qr scanner/CameraScanner';
-import { 
-  ScanResultModal, 
-  EventSelectModal, 
-  ScanResult 
-} from '../src/components/qr scanner/ScanModals';
+import CameraScannerView from '../components/qr scanner/CameraScanner';
+import {
+  ScanResultModal,
+  EventSelectModal,
+  ScanResult
+} from '../components/qr scanner/ScanModals';
 
 // Helper Function to extract token from scanned QR code data
 const extractTokenFromScan = (scannedData: string): string => {
