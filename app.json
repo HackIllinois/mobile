@@ -3,7 +3,7 @@
     "scheme": "hackillinois",
     "name": "mobile",
     "slug": "mobile",
-    "version": "1.0.0",
+    "version": "2026.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -15,7 +15,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.hackillinois.ios"
+      "bundleIdentifier": "org.hackillinois.ios"
     },
     "android": {
       "adaptiveIcon": {
@@ -29,9 +29,10 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      [
-        "expo-router",
-      ]
+      "expo-router",
+      "expo-secure-store",
+      "expo-web-browser",
+      "expo-font"
     ],
     "extra": {
       "router": {},

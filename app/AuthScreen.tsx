@@ -49,7 +49,10 @@ export default function AuthScreen({ navigation }: any) {
         "/auth/roles/",
         {
           headers: {
-            Authorization: token, // Pass the token directly to avoid a race condition
+            // Ensure backend receives a Bearer token even before interceptors run
+            Authorization: token.startsWith("Bearer ")
+              ? token
+              : `Bearer ${token}`,
           },
         }
       );

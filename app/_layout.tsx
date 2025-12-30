@@ -2,17 +2,22 @@ import { useEffect, useRef, useState } from "react";
 import { Animated } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Stack } from "expo-router";
-import StartupAnimation from "../src/components/hackrocket/StartupAnimation";
-import OnboardingScreens from "../src/components/onboarding/OnboardingScreen";
+import StartupAnimation from "../components/hackrocket/StartupAnimation";
+import OnboardingScreens from "../components/onboarding/OnboardingScreen";
 import * as SecureStore from "expo-secure-store";
-
+import { useFonts } from 'expo-font';
 
 export default function RootLayout() {
   const [showAnimation, setShowAnimation] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const fadeAnim = useRef(new Animated.Value(1)).current;
-  
+
+  const [fontsLoaded] = useFonts({
+    'Tsukimi Rounded': require('../assets/fonts/Tsukimi_Rounded/TsukimiRounded-Bold.ttf'),
+    'Montserrat': require('../assets/fonts/Montserrat/Montserrat-Italic-VariableFont_wght.ttf'),
+  });
+
   useEffect(() => {
     const checkOnboardingStatus = async () => {
       try {
@@ -65,6 +70,10 @@ export default function RootLayout() {
     );
   }
 
+  if (!fontsLoaded) {
+    return null; // maybe change to loading screen?
+  }
+
   if (showOnboarding) {
     return <OnboardingScreens onFinish={handleOnboardingFinish} />;
   }
@@ -76,6 +85,13 @@ export default function RootLayout() {
       ) : (
         <Stack.Screen name="(tabs)" />
       )}
+      <Stack.Screen
+        name="Profile"
+        options={{
+          presentation: 'modal',
+          headerShown: false,
+        }}
+      />
     </Stack>
   );
 }
