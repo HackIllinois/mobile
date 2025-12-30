@@ -21,7 +21,11 @@ class API {
         // inject jwt into headers before request is made
         const jwt = await SecureStore.getItemAsync("jwt");
         if (jwt) {
-          config.headers.Authorization = jwt.replace(/#$/, '');
+          const cleaned = jwt.replace(/#$/, '');
+          // API expects a Bearer token; add prefix if it is missing
+          config.headers.Authorization = /^Bearer\s/i.test(cleaned)
+            ? cleaned
+            : `Bearer ${cleaned}`;
         }
         return config;
       },

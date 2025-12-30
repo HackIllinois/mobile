@@ -1,14 +1,12 @@
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import AuthScreen from "./AuthScreen";
+import AuthScreen from "./app/AuthScreen";
 import MainScreen from "./MainScreen";
 import React, { useState, useEffect } from "react";
-import { NavigationContainer } from "@react-navigation/native";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { StatusBar } from "expo-status-bar";
 import StartupAnimation from "./components/hackrocket/StartupAnimation";
 import { StyleSheet, Text, View, Button } from "react-native";
-import QRScannerScreen from "./screens/QRScannerScreen";
+import QRScannerScreen from "./screens/UserQRScannerScreen";
 import PointShop from "./screens/PointShop";
 
 const Stack = createNativeStackNavigator();
