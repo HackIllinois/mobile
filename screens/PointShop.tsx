@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import api from "../../api";
-import { ShopItem } from "../../types";
+import api from "../api";
+import { ShopItem } from "../types";
 import { AxiosResponse } from "axios";
 import {
   StyleSheet,
@@ -12,10 +12,10 @@ import {
   Text,
   Alert,
 } from "react-native";
-import ShopItemCard from "../../src/components/point shop/ShopItemCard";
-import PageIndicator from "../../src/components/point shop/PageIndicator";
-import CartButton from "../../src/components/point shop/CartButton";
-import CartModal from "../../src/components/point shop/CartModal";
+import ShopItemCard from "../src/components/point shop/ShopItemCard";
+import PageIndicator from "../src/components/point shop/PageIndicator";
+import CartButton from "../src/components/point shop/CartButton";
+import CartModal from "../src/components/point shop/CartModal";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function PointShop() {

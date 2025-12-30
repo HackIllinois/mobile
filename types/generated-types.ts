@@ -1069,6 +1069,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/event/attendance/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Gets attendance per user
+         * @description **Required role: null**
+         *
+         *     The events returned are filtered based on what the currently authenticated user can access.
+         *     For example, if the currently authenticated user is not staff, staff events will not be shown.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["schemas"]["UserId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description List of mandatory events in which the user is absent, present, and excused */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["EventAttendance"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/event/attendees-info/{id}/": {
         parameters: {
             query?: never;
@@ -1242,12 +1286,11 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put?: never;
         /**
-         * Mark a user as excused for an event
+         * Updates a user's excused status for an event
          * @description **Required role: STAFF**
          */
-        post: {
+        put: {
             parameters: {
                 query?: never;
                 header?: never;
@@ -1260,11 +1303,12 @@ export interface paths {
                 content: {
                     "application/json": {
                         userId: string;
+                        excused: boolean;
                     };
                 };
             };
             responses: {
-                /** @description Successfully marked user as excused */
+                /** @description Successfully updated user's excused status */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -1292,6 +1336,7 @@ export interface paths {
                 };
             };
         };
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1987,6 +2032,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/notification/send/self": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sends a test notification to the currently authenticated user
+         * @description **Required role: STAFF**
+         *
+         *     Useful for testing if your device token is registered correctly and notifications are working.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        title: string;
+                        body: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description The result of the test notification */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["NotificationSend"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/profile/": {
         parameters: {
             query?: never;
@@ -2111,20 +2204,6 @@ export interface paths {
                             error: "AlreadyExists";
                             /** @enum {string} */
                             message: "Your profile is already created!";
-                        };
-                    };
-                };
-                /** @description Couldn't find registration information */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            /** @enum {string} */
-                            error: "NotFound";
-                            /** @enum {string} */
-                            message: "Couldn't find your registration";
                         };
                     };
                 };
@@ -2529,7 +2608,7 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Gets the currently authenticated user's registration data
+         * Gets the currently authenticated user's submitted registration data
          * @description **Required role: USER**
          */
         get: {
@@ -2541,16 +2620,16 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description The registration information */
+                /** @description The submitted registration information */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["RegistrationApplication"];
+                        "application/json": components["schemas"]["RegistrationApplicationDraft"];
                     };
                 };
-                /** @description Couldn't find registration information (make sure you create it first!) */
+                /** @description Couldn't find submitted registration information (make sure you create it first!) */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -2567,62 +2646,7 @@ export interface paths {
             };
         };
         put?: never;
-        /**
-         * Creates or sets the currently authenticated user's registration data
-         * @description **Required role: USER**
-         */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": components["schemas"]["RegistrationApplicationRequest"];
-                };
-            };
-            responses: {
-                /** @description The new registration information */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["RegistrationApplicationRequest"];
-                    };
-                };
-                /** @description Registration is already submitted, cannot update anymore */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            /** @enum {string} */
-                            error: "AlreadySubmitted";
-                            /** @enum {string} */
-                            message: "You've already submitted your registration!";
-                        };
-                    };
-                };
-                /** @description Registration is closed */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            /** @enum {string} */
-                            error: "RegistrationClosed";
-                            /** @enum {string} */
-                            message: "Registration is closed, check back next year!";
-                        };
-                    };
-                };
-            };
-        };
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2734,6 +2758,114 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/registration/draft/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Gets the currently authenticated user's draft registration data
+         * @description **Required role: USER**
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The draft registration information */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RegistrationApplicationDraft"];
+                    };
+                };
+                /** @description Couldn't find draft registration information (make sure you create it first!) */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "NotFound";
+                            /** @enum {string} */
+                            message: "Couldn't find your registration";
+                        };
+                    };
+                };
+            };
+        };
+        /**
+         * Creates or updates the currently authenticated user's draft registration data
+         * @description **Required role: USER**
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["RegistrationApplicationDraftRequest"];
+                };
+            };
+            responses: {
+                /** @description The registration draft was created or updated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RegistrationApplicationDraftRequest"];
+                    };
+                };
+                /** @description Registration is already submitted, cannot update anymore */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "AlreadySubmitted";
+                            /** @enum {string} */
+                            message: "You've already submitted your registration!";
+                        };
+                    };
+                };
+                /** @description Registration is closed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "RegistrationClosed";
+                            /** @enum {string} */
+                            message: "Registration is closed, check back next year!";
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/registration/status/": {
         parameters: {
             query?: never;
@@ -2742,7 +2874,7 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Gets the currently authenticated user's registration data
+         * Gets the status of whether registration is currently active
          * @description **Required role: null**
          */
         get: {
@@ -2801,10 +2933,16 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["RegistrationApplicationRequest"];
+                        "application/json": components["schemas"]["RegistrationApplicationSubmittedRequest"];
                     };
                 };
-                /** @description Registration is already submitted, cannot update anymore */
+                /**
+                 * @description One of:
+                 *     - AlreadySubmitted: Registration is already submitted, cannot update anymore
+                 *     - IncompleteApplication: Your application is incomplete. Please fill out all required fields before submitting.
+                 *
+                 *     **See examples dropdown below**
+                 */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -2815,6 +2953,11 @@ export interface paths {
                             error: "AlreadySubmitted";
                             /** @enum {string} */
                             message: "You've already submitted your registration!";
+                        } | {
+                            /** @enum {string} */
+                            error: "IncompleteApplication";
+                            /** @enum {string} */
+                            message: "Your application is incomplete. Please fill out all required fields before submitting.";
                         };
                     };
                 };
@@ -2885,7 +3028,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["RegistrationApplication"];
+                        "application/json": components["schemas"]["RegistrationApplicationDraft"];
                     };
                 };
                 /** @description Couldn't find registration information (make sure you create it first!) */
@@ -4525,7 +4668,7 @@ export interface paths {
         get?: never;
         /**
          * Checks in the currently authenticated user and marks their attendance
-         * @description **Required role: USER**
+         * @description **Required role: ATTENDEE**
          */
         put: {
             parameters: {
@@ -4901,7 +5044,10 @@ export interface components {
          *       "avatarUrl": "https://raw.githubusercontent.com/HackIllinois/adonix-metadata/main/avatars/goblin.png",
          *       "points": 23,
          *       "pointsAccumulated": 104,
-         *       "foodWave": 1
+         *       "foodWave": 1,
+         *       "dietaryRestrictions": [
+         *         "Peanut Allergy"
+         *       ]
          *     }
          */
         AttendeeProfile: {
@@ -4912,17 +5058,22 @@ export interface components {
             points: number;
             pointsAccumulated: number;
             foodWave: number;
+            dietaryRestrictions: string[];
         };
         /**
          * @example {
          *       "displayName": "Bob The Great",
          *       "discordTag": "hackillinois",
-         *       "avatarId": "goblin"
+         *       "avatarId": "goblin",
+         *       "dietaryRestrictions": [
+         *         "Peanut Allergy"
+         *       ]
          *     }
          */
         AttendeeProfileCreateRequest: {
             discordTag: string;
             displayName: string;
+            dietaryRestrictions: string[];
             avatarId: string;
         };
         /**
@@ -4943,6 +5094,7 @@ export interface components {
         AttendeeProfileUpdateRequest: {
             discordTag?: string;
             displayName?: string;
+            dietaryRestrictions?: string[];
             avatarId?: string;
         };
         /**
@@ -4999,8 +5151,6 @@ export interface components {
             waitlisted: number;
             tbd: number;
         };
-        /** @enum {string} */
-        Degree: "Associates' Degree" | "Bachelors' Degree " | "Masters' Degree" | "PhD" | "Graduated" | "Other" | "N/A" | "";
         DeleteSponsorRequest: {
             userId: components["schemas"]["UserId"];
         };
@@ -5051,6 +5201,23 @@ export interface components {
             isMandatory?: boolean;
             isPro: boolean;
         };
+        EventAttendance: {
+            present: [
+                string,
+                number,
+                number
+            ][];
+            excused: [
+                string,
+                number,
+                number
+            ][];
+            absent: [
+                string,
+                number,
+                number
+            ][];
+        };
         EventAttendees: {
             eventId: components["schemas"]["EventId"];
             attendees: components["schemas"]["UserId"][];
@@ -5073,12 +5240,6 @@ export interface components {
         Events: {
             events: components["schemas"]["Event"][];
         };
-        /** @enum {string} */
-        Gender: "Male" | "Female" | "Non-Binary" | "Other" | "Prefer Not To Answer" | "";
-        /** @enum {string} */
-        HackInterest: "Attending technical workshops" | "Submitting a project to win prizes" | "Participating in mini-events" | "Meeting new people" | "Working with mentors to get feedback" | "Company Q&As and networking events" | "OTHER";
-        /** @enum {string} */
-        HackOutreach: "Instagram" | "Twitter/X" | "TikTok" | "Discord" | "Facebook" | "LinkedIn" | "Reddit" | "Word of Mouth" | "CS Department Email" | "Posters/Flyers on Campus" | "Slack" | "HackIllinois Newsletter" | "OTHER";
         ListRoles: {
             userIds: components["schemas"]["UserId"][];
         };
@@ -5265,8 +5426,6 @@ export interface components {
             declined: number;
             pending: number;
         };
-        /** @enum {string} */
-        Race: "American Indian or Alaska Native" | "Arab or Middle Eastern" | "Black or African American" | "East Asian" | "Hispanic or Latino" | "Native Hawaiian or Pacific Islander" | "South East Asian" | "South Asian" | "White" | "Other" | "Prefer Not To Answer";
         /**
          * @description Must be a valid HTTPS URL (or HTTP for localhost)
          * @example https://hackillinois.org/register
@@ -5278,96 +5437,124 @@ export interface components {
         };
         /**
          * @example {
-         *       "preferredName": "Ronakin",
-         *       "legalName": "Ronakin Kanandini",
-         *       "emailAddress": "rpak@gmail.org",
-         *       "university": "University of Illinois Urbana-Champaign",
-         *       "hackEssay1": "I love hack",
-         *       "hackEssay2": "I love hack",
-         *       "optionalEssay": "",
-         *       "resumeFileName": "https://www.google.com",
-         *       "location": "Urbana",
-         *       "gender": "Prefer Not To Answer",
-         *       "degree": "Associates' Degree",
-         *       "major": "Computer Science",
-         *       "gradYear": 0,
-         *       "proEssay": "I wanna be a Knight",
-         *       "considerForGeneral": true,
-         *       "requestedTravelReimbursement": false,
-         *       "dietaryRestrictions": [
-         *         "Vegetarian"
-         *       ],
+         *       "firstName": "Ronakin",
+         *       "lastName": "Kanandini",
+         *       "age": "21",
+         *       "email": "rpak@gmail.org",
+         *       "gender": "Prefer Not to Answer",
          *       "race": [
-         *         "Prefer Not To Answer"
+         *         "Prefer Not to Answer"
          *       ],
-         *       "hackInterest": [
-         *         "Meeting new people"
-         *       ],
-         *       "hackOutreach": [
-         *         "Instagram"
-         *       ],
-         *       "userId": "github1234",
-         *       "hasSubmitted": false
+         *       "country": "United States",
+         *       "state": "Illinois",
+         *       "school": "University of Illinois Urbana-Champaign",
+         *       "education": "Undergraduate University (3+ year)",
+         *       "graduate": "Spring 2026",
+         *       "major": "Computer science, computer engineering, or software engineering",
+         *       "underrepresented": "No",
+         *       "hackathonsParticipated": "2-3",
+         *       "userId": "github1234"
          *     }
          */
-        RegistrationApplication: components["schemas"]["RegistrationApplicationRequest"] & {
+        RegistrationApplicationDraft: components["schemas"]["RegistrationApplicationDraftRequest"] & {
             userId: components["schemas"]["UserId"];
-            hasSubmitted: boolean;
         };
         /**
          * @example {
-         *       "preferredName": "Ronakin",
-         *       "legalName": "Ronakin Kanandini",
-         *       "emailAddress": "rpak@gmail.org",
-         *       "university": "University of Illinois Urbana-Champaign",
-         *       "hackEssay1": "I love hack",
-         *       "hackEssay2": "I love hack",
-         *       "optionalEssay": "",
-         *       "resumeFileName": "https://www.google.com",
-         *       "location": "Urbana",
-         *       "gender": "Prefer Not To Answer",
-         *       "degree": "Associates' Degree",
-         *       "major": "Computer Science",
-         *       "gradYear": 0,
-         *       "proEssay": "I wanna be a Knight",
-         *       "considerForGeneral": true,
-         *       "requestedTravelReimbursement": false,
-         *       "dietaryRestrictions": [
-         *         "Vegetarian"
-         *       ],
+         *       "firstName": "Ronakin",
+         *       "lastName": "Kanandini",
+         *       "age": "21",
+         *       "email": "rpak@gmail.org",
+         *       "gender": "Prefer Not to Answer",
          *       "race": [
-         *         "Prefer Not To Answer"
+         *         "Prefer Not to Answer"
          *       ],
-         *       "hackInterest": [
-         *         "Meeting new people"
-         *       ],
-         *       "hackOutreach": [
-         *         "Instagram"
-         *       ]
+         *       "country": "United States",
+         *       "state": "Illinois",
+         *       "school": "University of Illinois Urbana-Champaign",
+         *       "education": "Undergraduate University (3+ year)",
+         *       "graduate": "Spring 2026",
+         *       "major": "Computer science, computer engineering, or software engineering",
+         *       "underrepresented": "No",
+         *       "hackathonsParticipated": "2-3"
          *     }
          */
-        RegistrationApplicationRequest: {
-            preferredName: string;
-            legalName: string;
-            emailAddress: string | "";
-            gender: components["schemas"]["Gender"];
-            race: components["schemas"]["Race"][];
-            resumeFileName?: string;
-            requestedTravelReimbursement: boolean;
-            location: string;
-            degree: components["schemas"]["Degree"];
+        RegistrationApplicationDraftRequest: {
+            firstName?: string;
+            lastName?: string;
+            preferredName?: string;
+            age?: string;
+            /** Format: email */
+            email?: string;
+            gender?: string;
+            race?: string[];
+            country?: string;
+            state?: string;
+            school?: string;
+            education?: string;
+            graduate?: string;
+            major?: string;
+            underrepresented?: string;
+            hackathonsParticipated?: string;
+            application1?: string;
+            application2?: string;
+            applicationOptional?: string;
+            applicationPro?: string;
+            attribution?: string;
+            eventInterest?: string;
+            requestTravelReimbursement?: boolean;
+        };
+        /**
+         * @example {
+         *       "firstName": "Ronakin",
+         *       "lastName": "Kanandini",
+         *       "age": "21",
+         *       "email": "rpak@gmail.org",
+         *       "gender": "Prefer Not to Answer",
+         *       "race": [
+         *         "Prefer Not to Answer"
+         *       ],
+         *       "country": "United States",
+         *       "state": "Illinois",
+         *       "school": "University of Illinois Urbana-Champaign",
+         *       "education": "Undergraduate University (3+ year)",
+         *       "graduate": "Spring 2026",
+         *       "major": "Computer science, computer engineering, or software engineering",
+         *       "underrepresented": "No",
+         *       "hackathonsParticipated": "2-3",
+         *       "application1": "I love hack",
+         *       "application2": "I love hack",
+         *       "applicationOptional": "",
+         *       "applicationPro": "I wanna be a Pro",
+         *       "attribution": "Word of Mouth",
+         *       "eventInterest": "Meeting New People",
+         *       "requestTravelReimbursement": false
+         *     }
+         */
+        RegistrationApplicationSubmittedRequest: {
+            firstName: string;
+            lastName: string;
+            preferredName?: string;
+            age: string;
+            /** Format: email */
+            email: string;
+            gender: string;
+            race: string[];
+            country: string;
+            state?: string;
+            school: string;
+            education: string;
+            graduate: string;
             major: string;
-            minor?: string;
-            university: string;
-            gradYear: number;
-            hackInterest: components["schemas"]["HackInterest"][];
-            hackOutreach: components["schemas"]["HackOutreach"][];
-            dietaryRestrictions: string[];
-            hackEssay1: string;
-            hackEssay2: string;
-            optionalEssay?: string;
-            proEssay?: string;
-            considerForGeneral?: boolean;
+            underrepresented: string;
+            hackathonsParticipated: string;
+            application1: string;
+            application2: string;
+            applicationOptional?: string;
+            applicationPro?: string;
+            attribution: string;
+            eventInterest: string;
+            requestTravelReimbursement: boolean;
         };
         /**
          * @example {
@@ -5423,14 +5610,14 @@ export interface components {
         };
         ResumeBookEntry: {
             userId: components["schemas"]["UserId"];
-            emailAddress: string | "";
-            legalName: string;
-            location: string;
-            university: string;
-            degree: components["schemas"]["Degree"];
+            /** Format: email */
+            email: string;
+            firstName: string;
+            lastName: string;
+            school: string;
+            education: string;
             major: string;
-            minor?: string;
-            gradYear: number;
+            graduate: string;
         };
         ResumeBookFilter: {
             graduations?: (number | null)[];
@@ -5473,6 +5660,7 @@ export interface components {
             /** @enum {boolean} */
             success: true;
             userId: components["schemas"]["UserId"];
+            eventName: string;
             /**
              * @example [
              *       "Vegan",
@@ -5492,6 +5680,7 @@ export interface components {
         ScanEvent: {
             /** @enum {boolean} */
             success: true;
+            eventName: string;
             /**
              * @description Points added from checking into the event
              * @example 5
