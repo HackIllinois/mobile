@@ -89,6 +89,17 @@ export default function DuelScreen() {
         }
         await PermissionsAndroid.requestMultiple(permissions);
       }
+
+      // --- ZOMBIE FIX START ---
+      // Force kill any previous session before starting a new one
+      LocalConnection.EndConnection();
+      
+      // Short delay to ensure cleanup processes, then start
+      setTimeout(() => {
+          if (isHost) LocalConnection.startAdvertising();
+          else LocalConnection.startScanning();
+      }, 500);
+      // --- ZOMBIE FIX END ---
     };
     checkPermissions();
     checkBadExit();
@@ -210,13 +221,17 @@ export default function DuelScreen() {
     }
   };
 
+  // --- ZOMBIE FIX: Manual Refresh Function ---
   const refreshLobby = () => {
-      setFoundRooms([]);
-      LocalConnection.EndConnection();
+      setFoundRooms([]); // Clear UI immediately
+      LocalConnection.EndConnection(); // Kill native scan
+      
+      // Wait for kill to finish, then restart scan
       setTimeout(() => {
           if(!isHost) LocalConnection.startScanning();
-      }, 200);
+      }, 500);
   };
+  // ------------------------------------------
 
   const startGameSequence = async () => {
     await setMatchActive(true);
@@ -363,7 +378,6 @@ export default function DuelScreen() {
     LocalConnection.sendData(JSON.stringify({ type: "FIRE" }));
   };
 
-  // FIX: SINGLE EXIT FUNCTION FOR ALL SCENARIOS
   const handleExit = async () => {
       // 1. If currently playing, it's a "Rage Quit" -> Send message & Penalize
       if (gameState === "PLAYING" || gameState === "ROUND_OVER") {
@@ -436,9 +450,12 @@ export default function DuelScreen() {
                     </TouchableOpacity>
                 )}
                 />
+                
+                {/* --- ZOMBIE FIX: ADDED REFRESH BUTTON --- */}
                 <TouchableOpacity style={styles.refreshBtn} onPress={refreshLobby}>
                     <Text style={{color: 'white'}}>Refresh List</Text>
                 </TouchableOpacity>
+                {/* --------------------------------------- */}
             </>
           )}
         </View>
@@ -473,7 +490,6 @@ export default function DuelScreen() {
                         Final Score: {scores.me} - {scores.enemy}
                     </Text>
                     
-                    {/* FIX: Bind this button to the same robust handleExit function */}
                     <TouchableOpacity style={styles.resetBtn} onPress={handleExit}>
                         <Text style={styles.btnText}>Exit to Menu</Text>
                     </TouchableOpacity>
