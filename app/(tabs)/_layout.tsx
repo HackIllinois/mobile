@@ -10,7 +10,7 @@ export default function Layout() {
   return (
     <QueryClientProvider client={queryClient}>
       <Tabs
-        initialRouteName="Duel"
+        initialRouteName="DuelLobby"
         screenOptions={{
           headerShown: false,
           tabBarShowLabel: false,
@@ -18,18 +18,7 @@ export default function Layout() {
         }}
       >
         <Tabs.Screen
-          name="Duel"
-          options={{
-            tabBarIcon: ({ color, size }) => (
-              <Image
-                source={require("../../assets/qr.png")}
-                style={{ width: size, height: size, tintColor: color }}
-              />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="DuelAndroid"
+          name="DuelLobby"
           options={{
             tabBarIcon: ({ color, size }) => (
               <Image

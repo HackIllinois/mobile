@@ -9,6 +9,19 @@ dist/
 web-build/
 expo-env.d.ts
 
+# Android
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+**/android/build/
+**/android/.gradle/
+
+# iOS
+ios/build/
+ios/Pods/
+ios/Podfile.lock
+
 # Native
 .kotlin/
 *.orig.*

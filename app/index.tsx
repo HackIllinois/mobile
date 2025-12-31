@@ -4,5 +4,5 @@ import React, { useEffect, useState } from "react";
 
 export default function Index() {
   // Go straight to Duel screen for testing
-  return <Redirect href="(tabs)/Duel" />;
+  return <Redirect href="(tabs)/DuelLobby" />;
 }
