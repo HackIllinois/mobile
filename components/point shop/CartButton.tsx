@@ -28,8 +28,8 @@ const styles = StyleSheet.create({
   button: {
     backgroundColor: "#222",
     borderRadius: 24,
-    paddingVertical: 10,
-    paddingHorizontal: 28,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
     alignItems: "center",
     justifyContent: "center",
     elevation: 2,
