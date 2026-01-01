@@ -1,10 +1,10 @@
 import { useEffect, useRef } from "react";
-import { StyleSheet, Animated, Easing, Image, Dimensions } from "react-native";
+import { StyleSheet, Animated, Easing, Dimensions } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Clouds from "../../../assets/onboarding/loading/clouds.svg";
 import TinyStars from "../../../assets/onboarding/loading/tiny stars.svg";
-const AstronautImage = require("../../../assets/onboarding/loading/astronaut.png");
-const TextImage = require("../../../assets/onboarding/loading/hackillinois text.png");
+import Astronaut from "../../../assets/onboarding/loading/astronaut.svg";
+import HackIllinoisText from "../../../assets/onboarding/loading/hackillinois-text.svg";
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -213,19 +213,11 @@ export default function LoadingScreen({ onFinish }: LoadingScreenProps) {
             },
           ]}
         >
-          <Image
-            source={AstronautImage}
-            style={{ width: 270.86, height: 292 }}
-            resizeMode="contain"
-          />
+          <Astronaut width={270.86} height={292} />
         </Animated.View>
 
         <Animated.View style={[styles.textContainer, { opacity: textOpacity }]}>
-          <Image
-            source={TextImage}
-            style={{ width: 186, height: 104 }}
-            resizeMode="contain"
-          />
+          <HackIllinoisText width={186} height={104} />
         </Animated.View>
 
         <Animated.View style={styles.loadingBarContainer}>
