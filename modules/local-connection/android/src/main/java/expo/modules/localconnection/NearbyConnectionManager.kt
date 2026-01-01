@@ -5,11 +5,21 @@ import android.os.Build
 import android.util.Log
 import com.google.android.gms.nearby.Nearby
 import com.google.android.gms.nearby.connection.*
+import com.google.android.gms.nearby.connection.Mediums
 import java.nio.charset.StandardCharsets
+
+enum class ConnectionMedium {
+    BLUETOOTH,  // Bluetooth only (lower latency, shorter range)
+    WIFI,       // WiFi only (higher bandwidth, longer range)
+    ALL         // Both (default - lets system choose)
+}
 
 class NearbyConnectionManager(private val context: Context) {
     private val SERVICE_ID = "shooter-game" // Aligned with iOS SERVICE_TYPE
     private val STRATEGY = Strategy.P2P_CLUSTER // P2P_CLUSTER allows Any-to-Any connections
+    
+    // Connection medium preference
+    private var connectionMedium: ConnectionMedium = ConnectionMedium.BLUETOOTH
     
     // Get device name safely
     private var myPeerName = "${Build.MANUFACTURER} ${Build.MODEL}"
@@ -41,8 +51,28 @@ class NearbyConnectionManager(private val context: Context) {
         return myOpponentName
     }
 
+    fun setMedium(medium: String) {
+        connectionMedium = when (medium.uppercase()) {
+            "BLUETOOTH" -> ConnectionMedium.BLUETOOTH
+            "WIFI" -> ConnectionMedium.WIFI
+            else -> ConnectionMedium.ALL
+        }
+        Log.d("Nearby", "Connection medium set to: $connectionMedium")
+    }
+
+    private fun getMediums(): Int {
+        return when (connectionMedium) {
+            ConnectionMedium.BLUETOOTH -> Mediums.BLE
+            ConnectionMedium.WIFI -> Mediums.WIFI_LAN
+            ConnectionMedium.ALL -> Mediums.ALL
+        }
+    }
+
     fun startAdvertising() {
-        val options = AdvertisingOptions.Builder().setStrategy(STRATEGY).build()
+        val options = AdvertisingOptions.Builder()
+            .setStrategy(STRATEGY)
+            .setMediums(getMediums())
+            .build()
         connectionsClient.startAdvertising(
             myPeerName,
             SERVICE_ID,
@@ -52,7 +82,10 @@ class NearbyConnectionManager(private val context: Context) {
     }
 
     fun startDiscovery() {
-        val options = DiscoveryOptions.Builder().setStrategy(STRATEGY).build()
+        val options = DiscoveryOptions.Builder()
+            .setStrategy(STRATEGY)
+            .setMediums(getMediums())
+            .build()
         connectionsClient.startDiscovery(
             SERVICE_ID,
             endpointDiscoveryCallback,

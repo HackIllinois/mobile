@@ -82,6 +82,11 @@ class LocalConnectionModule : Module() {
       sessionManager.getOpponentName()
     }
 
+    // Set connection medium: "BLUETOOTH", "WIFI", or "ALL"
+    Function("setConnectionMedium") { medium: String ->
+      sessionManager.setMedium(medium)
+    }
+
     Function("startAdvertising") {
       // NOTE: Ensure 'startAdvertising()' is public in NearbyConnectionManager
       // OR use sessionManager.start() if you want to trigger both at once.

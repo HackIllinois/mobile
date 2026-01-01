@@ -3,68 +3,170 @@ import UIKit
 
 class MultipeerSessionManager: NSObject {
     private let SERVICE_TYPE = "shooter-game"
-    private let myPeerId = MCPeerID(displayName: UIDevice.current.name)
+    private var myPeerId: MCPeerID
     
-    private var session: MCSession
-    private var advertiser: MCNearbyServiceAdvertiser
-    private var browser: MCNearbyServiceBrowser
+    private var session: MCSession!
+    private var advertiser: MCNearbyServiceAdvertiser?
+    private var browser: MCNearbyServiceBrowser?
     
-    var onPeerConnected: ((String) -> Void)?
-    var onPeerDisconnected: ((String) -> Void)?
-    var onDataReceived: ((Data, String) -> Void)?
+    // Track discovered peers for joinRoom/acceptInvitation
+    private var discoveredPeers: [String: MCPeerID] = [:] // endpointId -> MCPeerID
+    private var pendingInvitations: [String: (Bool, MCSession?) -> Void] = [:] // endpointId -> invitationHandler
+    private var connectedPeerNames: [String: String] = [:] // endpointId -> displayName
+    
+    private var myOpponentName: String?
+    
+    // --- CALLBACKS (Matching Android) ---
+    var onOpponentFound: ((String, String) -> Void)?        // (endpointId, endpointName)
+    var onEndpointLost: ((String) -> Void)?                 // (endpointId)
+    var onConnectionRequest: ((String, String) -> Void)?    // (endpointId, endpointName)
+    var onPeerConnected: ((String) -> Void)?                // (peerName)
+    var onPeerDisconnected: ((String) -> Void)?             // (peerName)
+    var onDataReceived: ((Data, String) -> Void)?           // (data, peerName)
 
     override init() {
-        self.session = MCSession(peer: myPeerId, securityIdentity: nil, encryptionPreference: .required)
-        self.advertiser = MCNearbyServiceAdvertiser(peer: myPeerId, discoveryInfo: nil, serviceType: SERVICE_TYPE)
-        self.browser = MCNearbyServiceBrowser(peer: myPeerId, serviceType: SERVICE_TYPE)
-        
+        self.myPeerId = MCPeerID(displayName: UIDevice.current.name)
         super.init()
-        
-        self.session.delegate = self
-        self.advertiser.delegate = self
-        self.browser.delegate = self
-    }
-
-    func start() {
-        advertiser.startAdvertisingPeer()
-        browser.startBrowsingForPeers()
-    }
-
-    func stop() {
-        advertiser.stopAdvertisingPeer()
-        browser.stopBrowsingForPeers()
-        session.disconnect()
+        setupSession()
     }
     
+    private func setupSession() {
+        self.session = MCSession(peer: myPeerId, securityIdentity: nil, encryptionPreference: .none)
+        self.session.delegate = self
+    }
+    
+    // --- SETUP FUNCTIONS ---
+    
+    func setPeerName(_ name: String) {
+        // MCPeerID is immutable, so we need to recreate everything
+        myPeerId = MCPeerID(displayName: name)
+        setupSession()
+    }
+    
+    func getOpponentName() -> String? {
+        return myOpponentName
+    }
+    
+    // --- HOST FUNCTIONS ---
+    
+    func startAdvertising() {
+        stopAdvertising()
+        advertiser = MCNearbyServiceAdvertiser(peer: myPeerId, discoveryInfo: nil, serviceType: SERVICE_TYPE)
+        advertiser?.delegate = self
+        advertiser?.startAdvertisingPeer()
+    }
+    
+    func stopAdvertising() {
+        advertiser?.stopAdvertisingPeer()
+        advertiser = nil
+    }
+    
+    // --- JOINER FUNCTIONS ---
+    
+    func startScanning() {
+        stopScanning()
+        browser = MCNearbyServiceBrowser(peer: myPeerId, serviceType: SERVICE_TYPE)
+        browser?.delegate = self
+        browser?.startBrowsingForPeers()
+    }
+    
+    func stopScanning() {
+        browser?.stopBrowsingForPeers()
+        browser = nil
+    }
+    
+    // --- CONNECTION HANDSHAKE ---
+    
+    // Called by JS when user clicks a "Found" room
+    func joinRoom(_ endpointId: String) {
+        guard let peer = discoveredPeers[endpointId] else {
+            print("MultipeerSession: Peer not found for endpointId \(endpointId)")
+            return
+        }
+        browser?.invitePeer(peer, to: session, withContext: nil, timeout: 30)
+    }
+    
+    // Called by JS when user accepts an "Invite"
+    func acceptInvitation(_ endpointId: String) {
+        guard let handler = pendingInvitations.removeValue(forKey: endpointId) else {
+            print("MultipeerSession: No pending invitation for endpointId \(endpointId)")
+            return
+        }
+        handler(true, session)
+    }
+    
+    func rejectInvitation(_ endpointId: String) {
+        guard let handler = pendingInvitations.removeValue(forKey: endpointId) else { return }
+        handler(false, nil)
+    }
+    
+    // --- END CONNECTION ---
+    
+    func endConnection() {
+        stopAdvertising()
+        stopScanning()
+        session.disconnect()
+        discoveredPeers.removeAll()
+        pendingInvitations.removeAll()
+        connectedPeerNames.removeAll()
+        myOpponentName = nil
+    }
+    
+    // --- SEND DATA ---
+    
     func send(data: Data) {
-        // FIXED: Added space after 'guard'
         guard !session.connectedPeers.isEmpty else { return }
         
         do {
-            try session.send(data, toPeers: session.connectedPeers, with: .reliable)
+            try session.send(data, toPeers: session.connectedPeers, with: .unreliable)
         } catch {
             print("Send error: \(error)")
         }
     }
+    
+    // --- HELPER ---
+    
+    private func endpointId(for peer: MCPeerID) -> String {
+        // Use displayName as stable identifier (matches Android's endpointId concept)
+        return peer.displayName
+    }
 }
 
+// MARK: - MCSessionDelegate
 extension MultipeerSessionManager: MCSessionDelegate {
     func session(_ session: MCSession, peer peerID: MCPeerID, didChange state: MCSessionState) {
-        // FIXED: Added space between '==' and '.connected'
-        if state == .connected {
-            self.advertiser.stopAdvertisingPeer()
-            self.browser.stopBrowsingForPeers()
-            self.onPeerConnected?(peerID.displayName)
-            
-        // FIXED: Added space between '==' and '.notConnected'
-        } else if state == .notConnected {
-            self.onPeerDisconnected?(peerID.displayName)
-            self.start()
+        let endpointId = endpointId(for: peerID)
+        
+        DispatchQueue.main.async {
+            switch state {
+            case .connected:
+                self.myOpponentName = peerID.displayName
+                self.connectedPeerNames[endpointId] = peerID.displayName
+                
+                // Stop advertising/scanning to save battery
+                self.stopAdvertising()
+                self.stopScanning()
+                
+                self.onPeerConnected?(peerID.displayName)
+                
+            case .notConnected:
+                if let name = self.connectedPeerNames.removeValue(forKey: endpointId) {
+                    self.onPeerDisconnected?(name)
+                }
+                
+            case .connecting:
+                break
+                
+            @unknown default:
+                break
+            }
         }
     }
     
     func session(_ session: MCSession, didReceive data: Data, fromPeer peerID: MCPeerID) {
-        self.onDataReceived?(data, peerID.displayName)
+        DispatchQueue.main.async {
+            self.onDataReceived?(data, peerID.displayName)
+        }
     }
     
     func session(_ session: MCSession, didReceive stream: InputStream, withName streamName: String, fromPeer peerID: MCPeerID) {}
@@ -74,17 +176,49 @@ extension MultipeerSessionManager: MCSessionDelegate {
     func session(_ session: MCSession, didFinishReceivingResourceWithName resourceName: String, fromPeer peerID: MCPeerID, at localURL: URL?, withError error: Error?) {}
 }
 
+// MARK: - MCNearbyServiceAdvertiserDelegate (HOST)
 extension MultipeerSessionManager: MCNearbyServiceAdvertiserDelegate {
     func advertiser(_ advertiser: MCNearbyServiceAdvertiser, didReceiveInvitationFromPeer peerID: MCPeerID, withContext context: Data?, invitationHandler: @escaping (Bool, MCSession?) -> Void) {
-        invitationHandler(true, self.session)
+        let endpointId = endpointId(for: peerID)
+        
+        // Store the handler so JS can call acceptInvitation later
+        pendingInvitations[endpointId] = invitationHandler
+        
+        DispatchQueue.main.async {
+            // Emit "invite" event so JS can show alert and call acceptInvitation
+            self.onConnectionRequest?(endpointId, peerID.displayName)
+        }
+    }
+    
+    func advertiser(_ advertiser: MCNearbyServiceAdvertiser, didNotStartAdvertisingPeer error: Error) {
+        print("Advertiser failed: \(error)")
     }
 }
 
+// MARK: - MCNearbyServiceBrowserDelegate (JOINER)
 extension MultipeerSessionManager: MCNearbyServiceBrowserDelegate {
-    // FIXED: Added explicit type '[String: String]' before the '?'
     func browser(_ browser: MCNearbyServiceBrowser, foundPeer peerID: MCPeerID, withDiscoveryInfo info: [String: String]?) {
-        browser.invitePeer(peerID, to: self.session, withContext: nil, timeout: 10)
+        let endpointId = endpointId(for: peerID)
+        
+        // Store peer for later joinRoom call
+        discoveredPeers[endpointId] = peerID
+        
+        DispatchQueue.main.async {
+            // Emit "found" event so JS can display the room
+            self.onOpponentFound?(endpointId, peerID.displayName)
+        }
     }
     
-    func browser(_ browser: MCNearbyServiceBrowser, lostPeer peerID: MCPeerID) {}
+    func browser(_ browser: MCNearbyServiceBrowser, lostPeer peerID: MCPeerID) {
+        let endpointId = endpointId(for: peerID)
+        discoveredPeers.removeValue(forKey: endpointId)
+        
+        DispatchQueue.main.async {
+            self.onEndpointLost?(endpointId)
+        }
+    }
+    
+    func browser(_ browser: MCNearbyServiceBrowser, didNotStartBrowsingForPeers error: Error) {
+        print("Browser failed: \(error)")
+    }
 }
