@@ -1,7 +1,5 @@
 import React from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { CutCornerCard } from './CutCornerCard';
+import { View, Text, StyleSheet, Dimensions } from 'react-native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -12,10 +10,6 @@ interface UserStatsCardProps {
   rank: number;
   points: number;
   pointsToNextRank: number;
-  isEditing: boolean;
-  editedDisplayName: string;
-  onDisplayNameChange: (text: string) => void;
-  onEditPress: () => void;
 }
 
 export const UserStatsCard: React.FC<UserStatsCardProps> = ({
@@ -25,81 +19,62 @@ export const UserStatsCard: React.FC<UserStatsCardProps> = ({
   rank,
   points,
   pointsToNextRank,
-  isEditing,
-  editedDisplayName,
-  onDisplayNameChange,
-  onEditPress,
 }) => {
   return (
-    <View>
-      <CutCornerCard>
-        <Text style={styles.statsCardTitle}>USER STATS</Text>
+    <View style={styles.cardWrapper}>
+      <Text style={styles.statsCardTitle}>USER STATS</Text>
 
-        <View style={styles.statsContent}>
-          <View style={styles.nameSection}>
-            <Text style={styles.fieldLabelSmall}>NAME</Text>
-            <View style={styles.nameWithEdit}>
-              <TextInput
-                style={[
-                  styles.textInput,
-                  !isEditing && styles.textInputDisabled,
-                  isEditing && styles.textInputActive
-                ]}
-                value={isEditing ? editedDisplayName : displayName}
-                onChangeText={onDisplayNameChange}
-                editable={isEditing}
-                placeholder="Display Name"
-                placeholderTextColor="#B8B8B8"
-              />
-              <TouchableOpacity onPress={onEditPress} style={styles.editIconInline}>
-                <Ionicons name="pencil-sharp" size={18} color="#666" />
-              </TouchableOpacity>
-            </View>
-          </View>
+      <View style={styles.statsContent}>
+        <View style={styles.nameSection}>
+          <Text style={styles.fieldLabelSmall}>NAME</Text>
+          <Text style={styles.statsName}>{displayName}</Text>
+        </View>
 
-          <View style={styles.statsRow}>
-            <Text style={styles.fieldLabelSmall}>TRACK</Text>
-            <Text style={styles.statsValue}>{track}</Text>
-          </View>
+        <View style={styles.statsRow}>
+          <Text style={styles.fieldLabelSmall}>TRACK</Text>
+          <Text style={styles.statsValue}>{track}</Text>
+        </View>
 
-          <View style={styles.waveRankOuterContainer}>
-            <View style={styles.waveRankLeftSection}>
-              <View style={styles.waveRankItem}>
-                <Text style={styles.fieldLabelSmall}>WAVE</Text>
-                <View style={styles.waveBadge}>
-                  <Text style={styles.waveRankValue}>{foodWave || 1}</Text>
-                </View>
-              </View>
-
-              <View style={[styles.waveRankItem, { minWidth: SCREEN_WIDTH * 0.157 }]}>
-                <Text style={styles.fieldLabelSmall}>RANK</Text>
-                <View style={styles.rankBadge}>
-                  <Text style={styles.waveRankValue}>{rank}</Text>
-                </View>
+        <View style={styles.waveRankOuterContainer}>
+          <View style={styles.waveRankLeftSection}>
+            <View style={styles.waveRankItem}>
+              <Text style={styles.fieldLabelSmall}>WAVE</Text>
+              <View style={styles.waveBadge}>
+                <Text style={styles.waveRankValue}>{foodWave || 1}</Text>
               </View>
             </View>
 
-            <View style={styles.waveRankRightSection}>
-              <Text style={styles.pointsInfoText}>
-                You're {pointsToNextRank} points away from the next rank!
-              </Text>
+            <View style={[styles.waveRankItem, { minWidth: SCREEN_WIDTH * 0.157 }]}>
+              <Text style={styles.fieldLabelSmall}>RANK</Text>
+              <View style={styles.rankBadge}>
+                <Text style={styles.waveRankValue}>{rank}</Text>
+              </View>
             </View>
+          </View>
+
+          <View style={styles.waveRankRightSection}>
+            <Text style={styles.pointsInfoText}>
+              You're {pointsToNextRank} points away from the next rank!
+            </Text>
           </View>
         </View>
-      </CutCornerCard>
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  cardWrapper: {
+    flex: 1,
+  },
   statsCardTitle: {
     fontSize: 18,
     fontWeight: '500',
-    color: '#878787',
+    color: '#FFFFFF',
     letterSpacing: 0,
     marginBottom: 0,
     textAlign: 'left',
-    marginLeft: SCREEN_WIDTH * -0.04,
+    marginLeft: SCREEN_WIDTH * -0.01,
     marginTop: SCREEN_WIDTH * -0.019,
     lineHeight: 22,
   },
@@ -110,41 +85,33 @@ const styles = StyleSheet.create({
   nameSection: {
     marginBottom: 0,
   },
-  nameWithEdit: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingTop: 5,
-  },
   statsName: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#2D2D2D',
+    color: '#FFFFFF',
     marginBottom: 0,
     letterSpacing: 0,
     lineHeight: 20,
     fontFamily: 'Tsukimi Rounded',
     paddingTop: 5,
   },
-  editIconInline: {
-    padding: 2,
-  },
   statsRow: {
     marginBottom: 0,
   },
   fieldLabelSmall: {
     fontSize: 12,
-    color: '#B8B8B8',
+    color: '#FFE0B4',
     fontWeight: '400',
     letterSpacing: 0,
     marginBottom: 0,
+    marginTop: -3,
     fontStyle: 'italic',
     lineHeight: 12,
   },
   statsValue: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#2D2D2D',
+    color: '#FFFFFF',
     lineHeight: 20,
     letterSpacing: 0,
     fontFamily: 'Tsukimi Rounded',
@@ -168,7 +135,7 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   waveBadge: {
-    backgroundColor: '#8A8A8A',
+    backgroundColor: 'rgba(24, 1, 97, 0.8)',
     borderRadius: 6,
     paddingTop: 7,
     paddingBottom: 6,
@@ -181,7 +148,7 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   rankBadge: {
-    backgroundColor: '#8A8A8A',
+    backgroundColor: 'rgba(24, 1, 97, 0.8)',
     borderRadius: 20,
     paddingTop: 7,
     paddingBottom: 6,
@@ -203,7 +170,7 @@ const styles = StyleSheet.create({
 
   },
   waveRankRightSection: {
-    backgroundColor: '#AFAFAF',
+    backgroundColor: 'rgba(79, 23, 135, 0.5)',
     borderRadius: 20,
     flex: 1,
     marginTop: 3,
@@ -225,31 +192,5 @@ const styles = StyleSheet.create({
     textAlign: 'left',
     lineHeight: 12,
     letterSpacing: 0,
-  },
-  textInput: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#2D2D2D',
-    letterSpacing: 0,
-    lineHeight: 20,
-    fontFamily: 'Tsukimi Rounded',
-    paddingTop: 5,
-    paddingBottom: 5,
-    paddingHorizontal: 0,
-    backgroundColor: 'transparent',
-    borderWidth: 0,
-    margin: 0,
-    minWidth: 100,
-  },
-  textInputDisabled: {
-    paddingHorizontal: 0,
-  },
-  textInputActive: {
-    borderWidth: 1,
-    borderColor: '#D0D0D0',
-    backgroundColor: '#FAFAFA',
-    borderRadius: 4,
-    paddingHorizontal: 8,
-    marginLeft: -8,
   },
 });
