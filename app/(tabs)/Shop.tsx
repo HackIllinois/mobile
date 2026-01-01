@@ -12,6 +12,7 @@ import {
   Alert,
   ImageBackground,
   Pressable,
+  Image,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import TypeWriter from "react-native-typewriter";
@@ -32,11 +33,11 @@ const tutorialTexts = [
 
 const getSpacing = (screenHeight: number) => {
   if (screenHeight < 700) {
-    return { cartMargin: 15, rowSpacer: 45, bottomPadding: 0 };
+    return { cartMargin: 40, rowSpacer: 45, bottomPadding: 0 };
   } else if (screenHeight < 850) {
-    return { cartMargin: 20, rowSpacer: 70, bottomPadding: 20 };
+    return { cartMargin: 40, rowSpacer: 60, bottomPadding: 5 };
   }
-  return { cartMargin: 40, rowSpacer: 80, bottomPadding: 20 };
+  return { cartMargin: 45, rowSpacer: 80, bottomPadding: 20 };
 };
 
 const chunkItems = (items: ShopItem[]): ShopItem[][] => {
@@ -68,8 +69,7 @@ export default function PointShop() {
   useEffect(() => {
     const checkTutorial = async () => {
       try {
-        // const completed = await AsyncStorage.getItem(TUTORIAL_KEY);
-        const completed = false
+        const completed = await AsyncStorage.getItem(TUTORIAL_KEY);
 
         if (!completed) {
           setTutorialStep(0);
@@ -167,6 +167,11 @@ export default function PointShop() {
   return (
     <ImageBackground source={backgroundSource} style={styles.container} resizeMode="cover">
       <SafeAreaView style={[styles.safeArea, { paddingBottom: spacing.bottomPadding }]}>
+        <Image
+          source={require("../../assets/point shop/point-shop-title.png")}
+          style={styles.titleImage}
+          resizeMode="contain"
+        />
         <View style={styles.contentContainer}>
           <View style={[styles.cartButtonContainer, { marginBottom: spacing.cartMargin }]}>
             <CartButton
@@ -215,7 +220,7 @@ export default function PointShop() {
             <TypeWriter
               key={typewriterKey}
               typing={1}
-              initialDelay={100}
+              initialDelay={50}
               minDelay={10}
               maxDelay={20}
               style={styles.tutorialText}
@@ -245,10 +250,18 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
-    justifyContent: "flex-end",
+  },
+  titleImage: {
+    width: 200,
+    height: 60,
+    marginLeft: 20,
+    marginTop: 10,
+    alignSelf: "flex-start",
   },
   contentContainer: {
+    flex: 1,
     alignItems: "center",
+    justifyContent: "flex-end",
   },
   cartButtonContainer: {
     alignSelf: "center",
