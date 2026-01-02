@@ -27,8 +27,8 @@ const TUTORIAL_KEY = "@shop_tutorial_completed";
 
 const tutorialTexts = [
   "Welcome to the Point Shop traveller!",
-  "Use your earned points to purchase items. \nSwipe left or right to see more on each row.",
-  "Spend them wisely. Good luck with your travels.",
+  "Use your earned points to buy items.\nSwipe see more on each row.",
+  "Spend em' wisely. Good luck with your journey...",
 ];
 
 const getSpacing = (screenHeight: number) => {
@@ -69,7 +69,8 @@ export default function PointShop() {
   useEffect(() => {
     const checkTutorial = async () => {
       try {
-        const completed = await AsyncStorage.getItem(TUTORIAL_KEY);
+        // const completed = await AsyncStorage.getItem(TUTORIAL_KEY);
+        const completed = false
 
         if (!completed) {
           setTutorialStep(0);
@@ -294,12 +295,12 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   tutorialTextBox: {
-    backgroundColor: "rgba(0, 0, 0, 0.9)",
+    backgroundColor: "rgba(0, 0, 0, 1)",
     borderRadius: 16,
-    paddingVertical: 20,
-    paddingHorizontal: 16,
+    paddingVertical: 40,
+    paddingHorizontal: 30,
     marginHorizontal: 20,
-    maxWidth: SCREEN_WIDTH - 10,
+    maxWidth: SCREEN_WIDTH - 4,
   },
   tutorialText: {
     color: "white",
