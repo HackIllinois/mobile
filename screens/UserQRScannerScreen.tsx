@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Text, View, StyleSheet, TouchableOpacity } from 'react-native';
+import { Text, View, StyleSheet, TouchableOpacity, Dimensions, ImageBackground } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
 import axios from 'axios';
 import api from '../api';
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 import CameraScannerView from '../components/qr scanner/CameraScanner';
 import { ScanResultModal, ScanResult } from '../components/qr scanner/ScanModals';
@@ -132,47 +134,40 @@ export default function UserQRScannerScreen() {
     return <View />;
   }
 
-  // View 1: Camera Scanner
-  if (isScanning) {
-    return (
-      <>
-        <CameraScannerView
-          onScanned={handleQRCodeScanned}
-          onClose={() => setIsScanning(false)}
-          isLoading={isLoading}
-          isScanned={scanned}
-        />
-        <ScanResultModal
-          visible={!!scanResult}
-          onClose={closeModalAndReset}
-          result={scanResult}
-        />
-      </>
-    );
-  }
-
-  // View 2: (Default) Scanner Menu 
   return (
-    <SafeAreaView style={styles.menuContainer}>
-      <Text style={styles.menuTitle}>User Scanner</Text>
-      
-      <TouchableOpacity style={styles.menuButton} onPress={handleScanPress}>
-        <Text style={styles.menuButtonText}>Event Check-in</Text>
-        <Text style={styles.menuButtonArrow}>{">"}</Text>
-      </TouchableOpacity>
-      
-      <TouchableOpacity style={styles.menuButtonSecondary}>
-        <Text style={styles.menuButtonText}>Mentor Check-in (Placeholder)</Text>
-      </TouchableOpacity>
-      
-      <TouchableOpacity style={styles.menuButtonSecondary}>
-        <Text style={styles.menuButtonText}>Placeholder</Text>
-      </TouchableOpacity>
-      
-      <TouchableOpacity style={styles.menuButtonBottom}>
-        <Text style={styles.menuButtonText}>Placeholder</Text>
-      </TouchableOpacity>
-    </SafeAreaView>
+    <>
+      {/* Main Menu View */}
+      <ImageBackground
+        source={require('../assets/qr-scanner/background.png')}
+        style={styles.menuContainer}
+        resizeMode="cover"
+      >
+        <SafeAreaView style={styles.safeArea}>
+          <Text style={styles.menuTitle}>USER SCANNER</Text>
+
+          <TouchableOpacity style={styles.menuButton} onPress={handleScanPress}>
+            <Text style={styles.menuButtonText}>Event Check-in</Text>
+            <Text style={styles.menuButtonArrow}>{">"}</Text>
+          </TouchableOpacity>
+        </SafeAreaView>
+      </ImageBackground>
+
+      {/* Camera Scanner Modal */}
+      <CameraScannerView
+        visible={isScanning}
+        onScanned={handleQRCodeScanned}
+        onClose={() => setIsScanning(false)}
+        isLoading={isLoading}
+        isScanned={scanned}
+      />
+
+      {/* Scan Result Modal */}
+      <ScanResultModal
+        visible={!!scanResult}
+        onClose={closeModalAndReset}
+        result={scanResult}
+      />
+    </>
   );
 }
 
@@ -180,17 +175,23 @@ export default function UserQRScannerScreen() {
 const styles = StyleSheet.create({
   menuContainer: {
     flex: 1,
-    backgroundColor: 'white',
+  },
+  safeArea: {
+    flex: 1,
     paddingVertical: 20,
     paddingHorizontal: 30,
-    paddingBottom: 100, 
+    paddingBottom: 100,
   },
   menuTitle: {
-    fontSize: 40,
+    position: 'absolute',
+    width: SCREEN_WIDTH * 0.565, 
+    height: SCREEN_HEIGHT * 0.063, 
+    top: SCREEN_HEIGHT * 0.068, 
+    left: SCREEN_WIDTH * 0.079, 
+    fontSize: 28,
     fontWeight: 'bold',
-    color: 'black',
-    marginTop: 20,
-    marginBottom: 40,
+    color: 'white',
+    fontFamily: 'Tsukimi-Rounded-Bold',
   },
   menuButton: {
     backgroundColor: '#D9D9D9',
@@ -200,6 +201,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginTop: 120,
     marginBottom: 20,
     alignSelf: 'center',
   },

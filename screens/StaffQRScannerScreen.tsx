@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Text, View, StyleSheet, TouchableOpacity } from 'react-native';
+import { Text, View, StyleSheet, TouchableOpacity, Dimensions, ImageBackground } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
 import axios, { AxiosResponse } from 'axios';
 import api from '../api';
 
-// TODO: 
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+// TODO:
   // Test Attendee Check-in
   // Test Points Shop
 
@@ -392,77 +394,77 @@ export default function StaffQRScannerScreen() {
     return <View />;
   }
 
-  // View 1: Camera Scanner
-  if (isScanning) {
-    return (
-      <>
-        <CameraScannerView
-          onScanned={handleQRCodeScanned}
-          onClose={handleCloseScanner}
-          isLoading={isLoading}
-          isScanned={scanned}
-        />
-        <ScanResultModal
-          visible={!!scanResult}
-          onClose={closeModalAndReset}
-          result={scanResult}
-        />
-      </>
-    );
-  }
-
-  // View 2: (Default) Scanner Menu 
   return (
-    <SafeAreaView style={styles.menuContainer}>
-      <Text style={styles.menuTitle}>Staff Scanner</Text>
-      
-      <TouchableOpacity 
-        style={styles.menuButton} 
-        onPress={() => {
-          setScanMode('attendance');
-          handleScanPress();
-        }}
+    <>
+      <ImageBackground
+        source={require('../assets/qr-scanner/background.png')}
+        style={styles.menuContainer}
+        resizeMode="cover"
       >
-        <Text style={styles.menuButtonText}>Meeting Attendance</Text>
-        <Text style={styles.menuButtonArrow}>{">"}</Text>
-      </TouchableOpacity>
+        <SafeAreaView style={styles.safeArea}>
+          <Text style={styles.menuTitle}>STAFF SCANNER</Text>
 
-      <TouchableOpacity 
-        style={styles.menuButton} 
-        onPress={() => {
-            setScanMode('attendeeCheckin');
-            setIsEventModalVisible(true); 
-        }}
-      >
-        <Text style={styles.menuButtonText}>Attendee Check-in</Text>
-        <Text style={styles.menuButtonArrow}>{">"}</Text>
-      </TouchableOpacity>
-      
-      <TouchableOpacity 
-        style={styles.menuButton}
-        onPress={() => {
-          setScanMode('shopRedeem');
-          handleScanPress();
-        }}
-      >
-        <Text style={styles.menuButtonText}>Points Shop</Text>
-        <Text style={styles.menuButtonArrow}>{">"}</Text>
-      </TouchableOpacity>
-      
-      <TouchableOpacity style={styles.menuButtonBottom}>
-        <Text style={styles.menuButtonText}>Placeholder</Text>
-      </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.menuButtonFirst}
+            onPress={() => {
+              setScanMode('attendance');
+              handleScanPress();
+            }}
+          >
+            <Text style={styles.menuButtonText}>Meeting Attendance</Text>
+            <Text style={styles.menuButtonArrow}>{">"}</Text>
+          </TouchableOpacity>
 
-      {/* Render the EventSelectModal component */}
-      <EventSelectModal
-        visible={isEventModalVisible}
-        onClose={() => setIsEventModalVisible(false)}
-        onEventSelect={handleEventSelected}
-        events={mealEvents}
-        isLoading={isFetchingEvents}
-        error={fetchError}
+          <TouchableOpacity
+            style={styles.menuButton}
+            onPress={() => {
+                setScanMode('attendeeCheckin');
+                setIsEventModalVisible(true);
+            }}
+          >
+            <Text style={styles.menuButtonText}>Attendee Check-in</Text>
+            <Text style={styles.menuButtonArrow}>{">"}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.menuButton}
+            onPress={() => {
+              setScanMode('shopRedeem');
+              handleScanPress();
+            }}
+          >
+            <Text style={styles.menuButtonText}>Points Shop</Text>
+            <Text style={styles.menuButtonArrow}>{">"}</Text>
+          </TouchableOpacity>
+
+          {/* Render the EventSelectModal component */}
+          <EventSelectModal
+            visible={isEventModalVisible}
+            onClose={() => setIsEventModalVisible(false)}
+            onEventSelect={handleEventSelected}
+            events={mealEvents}
+            isLoading={isFetchingEvents}
+            error={fetchError}
+          />
+        </SafeAreaView>
+      </ImageBackground>
+
+      {/* Camera Scanner Modal */}
+      <CameraScannerView
+        visible={isScanning}
+        onScanned={handleQRCodeScanned}
+        onClose={handleCloseScanner}
+        isLoading={isLoading}
+        isScanned={scanned}
       />
-    </SafeAreaView>
+
+      {/* Scan Result Modal */}
+      <ScanResultModal
+        visible={!!scanResult}
+        onClose={closeModalAndReset}
+        result={scanResult}
+      />
+    </>
   );
 }
 
@@ -470,17 +472,23 @@ export default function StaffQRScannerScreen() {
 const styles = StyleSheet.create({
     menuContainer: {
       flex: 1,
-      backgroundColor: 'white',
+    },
+    safeArea: {
+      flex: 1,
       paddingVertical: 20,
       paddingHorizontal: 30,
-      paddingBottom: 100, 
+      paddingBottom: 100,
     },
     menuTitle: {
-      fontSize: 40,
+      position: 'absolute',
+      width: SCREEN_WIDTH * 0.565,
+      height: SCREEN_HEIGHT * 0.063, 
+      top: SCREEN_HEIGHT * 0.068, 
+      left: SCREEN_WIDTH * 0.079, 
+      fontSize: 28,
       fontWeight: 'bold',
-      color: 'black',
-      marginTop: 20,
-      marginBottom: 40,
+      color: 'white',
+      fontFamily: 'Tsukimi-Rounded-Bold',
     },
     menuButton: {
       backgroundColor: '#D9D9D9',
@@ -490,6 +498,18 @@ const styles = StyleSheet.create({
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
+      marginBottom: 20,
+      alignSelf: 'center',
+    },
+    menuButtonFirst: {
+      backgroundColor: '#D9D9D9',
+      padding: 20,
+      borderRadius: 15,
+      width: 300,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginTop: 120,
       marginBottom: 20,
       alignSelf: 'center',
     },
