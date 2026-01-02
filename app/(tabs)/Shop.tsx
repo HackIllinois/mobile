@@ -69,8 +69,7 @@ export default function PointShop() {
   useEffect(() => {
     const checkTutorial = async () => {
       try {
-        // const completed = await AsyncStorage.getItem(TUTORIAL_KEY);
-        const completed = false
+        const completed = await AsyncStorage.getItem(TUTORIAL_KEY);
 
         if (!completed) {
           setTutorialStep(0);
