@@ -54,7 +54,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
               <QRCode
                 value={qrCode}
                 size={QR_SIZE}
-                backgroundColor="#FFFFFF"
+                backgroundColor="#FFEAFE"
                 color="#000000"
               />
             ) : (
@@ -80,7 +80,7 @@ const styles = StyleSheet.create({
     paddingTop: 130,
   },
   modalContent: {
-    backgroundColor: '#FFF',
+    backgroundColor: '#FFEAFE',
     borderRadius: 30,
     width: MODAL_WIDTH,
     height: MODAL_HEIGHT,
