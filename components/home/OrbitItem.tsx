@@ -1,119 +1,141 @@
-import React from "react";
-import Svg, { Circle, Defs, Path, Text as SvgText, TextPath, G } from "react-native-svg";
-import { Dimensions, Animated, Easing } from "react-native";
-import Flag from "../../assets/home/closing-ceremony-flag.svg";
+import React, { useMemo } from "react";
+import { Dimensions, Animated, View } from "react-native";
+
+import CheckInTextPlanet from "../../assets/home/check-in_text.svg";
+import ScavengerTextPlanet from "../../assets/home/scavenger_text.svg";
+import CeremonyTextPlanet from "../../assets/home/ceremony_text.svg";
+import ShowcaseTextPlanet from "../../assets/home/showcase_text.svg";
+import HackingTextPlanet from "../../assets/home/hacking_text.svg";
+import ClosingTextPlanet from "../../assets/home/closing_text.svg";
+
+import CheckInFinished from "../../assets/home/check-in_finished.svg";
+import ScavengerFinished from "../../assets/home/scavenger_finished.svg";
+import CeremonyFinished from "../../assets/home/ceremony_finished.svg";
+import ShowcaseFinished from "../../assets/home/showcase_finished.svg";
+import HackingFinished from "../../assets/home/hacking_finished.svg";
+import ClosingFinished from "../../assets/home/closing_finished.svg";
 
 interface OrbitItemProps {
-  label?: string;
   radius: number;
-  angle: number; // angle among orbit in degrees - 0 is to right
-  animatedRotation?: Animated.Value;
-  speed?: number; // speed of orbit rotation
-  amplitude?: number; // amplitude of orbit rotation - for further orbits to move more
+  angle: number; // degrees
   centerY: number;
   size?: number;
-  textAngle?: number; // text angle around planet - its kind of messed up so fiddle with it
-  showFlag?: boolean;
-  flagOffsetY?: number;
-  flagOffsetX?: number;
-  flagScale?: number;
-  textDistance?: number; // distance from planet surface (pixels)
+  eventKey?: "checkin" | "scavenger" | "opening" | "showcase" | "hacking" | "closing";
+  dimmed?: boolean;
+
+  offsetX?: number;
+  offsetY?: number;
+
+  variant?: "normal" | "finished";
+
+  //  jiggle 
+  jiggle?: Animated.Value; // 0..1 loop
+  jigglePx?: number; // how far to slide along the orbit
 }
 
 const { width } = Dimensions.get("window");
 const CENTER_X = width / 2;
 
 export default function OrbitItem({
-  label = "Unnamed",
   radius,
   angle,
-  animatedRotation,
-  speed = 1,
-  amplitude = 1,
   centerY,
   size = 60,
-  textAngle = 0,
-  showFlag = false,
-  flagOffsetY = 0,
-  flagOffsetX = 0,
-  flagScale = 1,
-  textDistance = 10,
+  eventKey,
+  dimmed = false,
+  offsetX = 0,
+  offsetY = 0,
+  variant = "normal",
+
+  jiggle,
+  jigglePx = 10,
 }: OrbitItemProps) {
   const rad = (angle * Math.PI) / 180;
-  // const cx = CENTER_X + radius * Math.cos(rad);
-  // const cy = centerY + radius * Math.sin(rad);
-  
 
-  const planetRadius = size / 2;
-  const textRadius = planetRadius + textDistance;
+  // Base orbit position 
+  const baseX = useMemo(() => radius * Math.cos(rad), [radius, rad]);
+  const baseY = useMemo(() => radius * Math.sin(rad), [radius, rad]);
 
-  
-  const padding = textRadius + 20;
-  const svgSize = padding * 2;
-  const center = svgSize / 2;
+  // Tangent unit vector at angle
+  // tangent = (-sin(rad), cos(rad))
+  const tanX = useMemo(() => -Math.sin(rad), [rad]);
+  const tanY = useMemo(() => Math.cos(rad), [rad]);
 
-  const safeLabel = label || "Unnamed";
-  const pathId = `planet-path-${safeLabel.replace(/\s/g, "")}`;
+  const jiggleScalar: any = jiggle
+    ? jiggle.interpolate({
+        inputRange: [0, 1],
+        outputRange: [-jigglePx, jigglePx],
+      })
+    : 0;
 
-  // text path is a semicircle above the planet
-  const pathD = `
-    M ${center}, ${center - textRadius}
-    A ${textRadius} ${textRadius} 0 1 1 ${center - 0.001}, ${center - textRadius}
-  `;
+  const jiggleX: any = jiggle ? Animated.multiply(jiggleScalar, tanX) : 0;
+  const jiggleY: any = jiggle ? Animated.multiply(jiggleScalar, tanY) : 0;
 
-  
-  const flagWidth = 24 * flagScale;
-  const flagHeight = 24 * flagScale;
-  const flagX = center - flagWidth / 2 + flagOffsetX;
-  const flagY = center - planetRadius - flagHeight + flagOffsetY;
+  // Final translate = base + jiggle + manual offsets
+  const translateX: any = jiggle
+    ? Animated.add(Animated.add(baseX + offsetX, jiggleX), 0)
+    : baseX + offsetX;
+
+  const translateY: any = jiggle
+    ? Animated.add(Animated.add(baseY + offsetY, jiggleY), 0)
+    : baseY + offsetY;
+
+  const containerSize = size * 1.6;
+
+  const PlanetIcon =
+    variant === "finished"
+      ? eventKey === "checkin"
+        ? CheckInFinished
+        : eventKey === "scavenger"
+        ? ScavengerFinished
+        : eventKey === "opening"
+        ? CeremonyFinished
+        : eventKey === "showcase"
+        ? ShowcaseFinished
+        : eventKey === "hacking"
+        ? HackingFinished
+        : ClosingFinished
+      : eventKey === "checkin"
+      ? CheckInTextPlanet
+      : eventKey === "scavenger"
+      ? ScavengerTextPlanet
+      : eventKey === "opening"
+      ? CeremonyTextPlanet
+      : eventKey === "showcase"
+      ? ShowcaseTextPlanet
+      : eventKey === "hacking"
+      ? HackingTextPlanet
+      : ClosingTextPlanet;
 
   return (
     <Animated.View
       style={{
         position: "absolute",
-        top: centerY - svgSize / 2,
-        left: CENTER_X - svgSize / 2,
-        transform: [
-          // rotate orbit
-          animatedRotation
-            ? {
-                rotate: animatedRotation.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [
-                    `${(-8 * speed * amplitude)}deg`, // -8 deg to 8 deg for now
-                    `${(8 * speed * amplitude)}deg`,
-                  ], // sway instead of full spin
-                }),
-              }
-            : { rotate: "0deg" },
-
-          // move outward along the orbit
-          { translateX: radius * Math.cos(rad) },
-          { translateY: radius * Math.sin(rad) },
-        ],
+        top: centerY - containerSize / 2,
+        left: CENTER_X - containerSize / 2,
+        width: containerSize,
+        height: containerSize,
+        opacity: dimmed ? 0.55 : 1,
+        overflow: "visible",
+        transform: [{ translateX }, { translateY }],
       }}
     >
-      <Svg width={svgSize} height={svgSize} viewBox={`0 0 ${svgSize} ${svgSize}`}>
-        <Circle cx={center} cy={center} r={planetRadius} fill="#ccc" />
-
-        {showFlag && (
-          <G x={flagX} y={flagY}>
-            <Flag width={flagWidth} height={flagHeight} />
-          </G>
-        )}
-
-        <Defs>
-          <Path id={pathId} d={pathD} />
-        </Defs>
-
-        <G origin={`${center}, ${center}`} rotation={textAngle}>
-          <SvgText fill="#000" fontSize="10" letterSpacing="0.5">
-            <TextPath href={`#${pathId}`} startOffset="50%" textAnchor="middle">
-              {safeLabel}
-            </TextPath>
-          </SvgText>
-        </G>
-      </Svg>
+      <View
+        style={{
+          width: containerSize,
+          height: containerSize,
+          justifyContent: "center",
+          alignItems: "center",
+          overflow: "visible",
+        }}
+      >
+        <PlanetIcon
+          width={containerSize}
+          height={containerSize}
+          preserveAspectRatio="xMidYMid meet"
+          style={{ overflow: "visible" }}
+        />
+      </View>
     </Animated.View>
   );
 }

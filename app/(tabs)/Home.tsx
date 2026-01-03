@@ -1,11 +1,26 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, StyleSheet, Dimensions, Animated, Easing } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
 import EventOrbit from "../../components/home/EventOrbit";
 import OrbitItem from "../../components/home/OrbitItem";
+import RocketOrbit from "../../components/home/RocketOrbit";
 import { getTimeRemaining } from "../../components/home/countdown";
+import HomeBackground from "../../assets/home/home_bg.svg";
+import TimerOutline from "../../assets/home/timer_outline.svg";
 
 const { width, height } = Dimensions.get("window");
+
+export type StageKey =
+  | "checkin"
+  | "scavenger"
+  | "opening"
+  | "showcase"
+  | "hacking"
+  | "closing";
+
+const STAGE_ORDER: StageKey[] = ["checkin", "scavenger", "opening", "showcase", "hacking", "closing"];
+const stageIndex = (s: StageKey) => STAGE_ORDER.indexOf(s);
 
 interface Orbit {
   radius: number;
@@ -14,69 +29,87 @@ interface Orbit {
 }
 
 interface OrbitEvent {
-  label: string;
+  eventKey: Exclude<StageKey, "closing">;
   angle: number;
   orbit: Orbit;
   size: number;
-  textAngle?: number;
   fixed?: false;
+  offsetX?: number;
+  offsetY?: number;
+
+  
+  jigglePx?: number; // sway amount
+  jigglePeriodMs?: number; // sway period
 }
 
 interface FixedEvent {
-  label: string;
+  eventKey: "closing";
   x: number;
   y: number;
   size: number;
   fixed: true;
+  offsetX?: number;
+  offsetY?: number;
+
+  // closing jiggle, none for now ofc
+  jigglePx?: number;
+  jigglePeriodMs?: number;
 }
 
 type EventItem = OrbitEvent | FixedEvent;
 
 export default function HomeScreen() {
-  const targetDate = new Date("2026-02-20T09:00:00");
+  const targetDate = new Date("2026-02-27T18:00:00");
   const [timeLeft, setTimeLeft] = useState(getTimeRemaining(targetDate));
-  // const rotation = React.useRef(new Animated.Value(0)).current;
+
+  // replace later with actual stage logic based on timings
+  const [currentStage, setCurrentStage] = useState<StageKey>("opening");
 
   const anchorX = width / 2;
-  const anchorY = height * 0.25; // vertical position for Closing Ceremony
-  const orbitGap = width * 0.17; // spacing between orbits
-  const orbitScale = 1.2; // scale all orbits
+  const anchorY = height * 0.25;
+  const orbitGap = width * 0.17;
+  const orbitScale = 1.2;
+  const orbitMultipliers = [1.5, 1.2, 1.2, 1.2, 1.15];
 
-  const orbitMultipliers = [1.3, 1.1, 1.1, 1.1, 1.1]; // distance between orbits
-
-  
   const orbits: Orbit[] = Array.from({ length: 6 }, (_, i) => ({
-    radius: orbitScale * (i + 1) * orbitGap * orbitMultipliers[i], // increase scale for larger rings
+    radius: orbitScale * (i + 1) * orbitGap * orbitMultipliers[i],
     centerX: anchorX,
     centerY: anchorY,
   }));
 
   const items: EventItem[] = [
-    { label: "closing   ceremony", x: anchorX, y: anchorY, size: 80, fixed: true },
-    { label: "hacking!", orbit: orbits[0], angle: 110, size: 50, textAngle: 140 },
-    { label: "project showcase", orbit: orbits[1], angle: 80, size: 50, textAngle: 100 },
-    { label: "opening ceremony", orbit: orbits[2], angle: 100, size: 50, textAngle: 110 },
-    { label: "scavenger hunt", orbit: orbits[3], angle: 80, size: 50, textAngle: 100 },
-    { label: "check-in", orbit: orbits[4], angle: 90, size: 50, textAngle: 140 },
+    { eventKey: "closing", x: anchorX, y: anchorY, size: 150, fixed: true },
+
+    { eventKey: "hacking", orbit: orbits[0], angle: 140, size: 90, offsetY: -6, jigglePx: 14, jigglePeriodMs: 5200 },
+    { eventKey: "showcase", orbit: orbits[1], angle: 60, size: 90, jigglePx: 12, jigglePeriodMs: 6100 },
+    { eventKey: "opening", orbit: orbits[2], angle: 105, size: 90, jigglePx: 10, jigglePeriodMs: 6900 },
+    { eventKey: "scavenger", orbit: orbits[3], angle: 70, size: 90, jigglePx: 12, jigglePeriodMs: 7600 },
+    { eventKey: "checkin", orbit: orbits[4], angle: 100, size: 90, offsetY: -8, jigglePx: 9, jigglePeriodMs: 8400 },
   ];
 
-  const orbitAnimations = React.useRef(
-    items.map(() => new Animated.Value(0))
-  ).current;
   
+  const jiggleAnims = useRef(items.map(() => new Animated.Value(0))).current;
+
   useEffect(() => {
-    orbitAnimations.forEach((anim, i) => {
+    jiggleAnims.forEach((anim, i) => {
+      const period =
+        ("jigglePeriodMs" in items[i] && items[i].jigglePeriodMs != null)
+          ? items[i].jigglePeriodMs!
+          : 6500 + i * 700;
+
+      anim.setValue(0);
+
       Animated.loop(
         Animated.sequence([
           Animated.timing(anim, {
             toValue: 1,
-            duration: 6000 + i * 900,      // each orbit has different speed
+            duration: period / 2,
             easing: Easing.inOut(Easing.sin),
             useNativeDriver: true,
           }),
           Animated.timing(anim, {
             toValue: 0,
-            duration: 6000 + i * 900,
+            duration: period / 2,
             easing: Easing.inOut(Easing.sin),
             useNativeDriver: true,
           }),
@@ -85,10 +118,40 @@ export default function HomeScreen() {
     });
   }, []);
 
+  const currentIdx = stageIndex(currentStage);
+
+  // finished planet variants
+  const getVariantFor = (eventKey: StageKey): "normal" | "finished" => {
+    const idx = stageIndex(eventKey);
+    if (idx < currentIdx) return "finished";
+    if (currentStage === "closing" && eventKey === "closing") return "finished";
+    return "normal";
+  };
+
+  // rocket orbit
+  const rocketTarget = useMemo(() => {
+    if (currentStage === "closing") return null;
+
+    const target = items.find((it) => it.eventKey === currentStage);
+    if (!target) return null;
+
+    const ox = target.offsetX ?? 0;
+    const oy = target.offsetY ?? 0;
+
+    if ("fixed" in target && target.fixed) {
+      return { x: target.x + ox, y: target.y + oy, planetSize: target.size };
+    }
+
+    const rad = (target.angle * Math.PI) / 180;
+    return {
+      x: target.orbit.centerX + target.orbit.radius * Math.cos(rad) + ox,
+      y: target.orbit.centerY + target.orbit.radius * Math.sin(rad) + oy,
+      planetSize: target.size,
+    };
+  }, [items, currentStage]);
+
   useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft(getTimeRemaining(targetDate));
-    }, 1000);
+    const timer = setInterval(() => setTimeLeft(getTimeRemaining(targetDate)), 1000);
     return () => clearInterval(timer);
   }, []);
 
@@ -96,90 +159,111 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-      {/* Countdown */}
-      <View style={styles.header}>
+      <HomeBackground
+        width={width}
+        height={height}
+        style={StyleSheet.absoluteFill}
+        preserveAspectRatio="xMidYMid slice"
+      />
+
+      {/* timer */}
+      <View style={styles.headerOverlay} pointerEvents="none">
         <Text style={styles.timerLabel}>T-minus Liftoff</Text>
-        <Text style={styles.timerText}>
-          {formatTime(timeLeft.days)}:{formatTime(timeLeft.hours)}:
-          {formatTime(timeLeft.minutes)}:{formatTime(timeLeft.seconds)}
-        </Text>
+        <View style={styles.timerPill}>
+          <TimerOutline width="100%" height="100%" style={StyleSheet.absoluteFill} />
+          <Text style={styles.timerText}>
+            {formatTime(timeLeft.days)}:{formatTime(timeLeft.hours)}:
+            {formatTime(timeLeft.minutes)}:{formatTime(timeLeft.seconds)}
+          </Text>
+        </View>
       </View>
 
-      {/* Dashed rings */}
+      {/* Rings */}
       {orbits.map((orbit, i) => (
-        <EventOrbit
-          key={i}
-          radius={orbit.radius}
-          centerY={orbit.centerY}
-          color="#444"
-          strokeWidth={1}
-        />
+        <EventOrbit key={i} radius={orbit.radius} centerY={orbit.centerY} color="#687983ff" strokeWidth={1} />
       ))}
 
       {/* Planets */}
-      {items.map((item, i) =>
-        item.fixed ? (
+      {items.map((item, i) => {
+        const jigglePx =
+          ("jigglePx" in item && item.jigglePx != null) ? item.jigglePx! : 10;
+
+        if ("fixed" in item && item.fixed) {
+          return (
+            <OrbitItem
+              key={i}
+              eventKey={item.eventKey}
+              radius={0}
+              centerY={item.y}
+              angle={0}
+              size={item.size}
+              offsetX={item.offsetX}
+              offsetY={item.offsetY}
+              variant={getVariantFor(item.eventKey)}
+            />
+          );
+        }
+
+        return (
           <OrbitItem
             key={i}
-            label={item.label}
-            radius={0}               
-            centerY={item.y}         
-            angle={0}                
-            size={item.size}
-            textAngle={122}
-            showFlag={true}        
-            flagScale={1.2}   
-            flagOffsetY={2}   
-            flagOffsetX={4}   
-            textDistance={4}
-          />
-        ) : (
-          <OrbitItem
-            key={i}
-            label={item.label}
+            eventKey={item.eventKey}
             radius={item.orbit.radius}
             centerY={item.orbit.centerY}
             angle={item.angle}
-            animatedRotation={orbitAnimations[i]}
-            speed={2.5 - i * 0.2}
-            amplitude={0.3 + i * 0.3}
             size={item.size}
-            textAngle={item.textAngle ?? 0}
+            offsetX={item.offsetX}
+            offsetY={item.offsetY}
+            variant={getVariantFor(item.eventKey)}
+            jiggle={jiggleAnims[i]}
+            jigglePx={jigglePx}
           />
-        )
+        );
+      })}
+
+      {/* Rocket */}
+      {rocketTarget && (
+        <RocketOrbit
+          centerX={rocketTarget.x}
+          centerY={rocketTarget.y + rocketTarget.planetSize * 0.15}
+          orbitRadius={
+            currentStage === "hacking"
+              ? rocketTarget.planetSize * 0.55
+              : rocketTarget.planetSize * 0.75
+          }
+          size={60}
+          periodMs={7800}
+          startAngleDeg={0}
+          clockwise={false}
+        />
       )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
-  header: {
+  container: { flex: 1, backgroundColor: "transparent" },
+  headerOverlay: {
+    position: "absolute",
+    top: height * 0.06,
+    left: 0,
+    right: 0,
     alignItems: "center",
-    marginTop: height * 0.02,
+    zIndex: 50,
+    elevation: 50,
   },
   timerLabel: {
-    color: "#000",
-    fontSize: 18,
-    marginBottom: 6,
+    color: "#FFFFFF",
+    fontSize: 14,
+    letterSpacing: 1.5,
+    textTransform: "uppercase",
+    marginBottom: 8,
   },
-  timerText: {
-    color: "#000",
-    fontSize: 24,
-    fontWeight: "bold",
-  },
-  fixedItem: {
-    position: "absolute",
-    backgroundColor: "#ccc",
+  timerPill: {
+    width: 190,
+    height: 44,
     justifyContent: "center",
     alignItems: "center",
   },
-  itemText: {
-    fontSize: 10,
-    color: "#000",
-    textAlign: "center",
-  },
+  timerText: { color: "#FFFFFF", fontSize: 18, fontWeight: "700", letterSpacing: 0.5 },
 });

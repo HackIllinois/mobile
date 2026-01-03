@@ -15,7 +15,7 @@ const CENTER_X = width / 2;
 export default function EventOrbit({
   radius,
   strokeWidth = 1,
-  color = "#444",
+  color = "#ffffffff",
   centerY,
 }: EventOrbitProps) {
   const size = radius * 2 + strokeWidth * 2;
