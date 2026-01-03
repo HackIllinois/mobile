@@ -30,6 +30,7 @@ export default function FullScreenModal({ visible, event, onClose, handleSave, s
       statusBarTranslucent
       onRequestClose={onClose}
     >
+      
       <View style={styles.backdrop}>
         <Pressable style={styles.backdropPressable} onPress={onClose} />
         
@@ -61,7 +62,7 @@ export default function FullScreenModal({ visible, event, onClose, handleSave, s
                     </Text>
 
                     <Text style={styles.descriptionLabel}>
-                         please install the Hackillinois mobile app
+                          {event.description}
                     </Text>
                 </View>
 
@@ -74,6 +75,14 @@ export default function FullScreenModal({ visible, event, onClose, handleSave, s
                 )}
               </ScrollView>
             </View>
+
+            {/* === PAPERCLIP IMAGE ADDED HERE === */}
+            <Image
+                source={require('../../assets/event/paperclip.png')}
+                style={styles.paperclip}
+                resizeMode="contain"
+            />
+
         </View>
       </View>
     </Modal>
@@ -97,13 +106,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  paperclip: {
+    position: 'absolute',
+    top: '20%', 
+    left: '90.5%', 
+    width: 50,   
+    height: 80,  
+    zIndex: 10,  
+    transform: [{ rotate: '-7deg' }], 
+  },
   backgroundCard: {
     position: 'absolute',
     width: '100%',
-    height: '80%',
-    backgroundColor: '#FFFFFF', 
+    height: '90%',
+    backgroundColor: '#F5C6FF', 
     borderRadius: 20,
-    transform: [{ rotate: '4deg' }],
+    transform: [{ rotate: '173deg' }],
   },
   mainCard: {
     width: '100%',
@@ -111,7 +129,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#D9D9D9',
     borderRadius: 20,
     padding: 24,
-    transform: [{ rotate: '-4deg' }],
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,

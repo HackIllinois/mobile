@@ -1,13 +1,21 @@
-import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator, RefreshControl, Pressable } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useCallback, useState, useMemo } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, RefreshControl, Animated } from 'react-native'; // Added Animated
+import { useFonts, TsukimiRounded_700Bold } from '@expo-google-fonts/tsukimi-rounded';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useCallback, useState, useMemo, useEffect, useRef } from 'react'; // Added useRef
 import { useEvents } from '../../lib/fetchEvents';
 import { EventCard } from '../../components/eventScreen/EventCard';
 import EventDetailModal from '../../components/eventScreen/EventDetailModal';
 import MenuModal from '../../components/eventScreen/MenuModal';
+import StarryBackground from '../../components/eventScreen/StarryBackground';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Event } from '../../types';
 
 export default function EventScreen() {
+  const insets = useSafeAreaInsets();
+  
+  // 1. Create the Scroll Value Tracker
+  const scrollY = useRef(new Animated.Value(0)).current;
+
   const { events = [], loading, error, refetch } = useEvents();
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -17,6 +25,22 @@ export default function EventScreen() {
   const [savedEventIds, setSavedEventIds] = useState<Set<string>>(new Set());
   const [menuModalVisible, setMenuModalVisible] = useState(false);
   const [selectedEventForMenu, setSelectedEventForMenu] = useState<Event | null>(null);
+  const [fontsLoaded] = useFonts({TsukimiRounded_700Bold});
+
+  useEffect(() => {
+    const loadSavedEvents = async () => {
+      try {
+        const stored = await AsyncStorage.getItem('savedEvents');
+        if (stored) {
+          setSavedEventIds(new Set(JSON.parse(stored)));
+        }
+      } catch (e) {
+        console.error('Failed to load saved events', e);
+      }
+    };
+
+    loadSavedEvents();
+  }, []);
 
   const handleEventPress = (event: Event) => {
     setSelectedEvent(event);
@@ -45,25 +69,19 @@ export default function EventScreen() {
 
   const uniqueDays = (() => {
     if (!events.length) return [];
-
     const dateMap = new Map<string, Date>();
-
     events.forEach(event => {
       const eventDate = new Date(event.startTime * 1000);
       const dateKey = eventDate.toDateString(); 
-
       if (!dateMap.has(dateKey)) {
         dateMap.set(dateKey, eventDate);
       }
     });
-
     return Array.from(dateMap.entries())
       .sort(([, dateA], [, dateB]) => dateA.getTime() - dateB.getTime())
       .map(([dateKey, date]) => {
-        
         const dayNum = date.getDate().toString().padStart(2, '0');
         const weekDay = date.toLocaleDateString('en-US', { weekday: 'short' });
-        
         return {
           id: dateKey,
           label: `${dayNum} - ${weekDay}`,
@@ -73,19 +91,14 @@ export default function EventScreen() {
       });
   })();
 
-
-  // Filter events by selected day
   const filteredEvents = (() => {
     let data = events;
-
     if (selectedDay) {
       data = data.filter(event => new Date(event.startTime * 1000).toDateString() === selectedDay);
     }
-
     if (selectedSave) {
       data = data.filter(event => savedEventIds.has(event.eventId));
     }
-
     return data.sort((a, b) => a.startTime - b.startTime);
   })();
 
@@ -93,11 +106,17 @@ export default function EventScreen() {
     setSelectedDay(selectedDay === dayId ? null : dayId);
   };
 
-  const handleSave = (eventId: string) => {
+  const handleSave = async (eventId: string) => {
     setSavedEventIds(prev => {
       const next = new Set(prev);
       if (next.has(eventId)) next.delete(eventId);
       else next.add(eventId);
+      
+      AsyncStorage.setItem(
+        'savedEvents',
+        JSON.stringify(Array.from(next))
+      ).catch(e => console.error('Failed to save events', e));
+
       return next;
     });
   };
@@ -141,21 +160,30 @@ export default function EventScreen() {
 
     if (filteredEvents.length === 0 && !loading) {
         return (
-            <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>
-                  No events scheduled {selectedDay !== null ? 'for this day' : ''}.
-                </Text>
-            </View>
+          <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>
+                No events scheduled {selectedDay !== null ? 'for this day' : ''}.
+              </Text>
+          </View>
         );
     }
 
+    // 2. Use Animated.FlatList and attach the onScroll event
     return (
-      <FlatList
+      <Animated.FlatList
         data={[...filteredEvents].sort((a, b) => a.startTime - b.startTime)}
         renderItem={renderEvent}
         keyExtractor={(item) => item.eventId || item.name + item.startTime}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
+        
+        // This is the Magic Line:
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: true }
+        )}
+        scrollEventThrottle={16} // Ensures smooth 60fps updates
+
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
@@ -168,73 +196,92 @@ export default function EventScreen() {
       />
     );
   };
-  
 
   return (
-  <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-    
-    <View style={[styles.header, { paddingHorizontal: 30, flexDirection: 'column', alignItems: 'flex-start' }]}>
-      <Text style={[styles.text, {color: 'black'}]}>{currentEvent ? "Current Event:" : "No Events Running"}</Text>
-      {
-        currentEvent && (
-          <Text style={[styles.text, {color: 'black'}]}>{currentEvent.name}</Text>
-        )
-      }
-    </View>
+    // 3. Pass scrollY to the Background
+    <StarryBackground scrollY={scrollY}>
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        
+        <View style={[styles.header, { paddingHorizontal: 30, flexDirection: 'column', alignItems: 'flex-start' }]}>
+          <Text style={styles.title}>Schedule</Text>
+          {currentEvent && (
+            <Text style={[styles.text, { color: 'white' }]}>
+              {currentEvent.name}
+            </Text>
+          )}
+        </View>
 
-    {uniqueDays.length > 0 && (
-      <View style={[styles.tabs, { padding: 0, paddingHorizontal: 30, marginBottom: 10 }]}>
-        {uniqueDays.map((day) => (
-          <TouchableOpacity
-            key={day.id} 
-            style={[
-              styles.dayButton,
-              (selectedDay === day.id) && { backgroundColor: "#000000"}
-            ]} 
-            onPress={() => handleDayPress(day.id)}
+        {uniqueDays.length > 0 && (
+          <View style={[styles.tabs, { padding: 0, paddingHorizontal: 30, marginBottom: 10 }]}>
+            {uniqueDays.map((day) => (
+              <TouchableOpacity
+                key={day.id} 
+                style={[
+                  styles.dayButton,
+                  (selectedDay === day.id) && { backgroundColor: "#7551D1" } 
+                ]} 
+                onPress={() => handleDayPress(day.id)}
+              >
+                <Text style={[styles.dayButtonText, (selectedDay === day.id) && { color: "#ffffff" }]}>
+                  {isToday(day.date) ? 'Today' : day.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
+        <View style={{ 
+          flexDirection: 'row', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          paddingHorizontal: 30, 
+          marginBottom: 15, 
+          marginTop: 10 
+        }}>
+          <Text style={styles.sectionTitle}>
+            Today's event
+          </Text>
+
+          <TouchableOpacity 
+            onPress={() => setSaveValue(!selectedSave)} 
+            style={styles.reminderButton}
           >
-            <Text style={[styles.dayButtonText, (selectedDay === day.id) && { color: "white" }]}>{isToday(day.date) ? 'Today' : day.label}</Text>
+            <Text style={styles.reminderButtonText}>
+              {selectedSave ? "Close" : "Reminders"}
+            </Text>
           </TouchableOpacity>
-        ))}
-      </View>
-    )}
-    <View style={{ padding: 0, paddingHorizontal: 30, marginBottom: 10, alignItems: 'flex-end' }}>
-      <TouchableOpacity onPress={() => setSaveValue(!selectedSave)}>
-        <Text style={[styles.text, {color: 'black', fontSize: 18, textAlign: 'right'}]}>{selectedSave ? "Close Reminders" : "Show Reminders"}</Text>
-      </TouchableOpacity>
-    </View>
+        </View>
 
-    {renderContent()}
+        {renderContent()}
 
-    {selectedEvent && (
-        <EventDetailModal 
+        {selectedEvent && (
+          <EventDetailModal 
             visible={modalVisible} 
             event={selectedEvent} 
             onClose={() => setModalVisible(false)} 
             handleSave={handleSave} 
             saved={savedEventIds.has(selectedEvent.eventId)} 
+          />
+        )}
+        <MenuModal 
+          visible={menuModalVisible} 
+          event={selectedEventForMenu} 
+          onClose={() => setMenuModalVisible(false)} 
         />
-    )}
-    <MenuModal 
-        visible={menuModalVisible} 
-        event={selectedEventForMenu} 
-        onClose={() => setMenuModalVisible(false)} 
-    />
-
-  </SafeAreaView>
-);
+      </View>
+    </StarryBackground>
+  );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF', 
-    paddingTop: 30,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    marginBottom: 20, 
   },
   tabs: {
     flexDirection: 'row',
@@ -243,66 +290,58 @@ const styles = StyleSheet.create({
     gap: 10,
     padding: 20
   },
+  title: {
+    fontFamily: 'TsukimiRounded_700Bold',
+    fontSize: 35,
+    color: '#D0F5FF', 
+    textShadowColor: 'rgba(243, 77, 255, 0.9)', 
+    textShadowOffset: { width: 0, height: 0 },   
+    textShadowRadius: 20,                        
+    letterSpacing: 4, 
+    textTransform: 'uppercase',
+  },
   text: {
-    fontSize: 30,
+    fontSize: 14,
     fontWeight: '800',
-    fontFamily: 'Montserrat',
     color: '#fff',
-  },
-  activeText: {
-    color: '#840386',
-    textDecorationLine: 'underline',
-    textDecorationStyle: 'solid',
-  },
-  dayButtonContainer: {
-    alignItems: 'stretch',
-    opacity: 0.6,
   },
   dayButton: {
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 100,
     backgroundColor: 'transparent',
-    borderColor: '#000000',
+    borderColor: '#fff', 
     borderWidth: 1.5,
     marginTop: 10, 
     alignSelf: 'flex-start',
   },
+  sectionTitle: {
+    color: 'white',
+    fontSize: 18, 
+    fontWeight: 'bold',
+    fontFamily: 'Montserrat', 
+  },
+  reminderButton: {
+    backgroundColor: '#E0E0FF', 
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 30, 
+  },
+  reminderButtonText: {
+    color: '#050211', 
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
   dayButtonText: {
-    color: '#000000',
+    color: '#fff', 
     fontWeight: '600',
     textAlign: 'center',
     fontSize: 14,
   },
-  eventDay: {
-    width: 100,
-    height: 100,
-  },
-  selectedEventDay: {
-    opacity: 1,
-    borderWidth: 3,
-    borderColor: '#840386',
-    borderRadius: 50,
-  },
-  dayLabel: {
-    color: '#fff',
-    fontSize: 12,
-    marginTop: 4,
-    fontWeight: '600',
-  },
-  selectedDayLabel: {
-    color: '#840386',
-    fontWeight: '800',
-  },
   listContent: {
-    paddingTop: 20,
+    paddingTop: 10,
     paddingBottom: 120,
     width: '100%',
-  },
-  background: {
-    padding: 5,
-    backgroundColor: "#840386",
-    borderRadius: 20
   },
   emptyContainer: {
     alignItems: 'center',

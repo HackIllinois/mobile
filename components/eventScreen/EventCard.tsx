@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet, Pressable, TouchableOpacity } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { PillButton } from './PillButton';
 import { Event } from '../../types';
 
@@ -20,13 +21,6 @@ const formatTime = (timestamp: number): string => {
   });
 };
 
-const formatDate = (timestamp: number): string => {
-    const date = new Date(timestamp * 1000);
-    return date.toLocaleDateString('en-US', {
-        month: 'numeric',
-        day: 'numeric',
-    });
-};
 export function EventCard({ event, index, onPress, handleSave, onShowMenu, saved }: EventCardProps) {
   const handlePress = () => onPress(event);
   const handleSavePress = () => handleSave(event.eventId);
@@ -36,13 +30,20 @@ export function EventCard({ event, index, onPress, handleSave, onShowMenu, saved
     <View style={styles.container}>
       <View style={styles.cardContainer}>
         <View style={styles.backgroundCard} />
+        
         <Pressable
           onPress={handlePress}
           style={({ pressed }) => [
-            styles.mainCard,
+            styles.pressableContainer, 
             pressed && styles.pressed, 
           ]}
         >
+          <LinearGradient
+            colors={['#874186ff',   '#56269F']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.gradientBackground} 
+          >
           <View style={styles.header}>
             <Text numberOfLines={3} ellipsizeMode="tail" style={styles.title}>{event.name}</Text>
             
@@ -79,6 +80,7 @@ export function EventCard({ event, index, onPress, handleSave, onShowMenu, saved
               <Text style={styles.menuButtonText}>Show Menu</Text>
             </TouchableOpacity>
           )}
+          </LinearGradient>
         </Pressable>      
       </View>
       <Text style={styles.dateText}>
@@ -98,20 +100,29 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   backgroundCard: {
-    backgroundColor: '#ADADAD',
-    borderRadius: 12,    
+    backgroundColor: '#F5C6FF', 
+    borderRadius: 16,    
     position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0, 
-    bottom: 0,
-    padding: 18, 
+    left: 4, 
+    right: -4,
+    top: 4, 
+    bottom: -4,
+    transform: [{ rotate: '3deg' }], 
+  },  
+  pressableContainer: {
+    flex: 1,
+    borderRadius: 16,
+    transform: [{ rotate: '-3deg' }],
     shadowColor: '#000',
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.25,
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 6,
-    elevation: 5,
-    transform: [{ rotate: '5deg' }], 
+    elevation: 8,
+  },
+  gradientBackground: {
+    flex: 1, 
+    borderRadius: 16, 
+    padding: 18, 
   },  
   mainCard: {
     backgroundColor: '#D9D9D9',
@@ -138,7 +149,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 22,
     fontWeight: '800', 
-    color: '#000000',
+    color: '#fffefeff',
     flex: 1, 
     marginRight: 10, 
   },
@@ -155,13 +166,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 100,
     backgroundColor: 'transparent',
-    borderColor: '#000000',
+    borderColor: '#ffffffff',
     borderWidth: 1.5,
     marginTop: 10, 
     alignSelf: 'flex-start',
   },
   menuButtonText: {
-    color: '#000000',
+    color: '#ffffffff',
     fontWeight: '600',
     textAlign: 'center',
     fontSize: 14,
@@ -169,26 +180,26 @@ const styles = StyleSheet.create({
   time: {
     fontSize: 17,
     fontWeight: '600', 
-    color: '#000000',
+    color: '#ffffffff',
     marginBottom: 2,
   },
   secondaryText: {
     fontSize: 15,
     fontWeight: '500',
-    color: '#000000',
+    color: '#FFFFFF',
     marginBottom: 2,
   },
   location: {
     marginTop: 5,
     fontSize: 14,
-    color: '#000000',
+    color: '#ffffffff',
     fontWeight: '600'
   },
   description: {
     marginTop: 4,
     width: '100%',
     fontSize: 14,
-    color: '#333333',
+    color: '#ffffffff',
     marginBottom: 5,
   },
   dateDescription: {
@@ -197,7 +208,7 @@ const styles = StyleSheet.create({
   },
   dateText: {
     fontSize: 20,
-    color: '#666666',
+    color: '#ffffffff',
     textAlign: 'center',
     marginTop: 30,
   }
