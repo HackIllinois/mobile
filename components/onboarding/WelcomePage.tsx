@@ -1,33 +1,28 @@
 import { useEffect, useRef } from "react";
-import { StyleSheet, View, Text, TouchableOpacity, Animated, Easing, Dimensions } from "react-native";
+import { StyleSheet, View, Text, TouchableOpacity, Animated, Easing, useWindowDimensions } from "react-native";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import Hackastra from "../../assets/onboarding/welcome/hackastra.svg";
 import HalfRocket from "../../assets/onboarding/welcome/half-rocket.svg";
 import Clouds from "../../assets/onboarding/loading/clouds.svg";
 import TinyStars from "../../assets/onboarding/loading/tiny stars.svg";
-import StartButton from "../../assets/onboarding/welcome/start-button.svg";
-
-const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
-const ROCKET_WIDTH = Math.min(SCREEN_WIDTH, 500); 
-const ROCKET_HEIGHT = (ROCKET_WIDTH / 250) * 310; 
-
-const CLOUDS_TOP = SCREEN_HEIGHT * 0.07; 
-const CLOUDS_LEFT = -SCREEN_WIDTH * 0.39; 
-const STARS_TOP = SCREEN_HEIGHT * 0.04; 
-const STARS_LEFT = -SCREEN_WIDTH * 0.12; 
-const HACKASTRA_TOP = SCREEN_HEIGHT * 0.13; 
-const HEADER_TOP = SCREEN_HEIGHT * 0.36; 
-const SUBTITLE_TOP = SCREEN_HEIGHT * 0.40; 
-const BUTTON_TOP = SCREEN_HEIGHT * 0.49; 
+import StartButton from "../../assets/onboarding/welcome/start-button.svg"; 
 
 type OnSkipProps = {
   onFinish: () => void;
-  onStart: () => void; 
+  onStart: () => void;
 };
 
 export default function WelcomePage({ onFinish, onStart }: OnSkipProps) {
     const router = useRouter();
+    const { width, height } = useWindowDimensions();
+    const figmaWidth = 393;
+    const figmaHeight = 852;
+
+    const scaleWidth = (size: number) => (width / figmaWidth) * size;
+    const scaleHeight = (size: number) => (height / figmaHeight) * size;
+    const scaleFontSize = (size: number) => Math.min(scaleWidth(size), scaleHeight(size));
+
     const cloudX1 = useRef(new Animated.Value(0)).current;
     const cloudX2 = useRef(new Animated.Value(0)).current;
     const starOpacity = useRef(new Animated.Value(0.8)).current;
@@ -101,43 +96,120 @@ export default function WelcomePage({ onFinish, onStart }: OnSkipProps) {
             <Animated.View
                 style={[
                     styles.cloudsContainer,
-                    { transform: [{ translateX: cloudX1 }] },
+                    {
+                        top: height * 0.07,
+                        left: -width * 0.39,
+                        transform: [{ translateX: cloudX1 }]
+                    },
                 ]}
             >
-                <Clouds width={669.17} height={720.11} />
+                <Clouds width={scaleWidth(669.17)} height={scaleHeight(720.11)} />
             </Animated.View>
 
             {/* Second cloud layer */}
             <Animated.View
                 style={[
                     styles.cloudsContainer,
-                    { opacity: 0.5, transform: [{ translateX: cloudX2 }] },
+                    {
+                        top: height * 0.07,
+                        left: -width * 0.39,
+                        opacity: 0.5,
+                        transform: [{ translateX: cloudX2 }]
+                    },
                 ]}
             >
-                <Clouds width={669.17} height={720.11} />
+                <Clouds width={scaleWidth(669.17)} height={scaleHeight(720.11)} />
             </Animated.View>
 
             {/* Stars */}
             <Animated.View
-                style={[styles.starsContainer, { opacity: starOpacity }]}
+                style={[
+                    styles.starsContainer,
+                    {
+                        top: height * 0.04,
+                        left: -width * 0.12,
+                        opacity: starOpacity
+                    }
+                ]}
             >
-                <TinyStars width={499.59} height={614} />
+                <TinyStars width={scaleWidth(499.59)} height={scaleHeight(614)} />
             </Animated.View>
 
-            {/* Half-rocket aligned to bottom */}
-            <HalfRocket style={styles.halfRocket} width={ROCKET_WIDTH} height={ROCKET_HEIGHT} />
+            {/* Hackastra logo */}
+            <View style={{
+                position: 'absolute',
+                top: scaleHeight(80),
+                left: scaleWidth(54),
+            }}>
+                <Hackastra
+                    width={scaleWidth(289)}
+                    height={scaleHeight(125.84)}
+                />
+            </View>
 
-            <Hackastra style={styles.hackastra} width={289} height={125.84} />
-            <Text style={styles.headerText}>WELCOME ABOARD!</Text>
-            <Text style={styles.subtitleText}>Start your journey by exploring the features of our app</Text>
-            <View style={styles.buttonContainer}>
+            {/* Heading text */}
+            <View style={{
+                position: 'absolute',
+                top: scaleHeight(260),
+                left: scaleWidth(33),
+                width: scaleWidth(327),
+            }}>
+                <Text style={[
+                    styles.headerText,
+                    {
+                        fontSize: scaleFontSize(28),
+                        lineHeight: scaleHeight(32),
+                        letterSpacing: scaleWidth(0.14)
+                    }
+                ]}>
+                    WELCOME ABOARD!
+                </Text>
+                <Text style={[
+                    styles.subtitleText,
+                    {
+                        fontSize: scaleFontSize(16),
+                        lineHeight: scaleHeight(22),
+                        letterSpacing: scaleWidth(0.28),
+                        marginTop: scaleHeight(10),
+                        width: scaleWidth(327 * 0.8),
+                        alignSelf: 'center'
+                    }
+                ]}>
+                    Start your journey by exploring the features of our app
+                </Text>
+            </View>
+
+            {/* Buttons */}
+            <View style={[
+                styles.buttonContainer,
+                {
+                    position: 'absolute',
+                    top: scaleHeight(365),
+                    left: scaleWidth(125),
+                    gap: height * 0.002
+                }
+            ]}>
                 <TouchableOpacity onPress={onStart}>
-                    <StartButton width={120} height={50.68} />
+                    <StartButton
+                        width={scaleWidth(143)}
+                        height={scaleHeight(94)}
+                    />
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.skipButton} onPress={onSkip}>
-                    <Text style={styles.skipButtonText}>Skip</Text>
+                <TouchableOpacity style={[styles.skipButton, { paddingVertical: height * 0.01 }]} onPress={onSkip}>
+                    <Text style={[styles.skipButtonText, { fontSize: scaleFontSize(18) }]}>Skip</Text>
                 </TouchableOpacity>
             </View>
+
+            {/* Half-rocket */}
+            <HalfRocket
+                style={{
+                    position: 'absolute',
+                    top: scaleHeight(300),
+                    left: scaleWidth(0),
+                }}
+                width={scaleWidth(figmaWidth)}
+                height={scaleHeight(800)}
+            />
         </LinearGradient>
     )
 }
@@ -148,69 +220,53 @@ const styles = StyleSheet.create({
     },
     cloudsContainer: {
         position: "absolute",
-        top: CLOUDS_TOP,
-        left: CLOUDS_LEFT,
     },
     starsContainer: {
         position: "absolute",
-        top: STARS_TOP,
-        left: STARS_LEFT,
     },
-    halfRocket: {
-        position: "absolute",
-        bottom: -100,
-        left: (SCREEN_WIDTH - ROCKET_WIDTH) / 2,
-        width: ROCKET_WIDTH,
-        height: ROCKET_HEIGHT,
-        opacity: 1,
+    contentContainer: {
+        flex: 1,
+        justifyContent: "space-between",
+        paddingVertical: "5%",
+    },
+    topSection: {
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "flex-start",
+        paddingHorizontal: "8%",
+        marginTop: "20%",
+    },
+    bottomSection: {
+        alignItems: "center",
+        justifyContent: "flex-start",
     },
     hackastra: {
-        position: "absolute",
-        top: HACKASTRA_TOP,
-        alignSelf: "center",
-        width: 289,
-        height: 125.84,
+        marginBottom: "10%",
     },
     headerText: {
-        position: "absolute",
-        top: HEADER_TOP,
-        width: "84%",
-        alignSelf: "center",
         fontFamily: "Tsukimi-Rounded-Bold",
         fontWeight: "700",
-        fontSize: 28,
-        lineHeight: 32,
-        letterSpacing: 0.14,
         color: "#FFFFFF",
         textAlign: "center",
     },
     subtitleText: {
-        position: "absolute",
-        top: SUBTITLE_TOP,
-        width: "60%",
-        alignSelf: "center",
         fontFamily: "Montserrat",
         fontWeight: "500",
-        fontSize: 16,
-        lineHeight: 22,
-        letterSpacing: 0.28,
         textAlign: "center",
         color: "#FFFFFF",
     },
     buttonContainer: {
-        position: "absolute",
-        top: BUTTON_TOP,
-        alignSelf: "center",
-        flexDirection: "column",
         alignItems: "center",
-        gap: 16,
+        zIndex: 10,
     },
-    skipButton: {
-    },
+    skipButton: {},
     skipButtonText: {
         fontFamily: "Tsukimi-Rounded-Bold",
-        fontSize: 18,
         fontWeight: "700",
         color: "#FFFFFF",
+    },
+    halfRocket: {
+        position: "absolute",
+        alignSelf: "center",
     },
 });
