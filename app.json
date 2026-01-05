@@ -15,7 +15,11 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "org.hackillinois.ios"
+      "bundleIdentifier": "org.hackillinois.ios",
+      "infoPlist": {
+        "NSLocalNetworkUsageDescription": "This app uses the local network to discover and connect with nearby players for duels.",
+        "NSBonjourServices": ["_shooter-game._tcp"]
+      }
     },
     "android": {
       "adaptiveIcon": {

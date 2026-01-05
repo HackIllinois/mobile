@@ -1,0 +1,60 @@
+-- Merging decision tree log ---
+manifest
+ADDED from /Users/yaseenhalabi/Desktop/mobile/modules/local-connection/android/src/main/AndroidManifest.xml:1:1-25:12
+INJECTED from /Users/yaseenhalabi/Desktop/mobile/modules/local-connection/android/src/main/AndroidManifest.xml:1:1-25:12
+	package
+		INJECTED from /Users/yaseenhalabi/Desktop/mobile/modules/local-connection/android/src/main/AndroidManifest.xml
+	xmlns:android
+		ADDED from /Users/yaseenhalabi/Desktop/mobile/modules/local-connection/android/src/main/AndroidManifest.xml:1:11-69
+uses-permission#android.permission.ACCESS_FINE_LOCATION
+ADDED from /Users/yaseenhalabi/Desktop/mobile/modules/local-connection/android/src/main/AndroidManifest.xml:5:5-79
+	android:name
+		ADDED from /Users/yaseenhalabi/Desktop/mobile/modules/local-connection/android/src/main/AndroidManifest.xml:5:22-76
+uses-permission#android.permission.ACCESS_COARSE_LOCATION
+ADDED from /Users/yaseenhalabi/Desktop/mobile/modules/local-connection/android/src/main/AndroidManifest.xml:6:5-81
+	android:name
+		ADDED from /Users/yaseenhalabi/Desktop/mobile/modules/local-connection/android/src/main/AndroidManifest.xml:6:22-78
+uses-permission#android.permission.BLUETOOTH_SCAN
+ADDED from /Users/yaseenhalabi/Desktop/mobile/modules/local-connection/android/src/main/AndroidManifest.xml:10:5-73
+	android:name
+		ADDED from /Users/yaseenhalabi/Desktop/mobile/modules/local-connection/android/src/main/AndroidManifest.xml:10:22-70
+uses-permission#android.permission.BLUETOOTH_ADVERTISE
+ADDED from /Users/yaseenhalabi/Desktop/mobile/modules/local-connection/android/src/main/AndroidManifest.xml:11:5-78
+	android:name
+		ADDED from /Users/yaseenhalabi/Desktop/mobile/modules/local-connection/android/src/main/AndroidManifest.xml:11:22-75
+uses-permission#android.permission.BLUETOOTH_CONNECT
+ADDED from /Users/yaseenhalabi/Desktop/mobile/modules/local-connection/android/src/main/AndroidManifest.xml:12:5-76
+	android:name
+		ADDED from /Users/yaseenhalabi/Desktop/mobile/modules/local-connection/android/src/main/AndroidManifest.xml:12:22-73
+uses-permission#android.permission.NEARBY_WIFI_DEVICES
+ADDED from /Users/yaseenhalabi/Desktop/mobile/modules/local-connection/android/src/main/AndroidManifest.xml:15:5-78
+	android:name
+		ADDED from /Users/yaseenhalabi/Desktop/mobile/modules/local-connection/android/src/main/AndroidManifest.xml:15:22-75
+uses-permission#android.permission.ACCESS_WIFI_STATE
+ADDED from /Users/yaseenhalabi/Desktop/mobile/modules/local-connection/android/src/main/AndroidManifest.xml:18:5-76
+	android:name
+		ADDED from /Users/yaseenhalabi/Desktop/mobile/modules/local-connection/android/src/main/AndroidManifest.xml:18:22-73
+uses-permission#android.permission.CHANGE_WIFI_STATE
+ADDED from /Users/yaseenhalabi/Desktop/mobile/modules/local-connection/android/src/main/AndroidManifest.xml:19:5-76
+	android:name
+		ADDED from /Users/yaseenhalabi/Desktop/mobile/modules/local-connection/android/src/main/AndroidManifest.xml:19:22-73
+uses-feature#android.hardware.bluetooth
+ADDED from /Users/yaseenhalabi/Desktop/mobile/modules/local-connection/android/src/main/AndroidManifest.xml:22:5-87
+	android:required
+		ADDED from /Users/yaseenhalabi/Desktop/mobile/modules/local-connection/android/src/main/AndroidManifest.xml:22:61-84
+	android:name
+		ADDED from /Users/yaseenhalabi/Desktop/mobile/modules/local-connection/android/src/main/AndroidManifest.xml:22:19-60
+uses-feature#android.hardware.wifi
+ADDED from /Users/yaseenhalabi/Desktop/mobile/modules/local-connection/android/src/main/AndroidManifest.xml:23:5-82
+	android:required
+		ADDED from /Users/yaseenhalabi/Desktop/mobile/modules/local-connection/android/src/main/AndroidManifest.xml:23:56-79
+	android:name
+		ADDED from /Users/yaseenhalabi/Desktop/mobile/modules/local-connection/android/src/main/AndroidManifest.xml:23:19-55
+uses-sdk
+INJECTED from /Users/yaseenhalabi/Desktop/mobile/modules/local-connection/android/src/main/AndroidManifest.xml reason: use-sdk injection requested
+INJECTED from /Users/yaseenhalabi/Desktop/mobile/modules/local-connection/android/src/main/AndroidManifest.xml
+INJECTED from /Users/yaseenhalabi/Desktop/mobile/modules/local-connection/android/src/main/AndroidManifest.xml
+	android:targetSdkVersion
+		INJECTED from /Users/yaseenhalabi/Desktop/mobile/modules/local-connection/android/src/main/AndroidManifest.xml
+	android:minSdkVersion
+		INJECTED from /Users/yaseenhalabi/Desktop/mobile/modules/local-connection/android/src/main/AndroidManifest.xml
