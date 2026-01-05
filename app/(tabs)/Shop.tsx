@@ -1,18 +1,18 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { AxiosResponse } from "axios";
 import api from "../../api";
 import { ShopItem } from "../../types";
-import { AxiosResponse } from "axios";
 import {
   StyleSheet,
   View,
   ScrollView,
   Dimensions,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
   Alert,
   ImageBackground,
   Pressable,
   Image,
+  Modal,
+  Animated,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import TypeWriter from "react-native-typewriter";
@@ -22,22 +22,19 @@ import CartModal from "../../components/point shop/CartModal";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
-const CHUNK_SIZE = 3;
+const CHUNK_SIZE = 2;
 const TUTORIAL_KEY = "@shop_tutorial_completed";
 
 const tutorialTexts = [
   "Welcome to the Point Shop traveller!",
-  "Use your earned points to buy items.\nSwipe see more on each row.",
+  "Use your earned points to buy items.\nSwipe to see more on each row.",
   "Spend em' wisely. Good luck with your journey...",
 ];
 
 const getSpacing = (screenHeight: number) => {
-  if (screenHeight < 700) {
-    return { cartMargin: 40, rowSpacer: 45, bottomPadding: 0 };
-  } else if (screenHeight < 850) {
-    return { cartMargin: 40, rowSpacer: 60, bottomPadding: 5 };
-  }
-  return { cartMargin: 45, rowSpacer: 80, bottomPadding: 20 };
+  if (screenHeight < 700) return { cartMargin: 0, rowSpacer: 0, bottomPadding: 0, rowHeight: 175 };
+  if (screenHeight < 850) return { cartMargin: 35, rowSpacer: 40, bottomPadding: 0, rowHeight: 180 };
+  return { cartMargin: 20, rowSpacer: 30, bottomPadding: 10, rowHeight: 190 };
 };
 
 const chunkItems = (items: ShopItem[]): ShopItem[][] => {
@@ -54,23 +51,28 @@ export default function PointShop() {
   const [shopItemData, setShopItemData] = useState<ShopItem[]>([]);
   const [cartIds, setCartIds] = useState<string[]>([]);
   const [showCartModal, setShowCartModal] = useState(false);
-  const [currentPageTop, setCurrentPageTop] = useState(0);
-  const [currentPageBottom, setCurrentPageBottom] = useState(0);
-  const [backgroundImage, setBackgroundImage] = useState<"bg1" | "bg2">("bg1");
   const [tutorialStep, setTutorialStep] = useState<number | null>(null);
   const [isTutorialActive, setIsTutorialActive] = useState(false);
   const [typewriterKey, setTypewriterKey] = useState(0);
 
-  const backgroundSource =
-    backgroundImage === "bg1"
-      ? require("../../assets/point shop/point-shop-bg-1.png")
-      : require("../../assets/point shop/point-shop-bg-2.png");
+  const tutorialAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (isTutorialActive && tutorialStep !== null) {
+      tutorialAnim.setValue(0);
+      Animated.spring(tutorialAnim, {
+        toValue: 1,
+        friction: 6,
+        tension: 40,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [tutorialStep]);
 
   useEffect(() => {
     const checkTutorial = async () => {
       try {
         const completed = await AsyncStorage.getItem(TUTORIAL_KEY);
-
         if (!completed) {
           setTutorialStep(0);
           setIsTutorialActive(true);
@@ -83,39 +85,21 @@ export default function PointShop() {
   }, []);
 
   useEffect(() => {
-    const fetchShopData = async () => {
-      const response: AxiosResponse = await api.get(
-        "https://adonix.hackillinois.org/shop/"
-      );
-      setShopItemData(response.data);
-    };
-    fetchShopData();
+    api.get<AxiosResponse<ShopItem[]>>("https://adonix.hackillinois.org/shop/")
+      .then((response) => setShopItemData(response.data));
   }, []);
 
   const midpoint = Math.ceil(shopItemData.length / 2);
   const topPages = chunkItems(shopItemData.slice(0, midpoint));
   const bottomPages = chunkItems(shopItemData.slice(midpoint));
 
-  const handleScroll = (
-    event: NativeSyntheticEvent<NativeScrollEvent>,
-    setPage: (page: number) => void
-  ) => {
-    const page = Math.round(event.nativeEvent.contentOffset.x / SCREEN_WIDTH);
-    setPage(page);
-  };
-
   const handleTutorialTap = async () => {
     if (tutorialStep === null) return;
 
-    if (tutorialStep === 0) {
-      setTutorialStep(1);
-      setBackgroundImage("bg2");
+    if (tutorialStep < tutorialTexts.length - 1) {
+      setTutorialStep(tutorialStep + 1);
       setTypewriterKey((prev) => prev + 1);
-    } else if (tutorialStep === 1) {
-      setTutorialStep(2);
-      setBackgroundImage("bg1");
-      setTypewriterKey((prev) => prev + 1);
-    } else if (tutorialStep === 2) {
+    } else {
       setTutorialStep(null);
       setIsTutorialActive(false);
       try {
@@ -127,28 +111,24 @@ export default function PointShop() {
   };
 
   const addToCart = (itemId: string) => {
-    if (isTutorialActive) return;
-    setCartIds((ids) => [...ids, itemId]);
+    if (!isTutorialActive) setCartIds((ids) => [...ids, itemId]);
   };
 
   const removeFromCart = (itemId: string) => {
     setCartIds((ids) => {
       const index = ids.indexOf(itemId);
-      if (index === -1) return ids;
-      return [...ids.slice(0, index), ...ids.slice(index + 1)];
+      return index === -1 ? ids : [...ids.slice(0, index), ...ids.slice(index + 1)];
     });
   };
 
   const handlePurchase = () => {
-    Alert.alert("Purchase completed", "", [
-      {
-        text: "OK",
-        onPress: () => {
-          setCartIds([]);
-          setShowCartModal(false);
-        },
+    Alert.alert("Purchase completed", "", [{
+      text: "OK",
+      onPress: () => {
+        setCartIds([]);
+        setShowCartModal(false);
       },
-    ]);
+    }]);
   };
 
   const renderShopRow = (pages: ShopItem[][]) =>
@@ -165,8 +145,8 @@ export default function PointShop() {
     ));
 
   return (
-    <ImageBackground source={backgroundSource} style={styles.container} resizeMode="cover">
-      <SafeAreaView style={[styles.safeArea, { paddingBottom: spacing.bottomPadding }]}>
+    <ImageBackground source={require("../../assets/point shop/point-shop-background.png")} style={styles.container} resizeMode="cover">
+      <SafeAreaView style={[styles.safeArea, { paddingBottom: spacing.bottomPadding }]} edges={["top"]}>
         <Image
           source={require("../../assets/point shop/point-shop-title.png")}
           style={styles.titleImage}
@@ -176,21 +156,15 @@ export default function PointShop() {
           <View style={[styles.cartButtonContainer, { marginBottom: spacing.cartMargin }]}>
             <CartButton
               itemCount={cartIds.length}
-              onPress={() => {
-                if (!isTutorialActive) {
-                  setShowCartModal(true);
-                }
-              }}
+              onPress={() => !isTutorialActive && setShowCartModal(true)}
             />
           </View>
 
-          <View style={styles.scrollContainer}>
+          <View style={[styles.scrollContainer, { height: spacing.rowHeight }]}>
             <ScrollView
               horizontal
               pagingEnabled
               showsHorizontalScrollIndicator={false}
-              onScroll={(e) => handleScroll(e, setCurrentPageTop)}
-              scrollEventThrottle={30}
               scrollEnabled={!isTutorialActive}
             >
               {renderShopRow(topPages)}
@@ -199,13 +173,11 @@ export default function PointShop() {
 
           <View style={{ height: spacing.rowSpacer }} />
 
-          <View style={styles.scrollContainer}>
+          <View style={[styles.scrollContainer, { height: spacing.rowHeight }]}>
             <ScrollView
               horizontal
               pagingEnabled
               showsHorizontalScrollIndicator={false}
-              onScroll={(e) => handleScroll(e, setCurrentPageBottom)}
-              scrollEventThrottle={30}
               scrollEnabled={!isTutorialActive}
             >
               {renderShopRow(bottomPages)}
@@ -214,22 +186,62 @@ export default function PointShop() {
         </View>
       </SafeAreaView>
 
-      {isTutorialActive && tutorialStep !== null && (
+      <Modal
+        visible={isTutorialActive && tutorialStep !== null}
+        transparent
+        animationType="fade"
+        statusBarTranslucent
+      >
         <Pressable style={styles.tutorialOverlay} onPress={handleTutorialTap}>
-          <View style={styles.tutorialTextBox}>
-            <TypeWriter
-              key={typewriterKey}
-              typing={1}
-              initialDelay={50}
-              minDelay={10}
-              maxDelay={20}
-              style={styles.tutorialText}
-            >
-              {tutorialTexts[tutorialStep]}
-            </TypeWriter>
-          </View>
+          <Animated.View
+            style={[
+              styles.tutorialContainer,
+              {
+                opacity: tutorialAnim,
+                transform: [
+                  {
+                    translateY: tutorialAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [50, 0],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          >
+            <Animated.Image
+              source={require("../../assets/point shop/point-shop-shopkeeper-2.png")}
+              style={[
+                styles.shopkeeperImage,
+                {
+                  opacity: tutorialAnim,
+                  transform: [
+                    {
+                      translateY: tutorialAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [30, 0],
+                      }),
+                    },
+                  ],
+                },
+              ]}
+              resizeMode="contain"
+            />
+            <View style={styles.tutorialTextBox}>
+              <TypeWriter
+                key={typewriterKey}
+                typing={1}
+                initialDelay={10}
+                minDelay={5}
+                maxDelay={10}
+                style={styles.tutorialText}
+              >
+                {tutorialTexts[tutorialStep ?? 0]}
+              </TypeWriter>
+            </View>
+          </Animated.View>
         </Pressable>
-      )}
+      </Modal>
 
       <CartModal
         visible={showCartModal}
@@ -266,45 +278,54 @@ const styles = StyleSheet.create({
   cartButtonContainer: {
     alignSelf: "center",
   },
-  scrollContainer: {
-    height: 130,
-  },
-  page: {
-    gap: 0,
-  },
+  scrollContainer: {},
+  page: {},
   row: {
     flexDirection: "row",
-    justifyContent: "center",
+    justifyContent: "flex-start",
     alignItems: "center",
     width: "100%",
-    gap: 5,
+    paddingHorizontal: 20,
+    gap: 24,
   },
   gridItem: {
-    flex: 1,
-    aspectRatio: 1,
+    width: (SCREEN_WIDTH - 40 - 24) / 2,
+    aspectRatio: 0.9,
   },
   tutorialOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0, 0, 0, 0.75)",
     justifyContent: "flex-end",
     alignItems: "center",
-    paddingBottom: 40,
+    paddingBottom: 120,
+  },
+  tutorialContainer: {
+    position: "relative",
+    marginHorizontal: 20,
+    width: SCREEN_WIDTH - 40,
+  },
+  shopkeeperImage: {
+    position: "absolute",
+    width: 150,
+    height: 150,
+    right: -35,
+    top: -70,
+    zIndex: 1,
   },
   tutorialTextBox: {
-    backgroundColor: "rgba(0, 0, 0, 1)",
-    borderRadius: 16,
-    paddingVertical: 40,
-    paddingHorizontal: 30,
-    marginHorizontal: 20,
-    maxWidth: SCREEN_WIDTH - 4,
+    backgroundColor: "#354938",
+    borderWidth: 2,
+    borderColor: "rgba(180, 220, 180, 0.8)",
+    paddingVertical: 24,
+    paddingLeft: 24,
+    paddingRight: 100,
+    borderTopLeftRadius: 50,
   },
   tutorialText: {
-    color: "white",
-    fontSize: 16,
-    lineHeight: 24,
-    textAlign: "center",
+    color: "#FFFFFF",
+    fontSize: 14,
+    lineHeight: 18,
+    textAlign: "left",
+    fontWeight: "500",
   },
 });

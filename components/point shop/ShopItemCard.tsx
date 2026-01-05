@@ -48,27 +48,27 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     alignItems: "center",
-    marginTop: 30,
-    marginBottom: 10
+    marginTop: 40,
+    marginBottom: 12,
   },
   name: {
-    fontSize: 9,
+    fontSize: 13,
     fontWeight: "600",
     color: "#fff",
     textAlign: "center",
-    marginBottom: 4,
-    maxWidth: 60
+    marginBottom: 6,
+    maxWidth: 70,
   },
   price: {
-    fontSize: 8,
+    fontSize: 12,
     fontWeight: "400",
     color: "#ccc",
     textAlign: "center",
-    marginBottom: 4,
+    marginBottom: 6,
   },
   image: {
-    width: 40,
-    height: 40,
+    width: 60,
+    height: 60,
     resizeMode: "contain",
   },
 });
