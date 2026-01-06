@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, TextInput, Button, FlatList, Alert, Pressable, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, TextInput, Button, FlatList, Alert, Pressable, StyleSheet, Dimensions, PermissionsAndroid, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import LocalConnectionModule from '../../modules/local-connection';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // ======================
 // TYPES
@@ -68,6 +69,9 @@ export default function Duels() {
   
   const [myShip, setMyShip] = useState<Ship>({ x: 0.5, y: 0.5, angle: 0, id: 'player' });
   const [opponentShip, setOpponentShip] = useState<Ship>({ x: 0.5, y: 0.5, angle: 0, id: 'opponent' });
+  const [myScore, setMyScore] = useState(0);
+  const [opponentScore, setOpponentScore] = useState(0);
+  const [gameFinished, setGameFinished] = useState(false);
   const [opponentTarget, setOpponentTarget] = useState<Ship>({ x: 0.5, y: 0.5, angle: 0, id: 'opponent' }); // Target for interpolation
   const [myBullets, setMyBullets] = useState<Bullet[]>([]);
   const [opponentBullets, setOpponentBullets] = useState<Bullet[]>([]);
@@ -107,6 +111,28 @@ export default function Duels() {
   // ======================
   // GAME HELPERS
   // ======================
+  const disconnect = () => {
+    LocalConnectionModule.EndConnection();
+    setRole(null);
+    setGamePhase('waiting');
+    setGuestRatio(null);
+    setScreen('home');
+  }
+
+  const roundLost = () => {
+    setOpponentScore(prev => prev + 1);
+  }
+
+  const roundWon = () => {
+    setMyScore(prev => prev + 1);
+  }
+
+  const finishGame = () => {
+    setMyScore(0);
+    setOpponentScore(0);
+    setGameFinished(false);
+  }
+
   const resetGameState = useCallback(() => {
     // Host starts top-left, Guest starts bottom-right
     const startPos = role === 'host' 
@@ -155,6 +181,44 @@ export default function Duels() {
   };
 
   // ======================
+  // CONNECTION PERMISSIONS
+  // ======================
+  useEffect(() => {
+    const checkPermissions = async () => {
+      if (Platform.OS === 'android') {
+        const permissions = [];
+
+        // Android 12+ (API 31+) requires these specific Bluetooth permissions
+        if (Platform.Version >= 31) {
+          permissions.push(
+            PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
+            PermissionsAndroid.PERMISSIONS.BLUETOOTH_ADVERTISE,
+            PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT
+          );
+        }
+
+        // Android 13+ (API 33+) requires NEARBY_WIFI_DEVICES
+        if (Platform.Version >= 33) {
+          permissions.push(PermissionsAndroid.PERMISSIONS.NEARBY_WIFI_DEVICES);
+        }
+
+        // Android 11 and below (and 12+ for legacy reasons) needs Location
+        // AND specifically ACCESS_FINE_LOCATION (Coarse is not enough for Nearby)
+        permissions.push(PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION);
+
+        const result = await PermissionsAndroid.requestMultiple(permissions);
+        
+        // Log results to debug
+        console.log("Permissions result:", result);
+      }
+
+      // Cleanup any zombie sessions
+      LocalConnectionModule.EndConnection();
+    };
+    checkPermissions();
+  }, []);
+
+  // ======================
   // CONNECTION EVENTS
   // ======================
   useEffect(() => {
@@ -180,6 +244,7 @@ export default function Duels() {
               setOpponentBullets(msg.bullets.map(b => ({ ...b, ownerId: 'opponent' as const })));
               break;
             case 'hit':
+              roundLost();
               setGamePhase('lose');
               break;
             case 'restart':
@@ -321,6 +386,7 @@ export default function Duels() {
           // I win!
           const hitMsg: GameMessage = { type: 'hit', victimId: 'opponent' };
           LocalConnectionModule.sendData(JSON.stringify(hitMsg));
+          roundWon();
           setGamePhase('win');
           return;
         }
@@ -358,6 +424,19 @@ export default function Duels() {
   // ======================
   // WIN/LOSE & AUTO-RESTART
   // ======================
+  useEffect(() => {
+    if(myScore >= 3) {
+      Alert.alert('Game Over', 'You win! Starting a new game...')
+      finishGame();
+      disconnect();
+    } else if (opponentScore >= 3) {
+      Alert.alert('Game Over', 'You lose! Starting a new game...')
+      finishGame();
+      disconnect();
+    }
+  }, 
+  [opponentScore, myScore]);
+
   useEffect(() => {
     if (gamePhase !== 'win' && gamePhase !== 'lose') return;
     
@@ -516,13 +595,7 @@ export default function Duels() {
           <View style={{ height: 30 }} />
           <Pressable
             style={styles.cancelButton}
-            onPress={() => {
-              LocalConnectionModule.EndConnection();
-              setRole(null);
-              setGamePhase('waiting');
-              setGuestRatio(null);
-              setScreen('home');
-            }}
+            onPress={disconnect}
           >
             <Text style={styles.cancelButtonText}>DISCONNECT</Text>
           </Pressable>
@@ -538,6 +611,9 @@ export default function Duels() {
           <View style={styles.overlay}>
             <Text style={[styles.overlayText, gamePhase === 'win' ? styles.winText : styles.loseText]}>
               {gamePhase === 'win' ? 'YOU WIN!' : 'YOU LOSE!'}
+            </Text>
+            <Text style={styles.scoreText}>
+              {myScore} - {opponentScore}
             </Text>
           </View>
         )}
@@ -853,5 +929,15 @@ const styles = StyleSheet.create({
     textShadowColor: '#ff3366',
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 30,
+  },
+  scoreText: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#fff',
+    marginTop: 20, 
+    letterSpacing: 2,
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
 });

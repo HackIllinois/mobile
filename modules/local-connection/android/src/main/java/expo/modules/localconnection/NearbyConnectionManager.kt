@@ -9,7 +9,7 @@ import java.nio.charset.StandardCharsets
 
 class NearbyConnectionManager(private val context: Context) {
     private val SERVICE_ID = "shooter-game" // Aligned with iOS SERVICE_TYPE
-    private val STRATEGY = Strategy.P2P_CLUSTER // P2P_CLUSTER allows Any-to-Any connections
+    private val STRATEGY = Strategy.P2P_CLUSTER // P2P_CLUSTER automatically manages BT/WiFi switching
     
     // Get device name safely
     private var myPeerName = "${Build.MANUFACTURER} ${Build.MODEL}"
@@ -41,16 +41,17 @@ class NearbyConnectionManager(private val context: Context) {
         return myOpponentName
     }
 
+    // Kept for compatibility with your JS interface, but logs a warning
     fun setMedium(medium: String) {
-        // Note: Medium selection not supported in this version of Nearby API
-        // The system will automatically choose the best medium
-        Log.d("Nearby", "Medium preference: $medium (using system default)")
+        Log.w("Nearby", "setMedium($medium) ignored. P2P_CLUSTER Strategy automatically manages Bluetooth/WiFi.")
     }
 
     fun startAdvertising() {
+        // ERROR FIXED: Removed .setMediums(). The Strategy handles this.
         val options = AdvertisingOptions.Builder()
             .setStrategy(STRATEGY)
             .build()
+
         connectionsClient.startAdvertising(
             myPeerName,
             SERVICE_ID,
@@ -60,9 +61,11 @@ class NearbyConnectionManager(private val context: Context) {
     }
 
     fun startDiscovery() {
+        // ERROR FIXED: Removed .setMediums(). The Strategy handles this.
         val options = DiscoveryOptions.Builder()
             .setStrategy(STRATEGY)
             .build()
+
         connectionsClient.startDiscovery(
             SERVICE_ID,
             endpointDiscoveryCallback,
@@ -141,7 +144,6 @@ class NearbyConnectionManager(private val context: Context) {
                 connectionsClient.stopAdvertising()
                 connectionsClient.stopDiscovery()
                 
-                // FIXED: Name matches property
                 onOpponentConnected?.invoke(peerName)
             } else {
                 Log.d("Nearby", "Connection failed: ${result.status.statusCode}")
@@ -150,7 +152,6 @@ class NearbyConnectionManager(private val context: Context) {
 
         override fun onDisconnected(endpointId: String) {
             val peerName = connectedEndpoints.remove(endpointId)
-            // FIXED: Name matches property
             peerName?.let { onOpponentDisconnected?.invoke(it) }
         }
     }
@@ -170,7 +171,6 @@ class NearbyConnectionManager(private val context: Context) {
     // 2. Discovery: Finds Rooms
     private val endpointDiscoveryCallback = object : EndpointDiscoveryCallback() {
         override fun onEndpointFound(endpointId: String, info: DiscoveredEndpointInfo) {
-            // FIXED: Name matches property + passes both ID and Name
             onOpponentFound?.invoke(endpointId, info.endpointName)
         }
 

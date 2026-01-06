@@ -8,6 +8,7 @@ web-build/
 expo-env.d.ts
 
 # Native (DO NOT TRACK PREBUILD OUTPUT)
+modules/**/android/build/
 /ios
 /android
 
