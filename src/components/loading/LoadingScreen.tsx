@@ -1,27 +1,38 @@
 import { useEffect, useRef } from "react";
-import { StyleSheet, Animated, Easing, Image, Dimensions } from "react-native";
+import { StyleSheet, Animated, Easing, useWindowDimensions, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Clouds from "../../../assets/onboarding/loading/clouds.svg";
 import TinyStars from "../../../assets/onboarding/loading/tiny stars.svg";
-const AstronautImage = require("../../../assets/onboarding/loading/astronaut.png");
-const TextImage = require("../../../assets/onboarding/loading/hackillinois text.png");
-
-const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
-
-const CLOUDS_TOP = SCREEN_HEIGHT * 0.07; 
-const CLOUDS_LEFT = -SCREEN_WIDTH * 0.39; 
-const STARS_TOP = SCREEN_HEIGHT * 0.04; 
-const STARS_LEFT = -SCREEN_WIDTH * 0.12; 
-const ASTRONAUT_TOP = SCREEN_HEIGHT * 0.21; 
-const TEXT_TOP = SCREEN_HEIGHT * 0.59; 
-const LOADING_BAR_TOP = SCREEN_HEIGHT * 0.75; 
-const LOADING_BAR_WIDTH = SCREEN_WIDTH * 0.76; 
+import Astronaut from "../../../assets/onboarding/loading/astronaut.svg";
+import HackIllinoisText from "../../../assets/onboarding/loading/hackillinois-text.svg"; 
 
 type LoadingScreenProps = {
   onFinish: () => void;
 };
 
 export default function LoadingScreen({ onFinish }: LoadingScreenProps) {
+  const { width, height } = useWindowDimensions();
+
+  const figmaWidth = 393;
+  const figmaHeight = 852;
+  const scaleWidth = (size: number) => (width / figmaWidth) * size;
+  const scaleHeight = (size: number) => (height / figmaHeight) * size;
+
+  const CLOUDS_WIDTH = scaleWidth(669.17);
+  const CLOUDS_HEIGHT = scaleHeight(720.11);
+  const STARS_WIDTH = scaleWidth(499.59);
+  const STARS_HEIGHT = scaleHeight(614);
+  const ASTRONAUT_WIDTH = scaleWidth(270.8583068847656);
+  const ASTRONAUT_HEIGHT = scaleHeight(292);
+  const ASTRONAUT_TOP = scaleHeight(171);
+  const ASTRONAUT_LEFT = scaleWidth(62.15);
+  const LOGO_WIDTH = scaleWidth(186);
+  const LOGO_HEIGHT = scaleHeight(104);
+  const LOGO_TOP = scaleHeight(476);
+  const LOGO_LEFT = scaleWidth(104);
+  const LOADING_BAR_WIDTH = width * 0.76;
+  const LOADING_BAR_TOP = height * 0.75;
+
   const fadeIn = useRef(new Animated.Value(0)).current;
   const astronautY = useRef(new Animated.Value(0)).current;
   const astronautRotate = useRef(new Animated.Value(0)).current;
@@ -178,57 +189,85 @@ export default function LoadingScreen({ onFinish }: LoadingScreenProps) {
         end={{ x: 0, y: 1 }}
         style={styles.container}
       >
+        {/* Background clouds */}
         <Animated.View
           style={[
             styles.cloudsContainer,
-            { transform: [{ translateX: cloudX1 }] },
-          ]}
-        >
-          <Clouds width={669.17} height={720.11} />
-        </Animated.View>
-
-        <Animated.View
-          style={[
-            styles.cloudsContainer,
-            { opacity: 0.5, transform: [{ translateX: cloudX2 }] },
-          ]}
-        >
-          <Clouds width={669.17} height={720.11} />
-        </Animated.View>
-
-        <Animated.View
-          style={[styles.starsContainer, { opacity: starOpacity }]}
-        >
-          <TinyStars width={499.59} height={614} />
-        </Animated.View>
-
-        <Animated.View
-          style={[
-            styles.astronautContainer,
             {
-              transform: [
-                { translateY: astronautY },
-                { rotate: astronautRotateInterpolate },
-              ],
+              top: height * 0.07,
+              left: -width * 0.39,
+              transform: [{ translateX: cloudX1 }]
             },
           ]}
         >
-          <Image
-            source={AstronautImage}
-            style={{ width: 270.86, height: 292 }}
-            resizeMode="contain"
-          />
+          <Clouds width={CLOUDS_WIDTH} height={CLOUDS_HEIGHT} />
         </Animated.View>
 
-        <Animated.View style={[styles.textContainer, { opacity: textOpacity }]}>
-          <Image
-            source={TextImage}
-            style={{ width: 186, height: 104 }}
-            resizeMode="contain"
-          />
+        {/* Second cloud layer */}
+        <Animated.View
+          style={[
+            styles.cloudsContainer,
+            {
+              top: height * 0.07,
+              left: -width * 0.39,
+              opacity: 0.5,
+              transform: [{ translateX: cloudX2 }]
+            },
+          ]}
+        >
+          <Clouds width={CLOUDS_WIDTH} height={CLOUDS_HEIGHT} />
         </Animated.View>
 
-        <Animated.View style={styles.loadingBarContainer}>
+        {/* Stars */}
+        <Animated.View
+          style={[
+            styles.starsContainer,
+            {
+              top: height * 0.04,
+              left: -width * 0.12,
+              opacity: starOpacity
+            }
+          ]}
+        >
+          <TinyStars width={STARS_WIDTH} height={STARS_HEIGHT} />
+        </Animated.View>
+
+        {/* Astronaut */}
+        <Animated.View
+          style={{
+            position: 'absolute',
+            top: ASTRONAUT_TOP,
+            left: ASTRONAUT_LEFT,
+            width: ASTRONAUT_WIDTH,
+            height: ASTRONAUT_HEIGHT,
+            transform: [
+              { translateY: astronautY },
+              { rotate: astronautRotateInterpolate },
+            ],
+          }}
+        >
+          <Astronaut width={ASTRONAUT_WIDTH} height={ASTRONAUT_HEIGHT} />
+        </Animated.View>
+
+        {/* HackIllinois logo */}
+        <Animated.View
+          style={{
+            position: 'absolute',
+            top: LOGO_TOP,
+            left: LOGO_LEFT,
+            width: LOGO_WIDTH,
+            height: LOGO_HEIGHT,
+            opacity: textOpacity,
+          }}
+        >
+          <HackIllinoisText width={LOGO_WIDTH} height={LOGO_HEIGHT} />
+        </Animated.View>
+
+        {/* Loading bar */}
+        <Animated.View style={[styles.loadingBarContainer, {
+          top: LOADING_BAR_TOP,
+          width: LOADING_BAR_WIDTH,
+        }]}>
           <Animated.View
             style={[
               styles.loadingBarFillWrapper,
@@ -251,34 +290,16 @@ export default function LoadingScreen({ onFinish }: LoadingScreenProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
   },
   cloudsContainer: {
     position: "absolute",
-    top: CLOUDS_TOP,
-    left: CLOUDS_LEFT,
   },
   starsContainer: {
     position: "absolute",
-    top: STARS_TOP,
-    left: STARS_LEFT,
-  },
-  astronautContainer: {
-    position: "absolute",
-    top: ASTRONAUT_TOP,
-    alignSelf: "center",
-  },
-  textContainer: {
-    position: "absolute",
-    top: TEXT_TOP,
-    alignSelf: "center",
   },
   loadingBarContainer: {
     position: "absolute",
-    top: LOADING_BAR_TOP,
     alignSelf: "center",
-    width: LOADING_BAR_WIDTH,
     height: 7,
     backgroundColor: "rgba(0, 0, 0, 0.7)",
     borderRadius: 20,
