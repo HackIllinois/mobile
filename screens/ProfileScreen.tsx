@@ -23,7 +23,6 @@ import ButtonSvg from '../assets/profile/profile-screen/button.svg';
 import QRCodeButtonSvg from '../assets/profile/profile-screen/qr-code-button.svg';
 import EditButtonSvg from '../assets/profile/profile-screen/edit-button.svg';
 import BackgroundSvg from '../assets/profile/background.svg';
-import NavBarSvg from '../assets/profile/nav-bar.svg';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -277,13 +276,6 @@ export default function ProfileScreen() {
         onClose={() => setShowAvatarModal(false)}
       />
 
-      {/* Navbar */}
-      <View style={styles.navbarWrapper}>
-        <NavBarSvg
-          width={SCREEN_WIDTH}
-          height={SCREEN_WIDTH * (108 / 393)}
-        />
-      </View>
     </SafeAreaView>
   );
 }
@@ -301,13 +293,6 @@ const styles = StyleSheet.create({
     width: SCREEN_WIDTH,
     height: SCREEN_HEIGHT,
     zIndex: -1,
-  },
-  navbarWrapper: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    width: SCREEN_WIDTH,
-    height: SCREEN_WIDTH * (108 / 393),
   },
   centered: {
     justifyContent: 'center',

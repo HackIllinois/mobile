@@ -12,7 +12,7 @@ import * as SecureStore from "expo-secure-store";
 // Onboarding testing: 
 // true = show onboarding every reload
 // false = normal behavior
-const TESTING_MODE = true;
+const TESTING_MODE = false;
 
 export default function RootLayout() {
   const [showLoading, setShowLoading] = useState(true);
@@ -174,12 +174,6 @@ export default function RootLayout() {
       ) : (
         <Stack.Screen name="(tabs)" />
       )}
-      <Stack.Screen
-        name="Profile"
-        options={{
-          headerShown: false,
-        }}
-      />
     </Stack>
   );
 }
