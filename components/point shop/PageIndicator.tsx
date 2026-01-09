@@ -37,12 +37,12 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
   },
   activeDot: {
-    backgroundColor: "rgba(144, 144, 144, 0.9)",
+    backgroundColor: "rgba(203, 203, 203, 0.9)",
     width: 8,
     height: 8,
     borderRadius: 5,
   },
   inactiveDot: {
-    backgroundColor: "rgba(144, 144, 144, 0.3)",
+    backgroundColor: "rgba(196, 196, 196, 0.3)",
   },
 });

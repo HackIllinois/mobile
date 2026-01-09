@@ -39,6 +39,7 @@
     "react-native-screens": "~4.16.0",
     "react-native-svg": "15.12.1",
     "react-native-svg-transformer": "^1.5.1",
+    "react-native-typewriter": "^0.7.0",
     "react-native-web": "^0.21.0"
   },
   "devDependencies": {
