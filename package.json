@@ -20,7 +20,10 @@
     "expo-auth-session": "~7.0.9",
     "expo-camera": "~17.0.8",
     "expo-constants": "~18.0.10",
-    "expo-font": "~14.0.10",
+    "expo-file-system": "~19.0.21",
+    "expo-font": "^14.0.10",
+    "expo-image-manipulator": "~14.0.8",
+    "expo-image-picker": "~17.0.10",
     "expo-linear-gradient": "^15.0.7",
     "expo-linking": "~8.0.9",
     "expo-router": "~6.0.15",
@@ -37,6 +40,7 @@
     "react-native-screens": "~4.16.0",
     "react-native-svg": "15.12.1",
     "react-native-svg-transformer": "^1.5.1",
+    "react-native-typewriter": "^0.7.0",
     "react-native-web": "^0.21.0"
   },
   "devDependencies": {
