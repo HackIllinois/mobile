@@ -91,6 +91,21 @@ export default function EventScreen() {
       });
   })();
 
+  const sectionTitleText = useMemo(() => {
+    if (!selectedDay) {
+      return selectedSave ? "Saved events" : "All events";
+    }
+
+    const dayDate = new Date(selectedDay);
+    const isCurrentDay = new Date().toDateString() === selectedDay;
+    
+    const dayPrefix = isCurrentDay 
+      ? "Today's" 
+      : dayDate.toLocaleDateString('en-US', { weekday: 'long' }) + "'s";
+
+    return `${dayPrefix} ${selectedSave ? "saved events" : "events"}`;
+  }, [selectedDay, selectedSave]);
+
   const filteredEvents = (() => {
     let data = events;
     if (selectedDay) {
@@ -126,16 +141,22 @@ export default function EventScreen() {
     return events.find(event => now >= event.startTime && now < event.endTime);
   }, [events]);
 
-  const renderEvent = ({ item, index }: { item: Event; index: number }) => (
-    <EventCard
-      event={item}
-      index={index}
-      onPress={handleEventPress}
-      handleSave={handleSave}
-      onShowMenu={handleShowMenu}
-      saved={savedEventIds.has(item.eventId)}
-    />
-  );
+  const renderEvent = ({ item, index }: { item: Event; index: number }) => {
+    const previousItem = filteredEvents[index - 1];
+    const showTime = index === 0 || previousItem?.startTime !== item.startTime;
+
+    return (
+      <EventCard
+        event={item}
+        index={index}
+        onPress={handleEventPress}
+        handleSave={handleSave}
+        onShowMenu={handleShowMenu}
+        saved={savedEventIds.has(item.eventId)}
+        showTime={showTime} // <--- Pass this new prop
+      />
+    );
+  };
 
   const renderContent = () => {
     if (loading && events.length === 0 && !isRefreshing) {
@@ -239,7 +260,7 @@ export default function EventScreen() {
           marginTop: 10 
         }}>
           <Text style={styles.sectionTitle}>
-            Today's event
+            {sectionTitleText}
           </Text>
 
           <TouchableOpacity 
@@ -247,7 +268,7 @@ export default function EventScreen() {
             style={styles.reminderButton}
           >
             <Text style={styles.reminderButtonText}>
-              {selectedSave ? "Close" : "Reminders"}
+              {selectedSave ? "Close" : "Saved"}
             </Text>
           </TouchableOpacity>
         </View>
