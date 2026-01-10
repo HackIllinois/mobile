@@ -15,7 +15,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "org.hackillinois.ios"
+      "bundleIdentifier": "org.hackillinois.ios",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Allow camera access to scan QR codes."
+      }
     },
     "android": {
       "adaptiveIcon": {
