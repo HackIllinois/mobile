@@ -1,5 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, TextInput, Button, FlatList, Alert, Pressable, StyleSheet, Dimensions, PermissionsAndroid, Platform } from 'react-native';
+import { View, Text, TextInput, Button, FlatList, Alert, Pressable, StyleSheet, Dimensions, PermissionsAndroid, Platform, Image, ImageBackground } from 'react-native';
+
+// Asset imports
+const backgroundImage = require('../../assets/duels/duels-background.png');
+const userShipImage = require('../../assets/duels/duels-ship-user.png');
+const enemyShipImage = require('../../assets/duels/duels-ship-enemy.png');
+const buttonImage = require('../../assets/duels/duels-button.png');
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import LocalConnectionModule from '../../modules/local-connection';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -475,7 +481,7 @@ export default function Duels() {
   // Home screen
   if (screen === 'home') {
     return (
-      <View style={styles.container}>
+      <ImageBackground source={backgroundImage} style={styles.container} resizeMode="cover">
         <Text style={styles.title}>DUELS</Text>
         <Text style={styles.subtitle}>Enter your name:</Text>
         <TextInput
@@ -508,14 +514,14 @@ export default function Duels() {
         >
           <Text style={styles.menuButtonText}>JOIN LOBBY</Text>
         </Pressable>
-      </View>
+      </ImageBackground>
     );
   }
 
   // Hosting screen
   if (screen === 'hosting') {
     return (
-      <View style={styles.container}>
+      <ImageBackground source={backgroundImage} style={styles.container} resizeMode="cover">
         <Text style={styles.title}>HOSTING</Text>
         <Text style={styles.subtitle}>Lobby: {name}</Text>
         <Text style={styles.waitingText}>Waiting for players...</Text>
@@ -530,14 +536,14 @@ export default function Duels() {
         >
           <Text style={styles.cancelButtonText}>STOP HOSTING</Text>
         </Pressable>
-      </View>
+      </ImageBackground>
     );
   }
 
   // Browsing screen
   if (screen === 'browsing') {
     return (
-      <View style={[styles.container, { justifyContent: 'flex-start', paddingTop: insets.top + 40 }]}>
+      <ImageBackground source={backgroundImage} style={[styles.container, { justifyContent: 'flex-start', paddingTop: insets.top + 40 }]} resizeMode="cover">
         <Text style={styles.title}>LOBBIES</Text>
         <FlatList
           data={lobbies}
@@ -568,7 +574,7 @@ export default function Duels() {
           <Text style={styles.cancelButtonText}>BACK</Text>
         </Pressable>
         <View style={{ height: insets.bottom + 20 }} />
-      </View>
+      </ImageBackground>
     );
   }
 
@@ -577,7 +583,7 @@ export default function Duels() {
     // Waiting phase - show start button for host, waiting message for guest
     if (gamePhase === 'waiting') {
       return (
-        <View style={styles.container}>
+        <ImageBackground source={backgroundImage} style={styles.container} resizeMode="cover">
           <Text style={styles.title}>CONNECTED</Text>
           <Text style={styles.subtitle}>Opponent: {connectedPeer}</Text>
           <View style={{ height: 30 }} />
@@ -599,13 +605,13 @@ export default function Duels() {
           >
             <Text style={styles.cancelButtonText}>DISCONNECT</Text>
           </Pressable>
-        </View>
+        </ImageBackground>
       );
     }
 
     // Playing phase (or win/lose)
     return (
-      <View style={[styles.gameContainer, { paddingTop: insets.top }]}>
+      <ImageBackground source={backgroundImage} style={[styles.gameContainer, { paddingTop: insets.top }]} resizeMode="cover">
         {/* Win/Lose overlay */}
         {(gamePhase === 'win' || gamePhase === 'lose') && (
           <View style={styles.overlay}>
@@ -621,30 +627,32 @@ export default function Duels() {
         {/* Game area */}
         <View style={styles.gameArea}>
           {/* My ship */}
-          <View style={[
-            styles.ship,
-            styles.myShip,
-            {
-              left: myShip.x * gameWidth - SHIP_DISPLAY_SIZE / 2,
-              top: myShip.y * gameHeight - SHIP_DISPLAY_SIZE / 2,
-              transform: [{ rotate: `${myShip.angle}rad` }]
-            }
-          ]}>
-            <View style={styles.shipNose} />
-          </View>
+          <Image
+            source={userShipImage}
+            style={[
+              styles.ship,
+              {
+                left: myShip.x * gameWidth - SHIP_DISPLAY_SIZE / 2,
+                top: myShip.y * gameHeight - SHIP_DISPLAY_SIZE / 2,
+                transform: [{ rotate: `${myShip.angle + Math.PI / 2}rad` }]
+              }
+            ]}
+            resizeMode="contain"
+          />
           
           {/* Opponent ship */}
-          <View style={[
-            styles.ship,
-            styles.opponentShip,
-            {
-              left: opponentShip.x * gameWidth - SHIP_DISPLAY_SIZE / 2,
-              top: opponentShip.y * gameHeight - SHIP_DISPLAY_SIZE / 2,
-              transform: [{ rotate: `${opponentShip.angle}rad` }]
-            }
-          ]}>
-            <View style={styles.shipNose} />
-          </View>
+          <Image
+            source={enemyShipImage}
+            style={[
+              styles.ship,
+              {
+                left: opponentShip.x * gameWidth - SHIP_DISPLAY_SIZE / 2,
+                top: opponentShip.y * gameHeight - SHIP_DISPLAY_SIZE / 2,
+                transform: [{ rotate: `${opponentShip.angle + Math.PI / 2}rad` }]
+              }
+            ]}
+            resizeMode="contain"
+          />
           
           {/* My bullets */}
           {myBullets.map(b => (
@@ -679,10 +687,10 @@ export default function Duels() {
         
         {/* Controls */}
         <Pressable 
-          style={[styles.controlButton, styles.shootButton, { bottom: insets.bottom }, ammo === 0 && styles.controlButtonDisabled]} 
+          style={[styles.controlButton, styles.shootButton, { bottom: 0 }]} 
           onPress={shoot}
         >
-          <Text style={styles.controlButtonText}>SHOOT</Text>
+          <Image source={buttonImage} style={styles.buttonImage} resizeMode="stretch" />
         </Pressable>
         
         {/* Ammo indicator */}
@@ -694,13 +702,13 @@ export default function Duels() {
         </View>
         
         <Pressable
-          style={[styles.controlButton, styles.rotateButton, { bottom: insets.bottom }, isRotating && styles.controlButtonActive]}
+          style={[styles.controlButton, styles.rotateButton, { bottom: 0 }]}
           onPressIn={() => setIsRotating(true)}
           onPressOut={() => setIsRotating(false)}
         >
-          <Text style={styles.controlButtonText}>ROTATE</Text>
+          <Image source={buttonImage} style={[styles.buttonImage, styles.buttonImageFlipped]} resizeMode="stretch" />
         </Pressable>
-      </View>
+      </ImageBackground>
     );
   }
 
@@ -713,7 +721,6 @@ export default function Duels() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0a0a12',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
@@ -799,11 +806,9 @@ const styles = StyleSheet.create({
   },
   gameContainer: {
     flex: 1,
-    backgroundColor: '#0a0a12',
   },
   gameArea: {
     flex: 1,
-    backgroundColor: '#050510',
     position: 'relative',
     overflow: 'hidden',
   },
@@ -811,26 +816,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: SHIP_DISPLAY_SIZE,
     height: SHIP_DISPLAY_SIZE,
-    borderRadius: 4,
-    justifyContent: 'center',
-    alignItems: 'flex-end',
-  },
-  myShip: {
-    backgroundColor: '#00f5ff',
-  },
-  opponentShip: {
-    backgroundColor: '#ff3366',
-  },
-  shipNose: {
-    width: 0,
-    height: 0,
-    borderLeftWidth: 12,
-    borderTopWidth: 8,
-    borderBottomWidth: 8,
-    borderLeftColor: '#fff',
-    borderTopColor: 'transparent',
-    borderBottomColor: 'transparent',
-    marginRight: -10,
   },
   bullet: {
     position: 'absolute',
@@ -856,12 +841,15 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: 140,
     height: 70,
-    backgroundColor: 'rgba(26, 26, 46, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: 'rgba(51, 51, 51, 0.5)',
+    overflow: 'hidden',
+  },
+  buttonImage: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
+  buttonImageFlipped: {
+    transform: [{ scaleX: -1 }],
   },
   shootButton: {
     left: 0,
@@ -869,19 +857,20 @@ const styles = StyleSheet.create({
   rotateButton: {
     right: 0,
   },
-  controlButtonActive: {
-    backgroundColor: 'rgba(42, 42, 78, 0.5)',
-    borderColor: 'rgba(0, 245, 255, 0.7)',
-  },
-  controlButtonDisabled: {
-    backgroundColor: 'rgba(20, 20, 30, 0.5)',
-    borderColor: 'rgba(40, 40, 40, 0.5)',
-  },
   controlButtonText: {
     color: '#fff',
     fontSize: 18,
     fontWeight: '800',
     letterSpacing: 2,
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+  controlButtonTextActive: {
+    color: '#00f5ff',
+  },
+  controlButtonTextDisabled: {
+    color: '#888',
   },
   ammoContainer: {
     position: 'absolute',
