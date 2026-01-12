@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, TextInput, Button, FlatList, Alert, Pressable, StyleSheet, Dimensions, PermissionsAndroid, Platform, Image, ImageBackground } from 'react-native';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { View, Text, TextInput, Button, FlatList, Alert, Pressable, StyleSheet, Dimensions, PermissionsAndroid, Platform, Image, ImageBackground, GestureResponderEvent } from 'react-native';
 
 // Asset imports
 const backgroundImage = require('../../assets/duels/duels-background.png');
@@ -16,7 +16,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 type Screen = 'home' | 'hosting' | 'browsing' | 'connected';
 type Lobby = { endpointId: string; endpointName: string };
 type Role = 'host' | 'guest';
-type GamePhase = 'waiting' | 'playing' | 'win' | 'lose';
+type GamePhase = 'waiting' | 'playing' | 'win' | 'lose' | 'game_over';
 
 type Ship = {
   x: number;        // 0-1 normalized
@@ -60,10 +60,11 @@ export default function Duels() {
   // CONNECTION STATE
   // ======================
   const [screen, setScreen] = useState<Screen>('home');
-  const [name, setName] = useState('');
   const [lobbies, setLobbies] = useState<Lobby[]>([]);
   const [pendingInvite, setPendingInvite] = useState<Lobby | null>(null);
   const [connectedPeer, setConnectedPeer] = useState<string | null>(null);
+  const [joiningLobby, setJoiningLobby] = useState<string | null>(null); // endpointId of lobby being joined
+  const joinTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   // ======================
   // GAME STATE
@@ -77,7 +78,7 @@ export default function Duels() {
   const [opponentShip, setOpponentShip] = useState<Ship>({ x: 0.5, y: 0.5, angle: 0, id: 'opponent' });
   const [myScore, setMyScore] = useState(0);
   const [opponentScore, setOpponentScore] = useState(0);
-  const [gameFinished, setGameFinished] = useState(false);
+  const [finalWinner, setFinalWinner] = useState<'player' | 'opponent' | null>(null);
   const [opponentTarget, setOpponentTarget] = useState<Ship>({ x: 0.5, y: 0.5, angle: 0, id: 'opponent' }); // Target for interpolation
   const [myBullets, setMyBullets] = useState<Bullet[]>([]);
   const [opponentBullets, setOpponentBullets] = useState<Bullet[]>([]);
@@ -114,6 +115,12 @@ export default function Duels() {
   const gameHeight = screenHeight - insets.top - tabBarHeight;
   const screenRatio = screenWidth / gameHeight;
 
+  // Generate random guest username
+  const guestName = useMemo(() => {
+    const randomNum = Math.floor(10000 + Math.random() * 90000);
+    return `guest-${randomNum}`;
+  }, []);
+
   // ======================
   // GAME HELPERS
   // ======================
@@ -125,18 +132,45 @@ export default function Duels() {
     setScreen('home');
   }
 
+  // Dummy function that logs round results
+  const onRoundEnd = (winner: 'player' | 'opponent', playerScore: number, opponentScoreVal: number) => {
+    console.log('=== ROUND END ===');
+    console.log(`Winner: ${winner}`);
+    console.log(`Current Score - Player: ${playerScore}, Opponent: ${opponentScoreVal}`);
+    console.log('=================');
+  };
+
   const roundLost = () => {
-    setOpponentScore(prev => prev + 1);
+    setOpponentScore(prev => {
+      const newScore = prev + 1;
+      onRoundEnd('opponent', myScore, newScore);
+      return newScore;
+    });
   }
 
   const roundWon = () => {
-    setMyScore(prev => prev + 1);
+    setMyScore(prev => {
+      const newScore = prev + 1;
+      onRoundEnd('player', newScore, opponentScore);
+      return newScore;
+    });
   }
 
-  const finishGame = () => {
+  const goBackToLobby = () => {
     setMyScore(0);
     setOpponentScore(0);
-    setGameFinished(false);
+    setFinalWinner(null);
+    setGamePhase('waiting');
+    // Re-send ready message if guest
+    if (role === 'guest') {
+      const msg: GameMessage = { type: 'ready', screenRatio };
+      LocalConnectionModule.sendData(JSON.stringify(msg));
+    }
+  }
+
+  const finishGame = (winner: 'player' | 'opponent') => {
+    setFinalWinner(winner);
+    setGamePhase('game_over');
   }
 
   const resetGameState = useCallback(() => {
@@ -267,7 +301,12 @@ export default function Duels() {
       // Handle connection events
       switch (event.type) {
         case 'found':
-          setLobbies(prev => [...prev, { endpointId: event.endpointId, endpointName: event.endpointName }]);
+          // Only add if not already in the list (prevent duplicates/ghost lobbies)
+          setLobbies(prev => {
+            const exists = prev.some(l => l.endpointId === event.endpointId);
+            if (exists) return prev;
+            return [...prev, { endpointId: event.endpointId, endpointName: event.endpointName }];
+          });
           break;
         case 'lost':
           setLobbies(prev => prev.filter(l => l.endpointId !== event.endpointId));
@@ -276,14 +315,31 @@ export default function Duels() {
           setPendingInvite({ endpointId: event.endpointId, endpointName: event.endpointName });
           break;
         case 'connected':
-          setConnectedPeer(event.peer);
+          // Clear join timeout and loading state on successful connection
+          if (joinTimeoutRef.current) {
+            clearTimeout(joinTimeoutRef.current);
+            joinTimeoutRef.current = null;
+          }
+          setJoiningLobby(null);
+          // Use endpointName (guest name) instead of peer (device name)
+          setConnectedPeer(event.endpointName || event.peer);
           setScreen('connected');
+          break;
+        case 'rejected':
+        case 'failed':
+          // Clear join timeout and loading state on rejection/failure
+          if (joinTimeoutRef.current) {
+            clearTimeout(joinTimeoutRef.current);
+            joinTimeoutRef.current = null;
+          }
+          setJoiningLobby(null);
           break;
         case 'disconnected':
           setConnectedPeer(null);
           setScreen('home');
           setGamePhase('waiting');
           setRole(null);
+          setJoiningLobby(null);
           break;
       }
     });
@@ -432,13 +488,9 @@ export default function Duels() {
   // ======================
   useEffect(() => {
     if(myScore >= 3) {
-      Alert.alert('Game Over', 'You win! Starting a new game...')
-      finishGame();
-      disconnect();
+      finishGame('player');
     } else if (opponentScore >= 3) {
-      Alert.alert('Game Over', 'You lose! Starting a new game...')
-      finishGame();
-      disconnect();
+      finishGame('opponent');
     }
   }, 
   [opponentScore, myScore]);
@@ -483,18 +535,11 @@ export default function Duels() {
     return (
       <ImageBackground source={backgroundImage} style={styles.container} resizeMode="cover">
         <Text style={styles.title}>DUELS</Text>
-        <Text style={styles.subtitle}>Enter your name:</Text>
-        <TextInput
-          value={name}
-          onChangeText={setName}
-          placeholder="Your name"
-          placeholderTextColor="#666"
-          style={styles.input}
-        />
+        <Text style={styles.subtitle}>Playing as: {guestName}</Text>
         <Pressable
           style={styles.menuButton}
           onPress={() => {
-            LocalConnectionModule.InitPeerName(name);
+            LocalConnectionModule.InitPeerName(guestName);
             LocalConnectionModule.startAdvertising();
             setRole('host');
             setScreen('hosting');
@@ -506,7 +551,7 @@ export default function Duels() {
         <Pressable
           style={styles.menuButton}
           onPress={() => {
-            LocalConnectionModule.InitPeerName(name);
+            LocalConnectionModule.InitPeerName(guestName);
             LocalConnectionModule.startScanning();
             setRole('guest');
             setScreen('browsing');
@@ -523,7 +568,7 @@ export default function Duels() {
     return (
       <ImageBackground source={backgroundImage} style={styles.container} resizeMode="cover">
         <Text style={styles.title}>HOSTING</Text>
-        <Text style={styles.subtitle}>Lobby: {name}</Text>
+        <Text style={styles.subtitle}>Lobby: {guestName}</Text>
         <Text style={styles.waitingText}>Waiting for players...</Text>
         <View style={{ height: 20 }} />
         <Pressable
@@ -542,20 +587,42 @@ export default function Duels() {
 
   // Browsing screen
   if (screen === 'browsing') {
+    const handleJoinLobby = (endpointId: string) => {
+      if (joiningLobby) return; // Already joining a lobby
+      
+      setJoiningLobby(endpointId);
+      LocalConnectionModule.joinRoom(endpointId);
+      
+      // Set 15 second timeout
+      joinTimeoutRef.current = setTimeout(() => {
+        setJoiningLobby(null);
+        joinTimeoutRef.current = null;
+      }, 15000);
+    };
+
     return (
       <ImageBackground source={backgroundImage} style={[styles.container, { justifyContent: 'flex-start', paddingTop: insets.top + 40 }]} resizeMode="cover">
         <Text style={styles.title}>LOBBIES</Text>
+        {joiningLobby && (
+          <Text style={styles.waitingText}>Joining lobby...</Text>
+        )}
         <FlatList
           data={lobbies}
           keyExtractor={(item) => item.endpointId}
           renderItem={({ item }) => (
             <Pressable
-              style={styles.lobbyItem}
-              onPress={() => {
-                LocalConnectionModule.joinRoom(item.endpointId);
-              }}
+              style={[
+                styles.lobbyItem,
+                joiningLobby && styles.lobbyItemDisabled,
+                joiningLobby === item.endpointId && styles.lobbyItemJoining
+              ]}
+              onPress={() => handleJoinLobby(item.endpointId)}
+              disabled={!!joiningLobby}
             >
-              <Text style={styles.lobbyItemText}>{item.endpointName}</Text>
+              <Text style={styles.lobbyItemText}>
+                {item.endpointName}
+                {joiningLobby === item.endpointId && ' (joining...)'}
+              </Text>
             </Pressable>
           )}
           ListEmptyComponent={<Text style={styles.waitingText}>Searching...</Text>}
@@ -565,6 +632,12 @@ export default function Duels() {
         <Pressable
           style={styles.cancelButton}
           onPress={() => {
+            // Clear any pending join timeout
+            if (joinTimeoutRef.current) {
+              clearTimeout(joinTimeoutRef.current);
+              joinTimeoutRef.current = null;
+            }
+            setJoiningLobby(null);
             LocalConnectionModule.stopScanning();
             setLobbies([]);
             setRole(null);
@@ -603,6 +676,29 @@ export default function Duels() {
             style={styles.cancelButton}
             onPress={disconnect}
           >
+            <Text style={styles.cancelButtonText}>DISCONNECT</Text>
+          </Pressable>
+        </ImageBackground>
+      );
+    }
+
+    // Game Over phase - show final result with back to lobby button
+    if (gamePhase === 'game_over') {
+      const isWinner = finalWinner === 'player';
+      return (
+        <ImageBackground source={backgroundImage} style={styles.container} resizeMode="cover">
+          <Text style={[styles.gameOverTitle, isWinner ? styles.winText : styles.loseText]}>
+            {isWinner ? 'VICTORY!' : 'DEFEAT!'}
+          </Text>
+          <Text style={styles.finalScoreText}>
+            Final Score: {myScore} - {opponentScore}
+          </Text>
+          <View style={{ height: 30 }} />
+          <Pressable style={styles.startButton} onPress={goBackToLobby}>
+            <Text style={styles.startButtonText}>BACK TO LOBBY</Text>
+          </Pressable>
+          <View style={{ height: 20 }} />
+          <Pressable style={styles.cancelButton} onPress={disconnect}>
             <Text style={styles.cancelButtonText}>DISCONNECT</Text>
           </Pressable>
         </ImageBackground>
@@ -685,29 +781,77 @@ export default function Duels() {
           ))}
         </View>
         
-        {/* Controls */}
-        <Pressable 
-          style={[styles.controlButton, styles.shootButton, { bottom: 0 }]} 
-          onPress={shoot}
+        {/* Multitouch Controls Container */}
+        <View 
+          style={styles.controlsContainer}
+          onStartShouldSetResponder={() => true}
+          onMoveShouldSetResponder={() => true}
+          onResponderGrant={(e: GestureResponderEvent) => {
+            const touches = e.nativeEvent.touches;
+            let shootPressed = false;
+            let rotatePressed = false;
+            
+            for (let i = 0; i < touches.length; i++) {
+              const touch = touches[i];
+              if (touch.pageX < screenWidth / 2) {
+                shootPressed = true;
+              } else {
+                rotatePressed = true;
+              }
+            }
+            
+            if (shootPressed) shoot();
+            if (rotatePressed) setIsRotating(true);
+          }}
+          onResponderMove={(e: GestureResponderEvent) => {
+            const touches = e.nativeEvent.touches;
+            let rotatePressed = false;
+            
+            for (let i = 0; i < touches.length; i++) {
+              const touch = touches[i];
+              if (touch.pageX >= screenWidth / 2) {
+                rotatePressed = true;
+              }
+            }
+            
+            setIsRotating(rotatePressed);
+          }}
+          onResponderRelease={(e: GestureResponderEvent) => {
+            // Check remaining touches
+            const touches = e.nativeEvent.touches;
+            let rotatePressed = false;
+            
+            for (let i = 0; i < touches.length; i++) {
+              const touch = touches[i];
+              if (touch.pageX >= screenWidth / 2) {
+                rotatePressed = true;
+              }
+            }
+            
+            setIsRotating(rotatePressed);
+          }}
+          onResponderTerminate={() => {
+            setIsRotating(false);
+          }}
         >
-          <Image source={buttonImage} style={styles.buttonImage} resizeMode="stretch" />
-        </Pressable>
-        
-        {/* Ammo indicator */}
-        <View style={[styles.ammoContainer, { bottom: insets.bottom }]}>
-          <Text style={styles.ammoText}>{ammo}/{MAX_AMMO}</Text>
-          {reloading > 0 && (
-            <Text style={styles.reloadingText}>reloading...</Text>
-          )}
+          {/* Shoot Button (Left) */}
+          <View style={styles.shootButtonContainer}>
+            <Image source={buttonImage} style={styles.buttonImage} resizeMode="stretch" />
+          </View>
+          
+          {/* Ammo indicator */}
+          <View style={styles.ammoContainerCenter}>
+            <Text style={styles.ammoText}>{ammo}/{MAX_AMMO}</Text>
+            {reloading > 0 && (
+              <Text style={styles.reloadingText}>reloading...</Text>
+            )}
+          </View>
+          
+          {/* Rotate Button (Right) */}
+          <View style={styles.rotateButtonContainer}>
+            <Image source={buttonImage} style={[styles.buttonImage, styles.buttonImageFlipped]} resizeMode="stretch" />
+          </View>
         </View>
-        
-        <Pressable
-          style={[styles.controlButton, styles.rotateButton, { bottom: 0 }]}
-          onPressIn={() => setIsRotating(true)}
-          onPressOut={() => setIsRotating(false)}
-        >
-          <Image source={buttonImage} style={[styles.buttonImage, styles.buttonImageFlipped]} resizeMode="stretch" />
-        </Pressable>
       </ImageBackground>
     );
   }
@@ -728,40 +872,35 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 25,
     fontWeight: '900',
-    color: '#00f5ff',
-    letterSpacing: 8,
+    color: '#ffffffff',
     marginBottom: 10,
+    fontFamily: "Tsukimi-Rounded-Bold"
   },
   subtitle: {
     fontSize: 16,
-    color: '#888',
+    color: '#ffffff',
     marginBottom: 20,
   },
   waitingText: {
     fontSize: 14,
-    color: '#555',
+    color: '#ffffff',
     fontStyle: 'italic',
-  },
-  input: {
-    width: '80%',
-    borderWidth: 2,
-    borderColor: '#00f5ff',
-    backgroundColor: '#111',
-    color: '#fff',
-    padding: 15,
-    marginVertical: 15,
-    fontSize: 16,
-    borderRadius: 4,
   },
   menuButton: {
     width: '80%',
-    backgroundColor: '#00f5ff',
+    backgroundColor: '#4a1a6b',
     paddingVertical: 18,
     alignItems: 'center',
     borderRadius: 4,
+    borderWidth: 2,
+    borderColor: '#6b2d9e',
+    shadowColor: '#8b3dc7',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 8,
   },
   menuButtonText: {
-    color: '#0a0a12',
+    color: '#ffffff',
     fontSize: 18,
     fontWeight: '800',
     letterSpacing: 2,
@@ -770,39 +909,79 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 30,
     borderWidth: 2,
-    borderColor: '#ff3366',
+    borderColor: '#6b2d9e',
+    backgroundColor: '#4a1a6b',
     borderRadius: 4,
+    shadowColor: '#8b3dc7',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 8,
   },
   cancelButtonText: {
-    color: '#ff3366',
+    color: '#ffffff',
     fontSize: 14,
     fontWeight: '700',
     letterSpacing: 1,
   },
   startButton: {
-    backgroundColor: '#39ff14',
+    backgroundColor: '#4a1a6b',
     paddingVertical: 20,
     paddingHorizontal: 50,
     borderRadius: 4,
+    borderWidth: 2,
+    borderColor: '#6b2d9e',
+    shadowColor: '#8b3dc7',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 8,
   },
   startButtonText: {
-    color: '#0a0a12',
+    color: '#ffffff',
     fontSize: 20,
     fontWeight: '900',
     letterSpacing: 3,
   },
   lobbyItem: {
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#4a1a6b',
     padding: 18,
     marginVertical: 6,
     borderRadius: 4,
     borderLeftWidth: 4,
-    borderLeftColor: '#00f5ff',
+    borderLeftColor: '#8b3dc7',
+    borderWidth: 2,
+    borderColor: '#6b2d9e',
   },
   lobbyItemText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  lobbyItemDisabled: {
+    opacity: 0.5,
+  },
+  lobbyItemJoining: {
+    opacity: 1,
+    borderColor: '#8b3dc7',
+    borderWidth: 3,
+  },
+  gameOverTitle: {
+    fontSize: 48,
+    fontWeight: '900',
+    letterSpacing: 5,
+    marginBottom: 20,
+    fontFamily: "Tsukimi-Rounded-Bold"
+  },
+  gameOverSubtitle: {
+    fontSize: 18,
+    color: '#ffffff',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  finalScoreText: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#ffffff',
+    letterSpacing: 2,
   },
   gameContainer: {
     flex: 1,
@@ -824,8 +1003,8 @@ const styles = StyleSheet.create({
     borderRadius: BULLET_DISPLAY_SIZE / 2,
   },
   myBullet: {
-    backgroundColor: '#00f5ff',
-    shadowColor: '#00f5ff',
+    backgroundColor: '#0077ffff',
+    shadowColor: '#0051ffff',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 1,
     shadowRadius: 5,
@@ -837,11 +1016,32 @@ const styles = StyleSheet.create({
     shadowOpacity: 1,
     shadowRadius: 5,
   },
-  controlButton: {
+  controlsContainer: {
     position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 120,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  shootButtonContainer: {
     width: 140,
-    height: 70,
+    height: 120,
+    opacity: 0.7,
     overflow: 'hidden',
+  },
+  rotateButtonContainer: {
+    width: 140,
+    height: 120,
+    opacity: 0.7,
+    overflow: 'hidden',
+  },
+  ammoContainerCenter: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   buttonImage: {
     flex: 1,
@@ -881,10 +1081,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   ammoText: {
-    color: '#00f5ff',
+    color: '#ffffffff',
     fontSize: 24,
     fontWeight: '700',
-    textShadowColor: '#00f5ff',
+    textShadowColor: '#ffffffff',
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 8,
   },
@@ -909,15 +1109,9 @@ const styles = StyleSheet.create({
   },
   winText: {
     color: '#39ff14',
-    textShadowColor: '#39ff14',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 30,
   },
   loseText: {
     color: '#ff3366',
-    textShadowColor: '#ff3366',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 30,
   },
   scoreText: {
     fontSize: 32,

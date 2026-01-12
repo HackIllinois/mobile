@@ -1,8 +1,8 @@
 import ExpoModulesCore
 
 public class LocalConnectionModule: Module {
-  private lazy var sessionManager: MultipeerSessionManager = {
-    let manager = MultipeerSessionManager()
+  private lazy var sessionManager: CoreBluetoothSessionManager = {
+    let manager = CoreBluetoothSessionManager()
     
     // 1. Discovery: Found a room/peer
     manager.onOpponentFound = { [weak self] endpointId, endpointName in

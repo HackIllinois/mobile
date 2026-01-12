@@ -17,8 +17,8 @@
       "supportsTablet": true,
       "bundleIdentifier": "org.hackillinois.ios",
       "infoPlist": {
-        "NSLocalNetworkUsageDescription": "This app uses the local network to discover and connect with nearby players for duels.",
-        "NSBonjourServices": ["_shooter-game._tcp"]
+        "NSBluetoothAlwaysUsageDescription": "This app uses Bluetooth to connect with nearby players for multiplayer games.",
+        "NSBluetoothPeripheralUsageDescription": "This app uses Bluetooth to connect with nearby players for multiplayer games."
       }
     },
     "android": {
