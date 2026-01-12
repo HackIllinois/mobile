@@ -17,7 +17,8 @@
       "supportsTablet": true,
       "bundleIdentifier": "org.hackillinois.ios",
       "infoPlist": {
-        "NSCameraUsageDescription": "Allow camera access to scan QR codes."
+        "NSCameraUsageDescription": "Allow camera access to scan QR codes.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
