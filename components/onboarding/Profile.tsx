@@ -1,17 +1,21 @@
-import { useEffect, useRef } from "react";
-import { StyleSheet, View, Image, Text, TouchableOpacity, Animated, Easing, useWindowDimensions } from "react-native";
+import { StyleSheet, View, Image, Text, TouchableOpacity, Animated, useWindowDimensions } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Clouds from "../../assets/onboarding/loading/clouds.svg";
 import TinyStars from "../../assets/onboarding/loading/tiny stars.svg";
-import Navbar from "../../assets/onboarding/navbar.svg";
 import GetStartedButton from "../../assets/onboarding/get-started-button.svg";
+import InteractiveNavbar from "./InteractiveNavbar";
 
 type OnSkipProps = {
   onFinish: () => void;
   onStart: () => void;
+  currentScreen: number;
+  onPlanetPress: (index: number) => void;
+  cloudX1: Animated.Value;
+  cloudX2: Animated.Value;
+  starOpacity: Animated.Value;
 };
 
-export default function ScreenThree({ onFinish, onStart }: OnSkipProps) {
+export default function ScreenThree({ onFinish, onStart, currentScreen, onPlanetPress, cloudX1, cloudX2, starOpacity }: OnSkipProps) {
     const { width, height } = useWindowDimensions();
 
     const figmaWidth = 393;
@@ -31,69 +35,8 @@ export default function ScreenThree({ onFinish, onStart }: OnSkipProps) {
     const HEADER_WIDTH = scaleWidth(335);
     const HEADER_TOP = scaleHeight(632);
     const HEADER_LEFT = scaleWidth(29);
-    const SKIP_BUTTON_TOP = scaleHeight(762);
-    const SKIP_BUTTON_LEFT = scaleWidth(94);
-    const GET_STARTED_BUTTON_WIDTH = scaleWidth(95);
-    const GET_STARTED_BUTTON_HEIGHT = scaleHeight(31.22377586364746);
-    const GET_STARTED_BUTTON_TOP = scaleHeight(758);
-    const GET_STARTED_BUTTON_LEFT = scaleWidth(250);
-
-    const cloudX1 = useRef(new Animated.Value(0)).current;
-    const cloudX2 = useRef(new Animated.Value(0)).current;
-    const starOpacity = useRef(new Animated.Value(0.8)).current;
-
-    useEffect(() => {
-        Animated.loop(
-            Animated.sequence([
-                Animated.timing(cloudX1, {
-                    toValue: 30,
-                    duration: 8000,
-                    easing: Easing.inOut(Easing.ease),
-                    useNativeDriver: true,
-                }),
-                Animated.timing(cloudX1, {
-                    toValue: 0,
-                    duration: 8000,
-                    easing: Easing.inOut(Easing.ease),
-                    useNativeDriver: true,
-                }),
-            ])
-        ).start();
-
-        Animated.loop(
-            Animated.sequence([
-                Animated.timing(cloudX2, {
-                    toValue: 40,
-                    duration: 10000,
-                    easing: Easing.inOut(Easing.ease),
-                    useNativeDriver: true,
-                }),
-                Animated.timing(cloudX2, {
-                    toValue: 0,
-                    duration: 10000,
-                    easing: Easing.inOut(Easing.ease),
-                    useNativeDriver: true,
-                }),
-            ])
-        ).start();
-
-        Animated.loop(
-            Animated.sequence([
-                Animated.timing(starOpacity, {
-                    toValue: 0.4,
-                    duration: 1000,
-                    easing: Easing.inOut(Easing.ease),
-                    useNativeDriver: true,
-                }),
-                Animated.timing(starOpacity, {
-                    toValue: 0.8,
-                    duration: 1000,
-                    easing: Easing.inOut(Easing.ease),
-                    useNativeDriver: true,
-                }),
-            ])
-        ).start();
-    }, []);
+    const GET_STARTED_BUTTON_WIDTH = scaleWidth(135);
+    const GET_STARTED_BUTTON_HEIGHT = scaleHeight(44);
 
     return (
         <LinearGradient
@@ -144,11 +87,12 @@ export default function ScreenThree({ onFinish, onStart }: OnSkipProps) {
             <View style={{
                 position: 'absolute',
                 top: scaleHeight(80),
-                left: width * 0.075,
+                width: '100%',
+                alignItems: 'center',
             }}>
-                <Navbar
-                    width={width * 0.85}
-                    height={(width * 0.85) * 0.0885}
+                <InteractiveNavbar
+                    currentScreen={currentScreen}
+                    onPlanetPress={onPlanetPress}
                 />
             </View>
 
@@ -192,8 +136,9 @@ export default function ScreenThree({ onFinish, onStart }: OnSkipProps) {
             <TouchableOpacity
                 style={{
                     position: 'absolute',
-                    top: SKIP_BUTTON_TOP,
-                    left: SKIP_BUTTON_LEFT,
+                    bottom: scaleHeight(70),
+                    left: width * 0.5 - scaleWidth(125),
+                    height: scaleHeight(44),
                     justifyContent: 'center',
                     alignItems: 'center',
                 }}
@@ -204,12 +149,12 @@ export default function ScreenThree({ onFinish, onStart }: OnSkipProps) {
 
             {/* Get Started button */}
             <TouchableOpacity
+                onPress={onStart}
                 style={{
                     position: 'absolute',
-                    top: GET_STARTED_BUTTON_TOP,
-                    left: GET_STARTED_BUTTON_LEFT,
+                    bottom: scaleHeight(70),
+                    left: width * 0.5 + scaleWidth(27.5),
                 }}
-                onPress={onStart}
             >
                 <GetStartedButton
                     width={GET_STARTED_BUTTON_WIDTH}
@@ -244,7 +189,8 @@ const styles = StyleSheet.create({
     bottomSection: {
         alignItems: "center",
     },
-    navbar: {},
+    navbar: {
+    },
     iphone: {
         aspectRatio: 1,
     },

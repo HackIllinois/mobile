@@ -4,13 +4,16 @@ import { LinearGradient } from "expo-linear-gradient";
 import Clouds from "../../../assets/onboarding/loading/clouds.svg";
 import TinyStars from "../../../assets/onboarding/loading/tiny stars.svg";
 import Astronaut from "../../../assets/onboarding/loading/astronaut.svg";
-import HackIllinoisText from "../../../assets/onboarding/loading/hackillinois-text.svg"; 
+import HackIllinoisText from "../../../assets/onboarding/loading/hackillinois-text.svg";
 
 type LoadingScreenProps = {
   onFinish: () => void;
+  cloudX1: Animated.Value;
+  cloudX2: Animated.Value;
+  starOpacity: Animated.Value;
 };
 
-export default function LoadingScreen({ onFinish }: LoadingScreenProps) {
+export default function LoadingScreen({ onFinish, cloudX1, cloudX2, starOpacity }: LoadingScreenProps) {
   const { width, height } = useWindowDimensions();
 
   const figmaWidth = 393;
@@ -36,9 +39,6 @@ export default function LoadingScreen({ onFinish }: LoadingScreenProps) {
   const fadeIn = useRef(new Animated.Value(0)).current;
   const astronautY = useRef(new Animated.Value(0)).current;
   const astronautRotate = useRef(new Animated.Value(0)).current;
-  const cloudX1 = useRef(new Animated.Value(0)).current;
-  const cloudX2 = useRef(new Animated.Value(0)).current;
-  const starOpacity = useRef(new Animated.Value(0.8)).current;
   const textOpacity = useRef(new Animated.Value(0)).current;
   const loadingBarWidth = useRef(new Animated.Value(0)).current;
 
@@ -107,60 +107,7 @@ export default function LoadingScreen({ onFinish }: LoadingScreenProps) {
       ])
     ).start();
 
-    // Cloud animations
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(cloudX1, {
-          toValue: 30,
-          duration: 8000,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-        Animated.timing(cloudX1, {
-          toValue: 0,
-          duration: 8000,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(cloudX2, {
-          toValue: 40,
-          duration: 10000,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-        Animated.timing(cloudX2, {
-          toValue: 0,
-          duration: 10000,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-
-    // Star twinkling animation
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(starOpacity, {
-          toValue: 0.4,
-          duration: 1000,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-        Animated.timing(starOpacity, {
-          toValue: 0.8,
-          duration: 1000,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-
-    // Loading bar animation 
+    // Loading bar animation
     Animated.timing(loadingBarWidth, {
       toValue: 1,
       duration: 2500,

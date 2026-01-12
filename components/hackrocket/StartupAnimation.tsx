@@ -9,7 +9,13 @@ import StartButton from '../../assets/onboarding/welcome/start-button.svg';
 
 const AnimatedHackRocket = Animated.createAnimatedComponent(HackRocket);
 
-export default function StartupAnimation() {
+type StartupAnimationProps = {
+  cloudX1: Animated.Value;
+  cloudX2: Animated.Value;
+  starOpacity: Animated.Value;
+};
+
+export default function StartupAnimation({ cloudX1, cloudX2, starOpacity }: StartupAnimationProps) {
   const { width, height } = useWindowDimensions();
 
   // Figma design dimensions (matching WelcomePage.tsx)
@@ -67,65 +73,9 @@ export default function StartupAnimation() {
   const SKIP_FONT_SIZE = scaleFontSize(18);
 
   const translateY = useRef(new Animated.Value(0)).current;
-  const cloudX1 = useRef(new Animated.Value(0)).current;
-  const cloudX2 = useRef(new Animated.Value(0)).current;
-  const starOpacity = useRef(new Animated.Value(0.8)).current;
   const contentOpacity = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    // Cloud animations
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(cloudX1, {
-          toValue: 30,
-          duration: 8000,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-        Animated.timing(cloudX1, {
-          toValue: 0,
-          duration: 8000,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(cloudX2, {
-          toValue: 40,
-          duration: 10000,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-        Animated.timing(cloudX2, {
-          toValue: 0,
-          duration: 10000,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-
-    // Star twinkling animation
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(starOpacity, {
-          toValue: 0.4,
-          duration: 1000,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-        Animated.timing(starOpacity, {
-          toValue: 0.8,
-          duration: 1000,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-
     // Rocket flies up from bottom and content fades out simultaneously
     Animated.parallel([
       Animated.timing(translateY, {
