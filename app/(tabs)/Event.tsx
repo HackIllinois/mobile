@@ -223,13 +223,8 @@ export default function EventScreen() {
     <StarryBackground scrollY={scrollY}>
       <View style={[styles.container, { paddingTop: insets.top }]}>
         
-        <View style={[styles.header, { paddingHorizontal: 30, flexDirection: 'column', alignItems: 'flex-start' }]}>
+        <View style={[styles.header, { marginTop: insets.top, marginLeft: insets.left + 15, flexDirection: 'column', alignItems: 'flex-start', backgroundColor: 'transparent' }]}>
           <Text style={styles.title}>Schedule</Text>
-          {currentEvent && (
-            <Text style={[styles.text, { color: 'white' }]}>
-              {currentEvent.name}
-            </Text>
-          )}
         </View>
 
         {uniqueDays.length > 0 && (
