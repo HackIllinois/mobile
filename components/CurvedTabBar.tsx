@@ -5,21 +5,24 @@ import Svg, { Path, Defs, RadialGradient, Stop, Circle } from 'react-native-svg'
 import { useLinkBuilder } from '@react-navigation/native';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 
-const { width, height } = Dimensions.get('window');
+// 1. Constants
+const { width } = Dimensions.get('window');
 const WIDTH = width;
-const TAB_BAR_HEIGHT = Math.max(height * 0.125, 55); // Slightly reduced but with minimum height
+const TAB_CONTENT_HEIGHT = 65; // Fixed height for the interactive area
 const BUTTON_HIT_SLOP = { top: 15, bottom: 15, left: 15, right: 15 };
 
-const getSvgPath = (height: number) => `
+// 2. SVG Path Generator
+const getSvgPath = (width: number, height: number, borderRadius: number = 20) => `
   M 0 ${height}
-  L 0 20
-  Q 0 0 20 0
-  L ${WIDTH - 20} 0
-  Q ${WIDTH} 0 ${WIDTH} 20
-  L ${WIDTH} ${height}
+  L 0 ${borderRadius}
+  Q 0 0 ${borderRadius} 0
+  L ${width - borderRadius} 0
+  Q ${width} 0 ${width} ${borderRadius}
+  L ${width} ${height}
   Z
 `;
 
+// 3. Types
 interface TabButtonProps {
   route: any;
   isFocused: boolean;
@@ -29,13 +32,13 @@ interface TabButtonProps {
   buildHref: (name: string, params?: any) => string;
 }
 
+// 4. Individual Tab Button Component
 function TabButton({
   route,
   isFocused,
   options,
   onPress,
   onLongPress,
-  buildHref
 }: TabButtonProps) {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const rotateAnim = useRef(new Animated.Value(0)).current;
@@ -75,24 +78,18 @@ function TabButton({
           style={[
             styles.tabFab,
             isFocused && styles.tabFabShadow,
-            {
-              transform: [{ scale: scaleAnim }],
-            },
+            { transform: [{ scale: scaleAnim }] },
           ]}
         >
           <View style={[styles.tabFabGradient, isFocused && styles.tabFabActive]}>
-            <Animated.View
-              style={[
-                styles.tabFabInner,
-              ]}
-            >
+            <View style={styles.tabFabInner}>
               {options.tabBarIcon &&
                 options.tabBarIcon({
                   color: "#FFFFFF",
                   size: 26,
                   focused: isFocused
                 })}
-            </Animated.View>
+            </View>
           </View>
         </Animated.View>
       </Pressable>
@@ -100,6 +97,7 @@ function TabButton({
   );
 }
 
+// 5. Main Tab Bar Component
 export function CurvedTabBar({
   state,
   descriptors,
@@ -107,20 +105,16 @@ export function CurvedTabBar({
 }: BottomTabBarProps) {
   const { buildHref } = useLinkBuilder();
   const insets = useSafeAreaInsets();
-  const bottomPadding = Platform.OS === 'android' ? Math.max(insets.bottom, 8) : insets.bottom;
-  const totalHeight = TAB_BAR_HEIGHT + bottomPadding;
-  const svgPath = getSvgPath(totalHeight);
+  
+  const totalHeight = TAB_CONTENT_HEIGHT + insets.bottom + 12;
+  const svgPath = getSvgPath(WIDTH, totalHeight);
   const visibleRoutes = state.routes.filter((route) => route.name !== "Profile");
 
   return (
-    <View style={styles.container}>
-      {/* SVG background */}
-      <View style={styles.svgWrapper}>
-        <Svg
-          width={WIDTH}
-          height={TAB_BAR_HEIGHT}
-          style={styles.svg}
-        >
+    <View style={[styles.container, { height: totalHeight }]}>
+      
+      <View style={StyleSheet.absoluteFill}>
+        <Svg width={WIDTH} height={totalHeight}>
           <Defs>
             <RadialGradient
               id="grad"
@@ -135,12 +129,14 @@ export function CurvedTabBar({
             </RadialGradient>
           </Defs>
           <Path d={svgPath} fill="url(#grad)" />
-          <Circle cx={WIDTH / 2} cy={TAB_BAR_HEIGHT / 2} r="4" fill="#7B2CBF" opacity="0.3" />
+          <Circle cx={WIDTH / 2} cy={totalHeight / 2} r="4" fill="#7B2CBF" opacity="0.3" />
         </Svg>
       </View>
 
-      {/* Tab buttons */}
-      <View style={styles.buttonOverlay}>
+      <View style={[styles.buttonOverlay, { 
+          height: totalHeight, 
+          paddingBottom: insets.bottom 
+        }]}>
         {visibleRoutes.map((route, index) => {
           const { options } = descriptors[route.key];
           const isFocused = state.index === state.routes.indexOf(route);
@@ -183,48 +179,28 @@ export function CurvedTabBar({
 
 const styles = StyleSheet.create({
   container: {
-    position: 'relative',
-    backgroundColor: 'black',
-    height: TAB_BAR_HEIGHT,
-  },
-  svgWrapper: {
-    position: 'relative',
     width: '100%',
-    height: TAB_BAR_HEIGHT,
-  },
-  svg: {
-    position: "absolute",
-    bottom: 0,
+    backgroundColor: 'transparent',
   },
   buttonOverlay: {
     position: 'absolute',
-    top: 21,
+    top: 0,
     left: 0,
     right: 0,
-    height: TAB_BAR_HEIGHT,
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
-    zIndex: 10,
+    zIndex: 10, 
   },
   tabButtonWrapper: {
     flex: 1,
-    height: TAB_BAR_HEIGHT, 
     justifyContent: 'center',
     alignItems: 'center',
-    paddingBottom: 60
   },
   pressableArea: {
     padding: 12,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  tabFabShadow: {
-    shadowColor: "#7B2CBF",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.6,
-    shadowRadius: 16,
-    elevation: 12,
   },
   tabFab: {
     width: 56,
@@ -250,5 +226,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "transparent",
+  },
+  tabFabShadow: {
+    shadowColor: "#7B2CBF",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.6,
+    shadowRadius: 16,
+    elevation: 12,
   },
 });
