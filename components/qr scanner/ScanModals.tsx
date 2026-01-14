@@ -1,5 +1,7 @@
 import React from 'react';
 import { View, Text, Modal, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import CheckMark from '../../assets/qr-scanner/check-mark.svg';
+import OkButton from '../../assets/qr-scanner/ok-button.svg';
 
 export interface ScanResult {
   status: 'success' | 'error';
@@ -34,7 +36,7 @@ export function ScanResultModal({ visible, onClose, result }: ScanResultModalPro
         <View style={modalStyles.modalContent}>
           {isSuccess ? (
             <View style={modalStyles.successContent}>
-              <Text style={modalStyles.checkMark}>✓</Text>
+              <CheckMark width={120} height={120} style={modalStyles.checkMark} />
               {eventName ? (
                 <>
                   <Text style={modalStyles.modalEventName}>{eventName}</Text>
@@ -51,8 +53,8 @@ export function ScanResultModal({ visible, onClose, result }: ScanResultModalPro
               <Text style={modalStyles.modalMessage}>{message}</Text>
             </View>
           )}
-          <TouchableOpacity style={modalStyles.okButton} onPress={onClose}>
-            <Text style={modalStyles.okButtonText}>OK</Text>
+          <TouchableOpacity onPress={onClose}>
+            <OkButton width={185} height={41} />
           </TouchableOpacity>
         </View>
       </View>
@@ -140,7 +142,7 @@ const modalStyles = StyleSheet.create({
   },
   modalContent: {
     width: '80%',
-    backgroundColor: 'white',
+    backgroundColor: '#FFEAFE',
     paddingVertical: 40,
     paddingHorizontal: 20,
     borderRadius: 20,
@@ -157,16 +159,7 @@ const modalStyles = StyleSheet.create({
     width: '100%',
   },
   checkMark: {
-    fontSize: 90,
-    color: '#000000',
-    backgroundColor: '#ACACAC',
-    borderRadius: 60,
-    width: 120,
-    height: 120,
-    textAlign: 'center',
-    lineHeight: 120,
     marginBottom: 20,
-    overflow: 'hidden',
   },
   modalEventName: {
     fontSize: 20,

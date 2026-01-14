@@ -174,13 +174,6 @@ export default function RootLayout() {
       ) : (
         <Stack.Screen name="(tabs)" />
       )}
-      <Stack.Screen
-        name="Profile"
-        options={{
-          presentation: 'modal',
-          headerShown: false,
-        }}
-      />
     </Stack>
   );
 }

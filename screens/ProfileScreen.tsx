@@ -2,21 +2,29 @@ import React, { useState, useCallback } from 'react';
 import {
   Text,
   TouchableOpacity,
-  ScrollView,
   ActivityIndicator,
   Alert,
   StyleSheet,
+  View,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import api from '../api';
 import axios, { AxiosResponse } from 'axios';
-import { ProfileHeader } from '../components/profile/ProfileHeader';
 import { ProfileAvatar } from '../components/profile/ProfileAvatar';
 import { UserStatsCard } from '../components/profile/UserStatsCard';
 import { QRCodeModal } from '../components/profile/QRCodeModal';
-import { EditButtons } from '../components/profile/EditButtons';
+import { AvatarSelectionModal } from '../components/profile/AvatarSelectionModal';
+import FrontBoxSvg from '../assets/profile/profile-screen/front-box.svg';
+import BackBoxSvg from '../assets/profile/profile-screen/back-box.svg';
+import ButtonSvg from '../assets/profile/profile-screen/button.svg';
+import QRCodeButtonSvg from '../assets/profile/profile-screen/qr-code-button.svg';
+import EditButtonSvg from '../assets/profile/profile-screen/edit-button.svg';
+import BackgroundSvg from '../assets/profile/background.svg';
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 interface UserProfile {
   userId: string;
@@ -38,14 +46,12 @@ interface QrCodeResponse {
 export default function ProfileScreen() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isEditing, setIsEditing] = useState(false);
-  const router = useRouter(); 
-  
-  const [displayName, setDisplayName] = useState('');
-  const [discordTag, setDiscordTag] = useState('');
+  const router = useRouter();
+
   const [qrCode, setQrInfo] = useState<string | null>(null);
   const [qrLoading, setQrLoading] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -66,11 +72,13 @@ export default function ProfileScreen() {
       const response: any = await api.get<UserProfile>('profile');
       const data = response.data;
       setProfile(data);
-      setDisplayName(data.displayName);
-      setDiscordTag(data.discordTag);
     } catch (error) {
-      console.error("Failed to fetch profile:", error);
-      console.log("Could not load profile. Please try again later.");
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
+        console.log("Profile not found - user does not have a profile yet");
+      } else {
+        console.error("Failed to fetch profile:", error);
+      }
+      // (Staff/Unauthorized Attendee) Just logging the error and letting the UI handle it for now
     } finally {
       setIsLoading(false);
     }
@@ -114,50 +122,12 @@ export default function ProfileScreen() {
     }, [profile, fetchQrCode]) 
   );
 
-  const handleSave = async () => {
-    if (!profile) return;
-    
-    if (displayName === profile.displayName && discordTag === profile.discordTag) {
-        setIsEditing(false);
-        return;
-    }
-
-    setIsLoading(true); 
-    try {
-      const updatedProfile = {
-        displayName: displayName,
-        discordTag: discordTag,
-      };
-      
-      const response: any = await api.put<UserProfile>('profile', updatedProfile);
-      const data = response.data;
-      
-      setProfile(data);
-      setIsEditing(false);
-      Alert.alert("Success", "Profile updated successfully!");
-      
-    } catch (error) {
-      console.error("Failed to save profile:", error);
-      let message = "An unknown error occurred.";
-      if (axios.isAxiosError(error) && error.response) {
-        message = error.response.data?.message || 'Failed to update profile. Please check your input.';
-      }
-      Alert.alert("Update Failed", message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleLogout = async () => {
     await SecureStore.deleteItemAsync("jwt");
-    setProfile(null); 
-    setQrInfo(null);  
+    setProfile(null);
+    setQrInfo(null);
     Alert.alert("Logged out", "You have been logged out successfully.");
-    router.replace("/AuthScreen"); 
-  };
-
-  const handleGoBack = () => {
-    router.back();
+    router.replace("/AuthScreen");
   };
 
   if (isLoading && !profile) {
@@ -184,50 +154,112 @@ export default function ProfileScreen() {
       </SafeAreaView>
     );
   }
-  
+
   return (
     <SafeAreaView style={styles.container}>
-      <ProfileHeader onGoBack={handleGoBack} />
+      {/* Background */}
+      <View style={styles.backgroundWrapper}>
+        <BackgroundSvg
+          width={SCREEN_WIDTH}
+          height={SCREEN_HEIGHT}
+          preserveAspectRatio="xMidYMid slice"
+        />
+      </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
+      {/* Close Button */}
+      <TouchableOpacity
+        style={styles.closeButton}
+        onPress={() => router.back()}
+      >
+        <Text style={styles.closeButtonText}>✕</Text>
+      </TouchableOpacity>
+
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>PROFILE</Text>
+      </View>
+
+      <View style={styles.contentContainer}>
         <ProfileAvatar
           avatarUrl={profile.avatarUrl}
-          onQRCodePress={() => setShowQrModal(true)}
         />
 
-        <UserStatsCard
-          displayName={profile.displayName}
-          foodWave={profile.foodWave}
-          track={profile.teamStatus || 'GENERAL'}
-          rank={profile.ranking || 0}
-          points={profile.points}
-          pointsToNextRank={Math.max(0, 100 - (profile.points % 100))}
-          isEditing={isEditing}
-          editedDisplayName={displayName}
-          onDisplayNameChange={setDisplayName}
-          onEditPress={() => setIsEditing(!isEditing)}
-        />
+        {/* Boxes */}
+        <View style={styles.boxContainer}>
+          {/* Back Box */}
+          <View style={styles.backBoxWrapper}>
+            <BackBoxSvg
+              width={SCREEN_WIDTH * (313 / 393)}
+              height={SCREEN_WIDTH * (253 / 393)}
+            />
+          </View>
 
-        {isEditing && (
-          <EditButtons
-            isLoading={isLoading}
-            onSave={handleSave}
-            onCancel={() => {
-              setDisplayName(profile.displayName);
-              setDiscordTag(profile.discordTag);
-              setIsEditing(false);
-            }}
-          />
-        )}
+          {/* Front Box */}
+          <View style={styles.frontBoxWrapper}>
+            <FrontBoxSvg
+              width={SCREEN_WIDTH * (313 / 393)}
+              height={SCREEN_WIDTH * (253 / 393)}
+            />
 
-        <TouchableOpacity
-          style={[styles.button, styles.logoutButton]}
-          onPress={handleLogout}
-          disabled={isLoading}
-        >
-          <Text style={styles.buttonText}>Log Out</Text>
-        </TouchableOpacity>
-      </ScrollView>
+            {/* Content */}
+            <View style={styles.frontBoxContent}>
+              <UserStatsCard
+                displayName={profile.displayName}
+                foodWave={profile.foodWave}
+                track={profile.teamStatus || 'GENERAL'}
+                rank={profile.ranking || 0}
+                points={profile.points}
+                pointsToNextRank={Math.max(0, 100 - (profile.points % 100))}
+              />
+            </View>
+          </View>
+
+          {/* Buttons */}
+          {/* QR Code Button */}
+          <TouchableOpacity
+            style={styles.actionButton1}
+            onPress={() => setShowQrModal(true)}
+          >
+            <ButtonSvg
+              width={SCREEN_WIDTH * (83.557 / 393)}
+              height={SCREEN_WIDTH * (83.557 / 393)}
+            />
+            <View style={styles.buttonIconContainer1}>
+              <QRCodeButtonSvg
+                width={SCREEN_WIDTH * (50.134 / 393)}
+                height={SCREEN_WIDTH * (50.134 / 393)}
+              />
+            </View>
+            <Text style={styles.buttonText1}>QR CODE</Text>
+          </TouchableOpacity>
+
+          {/* Avatar Button */}
+          <TouchableOpacity
+            style={styles.actionButton2}
+            onPress={() => setShowAvatarModal(true)}
+          >
+            <ButtonSvg
+              width={SCREEN_WIDTH * (83.557 / 393)}
+              height={SCREEN_WIDTH * (83.557 / 393)}
+            />
+            <View style={styles.buttonIconContainer2}>
+              <EditButtonSvg
+                width={SCREEN_WIDTH * (50.134 / 393)}
+                height={SCREEN_WIDTH * (50.134 / 393)}
+              />
+            </View>
+            <Text style={styles.buttonText2}>EDIT AVATAR</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Logout Button */}
+      <TouchableOpacity
+        style={styles.logoutButton}
+        onPress={handleLogout}
+        disabled={isLoading}
+      >
+        <Text style={styles.logoutButtonText}>Log Out</Text>
+      </TouchableOpacity>
 
       <QRCodeModal
         visible={showQrModal}
@@ -235,8 +267,15 @@ export default function ProfileScreen() {
         qrLoading={qrLoading}
         onClose={() => setShowQrModal(false)}
         onRefresh={() => fetchQrCode(true)}
-        displayName={displayName}
+        displayName={profile.displayName}
       />
+
+      <AvatarSelectionModal
+        visible={showAvatarModal}
+        currentAvatarId={profile.avatarUrl?.split('/').pop()?.replace('.png', '').replace('.svg', '') || null}
+        onClose={() => setShowAvatarModal(false)}
+      />
+
     </SafeAreaView>
   );
 }
@@ -247,14 +286,102 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5F5F5',
     fontFamily: 'Montserrat',
   },
+  backgroundWrapper: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT,
+    zIndex: -1,
+  },
   centered: {
     justifyContent: 'center',
     alignItems: 'center',
   },
-  scrollContainer: {
-    paddingVertical: 30,
-    paddingHorizontal: 20,
+  boxContainer: {
+    position: 'absolute',
+    width: SCREEN_WIDTH * (313 / 393),
+    height: SCREEN_WIDTH * (253 / 393),
+    top: SCREEN_WIDTH * ((462 - 130) / 393),
+    left: SCREEN_WIDTH * (36 / 393),
+    borderRadius: 2,
+    borderWidth: 4,
+    borderColor: 'transparent',
+  },
+  backBoxWrapper: {
+    position: 'absolute',
+    top: 0,
+    left: SCREEN_WIDTH * 0.053,
+  },
+  frontBoxWrapper: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+  },
+  frontBoxContent: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingTop: SCREEN_WIDTH * 0.06,
+    paddingLeft: SCREEN_WIDTH * 0.08,
+    paddingRight: SCREEN_WIDTH * 0.06,
+    paddingBottom: SCREEN_WIDTH * 0.04,
+  },
+  actionButton1: {
+    position: 'absolute',
+    top: SCREEN_WIDTH * ((189 - 462) / 393), 
+    left: SCREEN_WIDTH * ((244 - 36) / 393), 
+    justifyContent: 'center',
     alignItems: 'center',
+  },
+  actionButton2: {
+    position: 'absolute',
+    top: SCREEN_WIDTH * ((299 - 462) / 393), 
+    left: SCREEN_WIDTH * ((244 - 36) / 393), 
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  buttonIconContainer1: {
+    position: 'absolute',
+    top: SCREEN_WIDTH * (7.24 / 393),
+    left: SCREEN_WIDTH * (16.71 / 393),
+    width: SCREEN_WIDTH * (50.134 / 393),
+    height: SCREEN_WIDTH * (50.134 / 393),
+  },
+  buttonIconContainer2: {
+    position: 'absolute',
+    top: SCREEN_WIDTH * (7.24 / 393),
+    left: SCREEN_WIDTH * (16.71 / 393),
+    width: SCREEN_WIDTH * (50.134 / 393),
+    height: SCREEN_WIDTH * (50.134 / 393),
+  },
+  buttonText1: {
+    position: 'absolute',
+    top: SCREEN_WIDTH * (62 / 393),
+    left: SCREEN_WIDTH * (12 / 393),
+    width: SCREEN_WIDTH * (60 / 393),
+    fontFamily: 'Tsukimi Rounded',
+    fontWeight: '700',
+    fontSize: SCREEN_WIDTH * (8.91 / 393),
+    lineHeight: SCREEN_WIDTH * (11 / 393),
+    letterSpacing: 0,
+    textAlign: 'center',
+    color: '#FFFFFF',
+  },
+  buttonText2: {
+    position: 'absolute',
+    top: SCREEN_WIDTH * (62 / 393),
+    left: SCREEN_WIDTH * (8 / 393),
+    width: SCREEN_WIDTH * (68 / 393),
+    fontFamily: 'Tsukimi Rounded',
+    fontWeight: '700',
+    fontSize: SCREEN_WIDTH * (8.91 / 393),
+    lineHeight: SCREEN_WIDTH * (11 / 393),
+    letterSpacing: 0,
+    textAlign: 'center',
+    color: '#FFFFFF',
   },
   errorText: {
     color: '#FF5555',
@@ -275,10 +402,56 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   logoutButton: {
-    backgroundColor: '#C70039',
-    borderRadius: 40,
+    position: 'absolute',
+    top: SCREEN_WIDTH * (60 / 393),
+    right: SCREEN_WIDTH * (20 / 393),
+    backgroundColor: '#E936F8',
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    zIndex: 100,
+  },
+  logoutButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  contentContainer: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    position: 'relative',
+    height: SCREEN_WIDTH * (51 / 393),
+    marginTop: SCREEN_WIDTH * ((55 - 30) / 393), 
+  },
+  headerTitle: {
+    position: 'absolute',
+    left: SCREEN_WIDTH * (31 / 393),
+    top: 0,
+    width: SCREEN_WIDTH * (222 / 393),
+    height: SCREEN_WIDTH * (51 / 393),
+    fontSize: 26,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    textAlign: 'left',
+    letterSpacing: 1.5,
+    fontFamily: 'Tsukimi Rounded',
+  },
+  closeButton: {
+    position: 'absolute',
+    left: SCREEN_WIDTH * (20 / 393),
+    top: SCREEN_WIDTH * (50 / 393),
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
     alignItems: 'center',
-    width: '40%',
-    marginTop: 20,
+    zIndex: 100,
+  },
+  closeButtonText: {
+    color: '#FFFFFF',
+    fontSize: 28,
+    fontWeight: '300',
   },
 });

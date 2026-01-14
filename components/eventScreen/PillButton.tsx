@@ -1,14 +1,12 @@
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 
 interface PillButtonProps {
-    toggleSave: () => void;
-    points: number;
-    isSaved: boolean;
+  toggleSave: () => void;
+  points: number;
+  isSaved: boolean;
 }
 
-
-export const PillButton = ({toggleSave, points, isSaved}: PillButtonProps) => {
-
+export const PillButton = ({ toggleSave, points, isSaved }: PillButtonProps) => {
   return (
     <View style={styles.pillContainer}>
       <View style={styles.pointsContainer}>
@@ -20,14 +18,14 @@ export const PillButton = ({toggleSave, points, isSaved}: PillButtonProps) => {
         style={({ pressed }) => [
           styles.saveButton,
           {
-            backgroundColor: pressed
-              ? isSaved ? '#4a4a4a' : '#d3d3d3' 
-              : isSaved ? '#666666' : '#E0E0E0', 
+            backgroundColor: isSaved 
+              ? (pressed ? '#5e00a3' : '#3f006c') 
+              : (pressed ? '#7a8aff' : '#4d5eff'),
           },
         ]}
       >
-        <Text style={[styles.saveButtonText, { color: isSaved ? '#FFFFFF' : '#333333' }]}>
-          { isSaved ? 'Saved' : 'Save' }
+        <Text style={styles.saveButtonText}>
+          {isSaved ? 'Saved' : 'Save'}
         </Text>
       </Pressable>
     </View>
@@ -38,32 +36,29 @@ const styles = StyleSheet.create({
   pillContainer: {
     flexDirection: 'row',
     borderRadius: 20,
-    overflow: 'hidden', 
-    borderWidth: 1,
-    borderColor: '#CCCCCC', 
-    backgroundColor: '#FFFFFF',
+    overflow: 'hidden',
+    backgroundColor: 'transparent',
   },
   pointsContainer: {
-    backgroundColor: '#FFFFFF',
-    paddingVertical: 8,
+    backgroundColor: '#eddbff',
+    paddingVertical: 6,
     paddingHorizontal: 12,
-    borderRightWidth: 1,
-    borderRightColor: '#CCCCCC',
+    justifyContent: 'center',
   },
   pointsText: {
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 14,
+    fontWeight: '800',
     color: '#333333',
   },
   saveButton: {
-    paddingVertical: 8,
+    paddingVertical: 6,
     paddingHorizontal: 16,
     justifyContent: 'center',
     alignItems: 'center',
   },
   saveButtonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#FFFFFF',
   },
 });
-

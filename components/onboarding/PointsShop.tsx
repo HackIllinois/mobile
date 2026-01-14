@@ -1,21 +1,10 @@
 import { useEffect, useRef } from "react";
-import { StyleSheet, View, Image, Text, TouchableOpacity, Animated, Easing, Dimensions } from "react-native";
+import { StyleSheet, View, Image, Text, TouchableOpacity, Animated, Easing, useWindowDimensions } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Clouds from "../../assets/onboarding/loading/clouds.svg";
 import TinyStars from "../../assets/onboarding/loading/tiny stars.svg";
 import Navbar from "../../assets/onboarding/navbar.svg";
 import NextButton from "../../assets/onboarding/next-button.svg";
-
-const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
-const CLOUDS_TOP = SCREEN_HEIGHT * 0.07;
-const CLOUDS_LEFT = -SCREEN_WIDTH * 0.39;
-const STARS_TOP = SCREEN_HEIGHT * 0.04;
-const STARS_LEFT = -SCREEN_WIDTH * 0.12;
-const NAVBAR_TOP = SCREEN_HEIGHT * 0.10;
-const IPHONE_TOP = SCREEN_HEIGHT * 0.21;
-const HEADER_TOP = SCREEN_HEIGHT * 0.75;
-const SUBTITLE_TOP = SCREEN_HEIGHT * 0.79;
-const BUTTON_TOP = SCREEN_HEIGHT * 0.85;
 
 type OnSkipProps = {
   onFinish: () => void;
@@ -23,6 +12,32 @@ type OnSkipProps = {
 };
 
 export default function ScreenThree({ onFinish, onStart }: OnSkipProps) {
+    const { width, height } = useWindowDimensions();
+
+    const figmaWidth = 393;
+    const figmaHeight = 852;
+    const scaleWidth = (size: number) => (width / figmaWidth) * size;
+    const scaleHeight = (size: number) => (height / figmaHeight) * size;
+    const scaleFontSize = (size: number) => Math.min(scaleWidth(size), scaleHeight(size));
+
+    const CLOUDS_WIDTH = scaleWidth(669.17);
+    const CLOUDS_HEIGHT = scaleHeight(720.11);
+    const STARS_WIDTH = scaleWidth(499.59);
+    const STARS_HEIGHT = scaleHeight(614);
+    const IPHONE_WIDTH = scaleWidth(206);
+    const IPHONE_HEIGHT = scaleHeight(419.03875732421875);
+    const IPHONE_TOP = scaleHeight(175);
+    const IPHONE_LEFT = scaleWidth(94);
+    const HEADER_WIDTH = scaleWidth(335);
+    const HEADER_TOP = scaleHeight(632);
+    const HEADER_LEFT = scaleWidth(29);
+    const SKIP_BUTTON_TOP = scaleHeight(762);
+    const SKIP_BUTTON_LEFT = scaleWidth(94);
+    const NEXT_BUTTON_WIDTH = scaleWidth(95);
+    const NEXT_BUTTON_HEIGHT = scaleHeight(31.22377586364746);
+    const NEXT_BUTTON_TOP = scaleHeight(758);
+    const NEXT_BUTTON_LEFT = scaleWidth(250);
+
     const cloudX1 = useRef(new Animated.Value(0)).current;
     const cloudX2 = useRef(new Animated.Value(0)).current;
     const starOpacity = useRef(new Animated.Value(0.8)).current;
@@ -88,46 +103,119 @@ export default function ScreenThree({ onFinish, onStart }: OnSkipProps) {
             <Animated.View
                 style={[
                     styles.cloudsContainer,
-                    { transform: [{ translateX: cloudX1 }] },
+                    {
+                        top: height * 0.07,
+                        left: -width * 0.39,
+                        transform: [{ translateX: cloudX1 }]
+                    },
                 ]}
             >
-                <Clouds width={669.17} height={720.11} />
+                <Clouds width={CLOUDS_WIDTH} height={CLOUDS_HEIGHT} />
             </Animated.View>
 
             <Animated.View
                 style={[
                     styles.cloudsContainer,
-                    { opacity: 0.5, transform: [{ translateX: cloudX2 }] },
+                    {
+                        top: height * 0.07,
+                        left: -width * 0.39,
+                        opacity: 0.5,
+                        transform: [{ translateX: cloudX2 }]
+                    },
                 ]}
             >
-                <Clouds width={669.17} height={720.11} />
+                <Clouds width={CLOUDS_WIDTH} height={CLOUDS_HEIGHT} />
             </Animated.View>
 
             <Animated.View
-                style={[styles.starsContainer, { opacity: starOpacity }]}
+                style={[
+                    styles.starsContainer,
+                    {
+                        top: height * 0.04,
+                        left: -width * 0.12,
+                        opacity: starOpacity
+                    }
+                ]}
             >
-                <TinyStars width={499.59} height={614} />
+                <TinyStars width={STARS_WIDTH} height={STARS_HEIGHT} />
             </Animated.View>
 
-            <Navbar style={styles.navbar} width={339} height={30} />
-            <Image 
-                source={require("../../assets/onboarding/iphone.png")}
-                style={styles.iphone}
-            />
-            <Text style={styles.headerText}>
-                POINT SHOP
-            </Text>
-            <Text style={styles.subtitleText}>
-                View the available prizes you can redeem using your earned points!
-            </Text>
-            <View style={styles.buttonContainer}>
-                <TouchableOpacity style={styles.skipButton} onPress={onFinish}>
-                    <Text style={styles.skipButtonText}>SKIP</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={onStart}>
-                    <NextButton width={120} height={50.68} />
-                </TouchableOpacity>
+            {/* Navbar */}
+            <View style={{
+                position: 'absolute',
+                top: scaleHeight(80),
+                left: width * 0.075,
+            }}>
+                <Navbar
+                    width={width * 0.85}
+                    height={(width * 0.85) * 0.0885}
+                />
             </View>
+
+            {/* iPhone */}
+            <Image
+                source={require("../../assets/onboarding/iphone.png")}
+                style={{
+                    position: 'absolute',
+                    top: IPHONE_TOP,
+                    left: IPHONE_LEFT,
+                    width: IPHONE_WIDTH,
+                    height: IPHONE_HEIGHT,
+                }}
+                resizeMode="contain"
+            />
+
+            {/* Header */}
+            <View style={{
+                position: 'absolute',
+                top: HEADER_TOP,
+                left: HEADER_LEFT,
+                width: HEADER_WIDTH,
+            }}>
+                <Text style={[styles.headerText, {
+                    fontSize: scaleFontSize(28),
+                    lineHeight: scaleHeight(32),
+                    letterSpacing: scaleWidth(0.14),
+                }]}>POINT SHOP</Text>
+                <Text style={[styles.subtitleText, {
+                    fontSize: scaleFontSize(16),
+                    lineHeight: scaleHeight(22),
+                    letterSpacing: scaleWidth(1.0),
+                    marginTop: scaleHeight(10),
+                    alignSelf: 'center',
+                }]}>
+                    View the available prizes you can redeem using your earned points!
+                </Text>
+            </View>
+
+            {/* Skip button */}
+            <TouchableOpacity
+                style={{
+                    position: 'absolute',
+                    top: SKIP_BUTTON_TOP,
+                    left: SKIP_BUTTON_LEFT,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                }}
+                onPress={onFinish}
+            >
+                <Text style={[styles.skipButtonText, { fontSize: scaleFontSize(18) }]}>SKIP</Text>
+            </TouchableOpacity>
+
+            {/* Next button */}
+            <TouchableOpacity
+                style={{
+                    position: 'absolute',
+                    top: NEXT_BUTTON_TOP,
+                    left: NEXT_BUTTON_LEFT,
+                }}
+                onPress={onStart}
+            >
+                <NextButton
+                    width={NEXT_BUTTON_WIDTH}
+                    height={NEXT_BUTTON_HEIGHT}
+                />
+            </TouchableOpacity>
         </LinearGradient>
     )
 }
@@ -135,63 +223,50 @@ export default function ScreenThree({ onFinish, onStart }: OnSkipProps) {
 const styles = StyleSheet.create({
     background: {
         flex: 1,
-        alignItems: "center",
-        justifyContent: "flex-start",
-        paddingHorizontal: 24,
     },
     cloudsContainer: {
         position: "absolute",
-        top: CLOUDS_TOP,
-        left: CLOUDS_LEFT,
     },
     starsContainer: {
         position: "absolute",
-        top: STARS_TOP,
-        left: STARS_LEFT,
     },
-    navbar: {
-        position: "absolute",
-        top: NAVBAR_TOP,
-        alignSelf: 'center',
+    contentContainer: {
+        flex: 1,
+        justifyContent: "space-between",
+        paddingTop: "10%",
+        paddingBottom: "10%",
     },
+    topSection: {
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    bottomSection: {
+        alignItems: "center",
+    },
+    navbar: {},
     iphone: {
-        position: "absolute",
-        top: IPHONE_TOP,
-        alignSelf: 'center',
+        aspectRatio: 1,
     },
     headerText: {
-        position: "absolute",
-        top: HEADER_TOP,
         width: "100%",
         fontFamily: "Tsukimi-Rounded-Bold",
         fontWeight: "700",
-        fontSize: 28,
-        lineHeight: 32,
-        letterSpacing: 0.14,
         color: "#FFFFFF",
         textAlign: "center",
     },
     subtitleText: {
-        position: "absolute",
-        top: SUBTITLE_TOP,
         width: "75%",
-        alignSelf: "center",
         fontFamily: "Montserrat",
         fontWeight: "500",
-        fontSize: 16,
-        lineHeight: 22,
-        letterSpacing: 1.0,
         textAlign: "center",
         color: "#FFFFFF",
     },
     buttonContainer: {
-        position: "absolute",
-        top: BUTTON_TOP,
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
         width: "70%",
-        alignSelf: "center",
     },
     skipButton: {
         justifyContent: "center",
@@ -199,9 +274,7 @@ const styles = StyleSheet.create({
     },
     skipButtonText: {
         fontFamily: "Tsukimi-Rounded-Bold",
-        fontSize: 18,
         fontWeight: "700",
         color: "#FFFFFF",
     }
 });
-

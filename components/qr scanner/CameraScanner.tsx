@@ -1,78 +1,153 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { CameraView, BarcodeScanningResult } from 'expo-camera';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Dimensions, Modal, Alert } from 'react-native';
+import { CameraView, BarcodeScanningResult, scanFromURLAsync } from 'expo-camera';
+import * as ImagePicker from 'expo-image-picker';
+import ExitSymbol from '../../assets/qr-scanner/exit-symbol.svg';
+import ChooseImageButton from '../../assets/qr-scanner/choose-image-button.svg';
+import ScanCodeTitle from '../../assets/qr-scanner/scan-code-title.svg';
+
+const { width, height } = Dimensions.get('window');
 
 interface CameraScannerViewProps {
+  visible: boolean;
   onScanned: (result: BarcodeScanningResult) => void;
   onClose: () => void;
   isLoading: boolean;
   isScanned: boolean;
 }
 
-export default function CameraScannerView({ 
-  onScanned, 
-  onClose, 
-  isLoading, 
-  isScanned 
+export default function CameraScannerView({
+  visible,
+  onScanned,
+  onClose,
+  isLoading,
+  isScanned
 }: CameraScannerViewProps) {
+  const [imageLibraryPermission, requestImageLibraryPermission] = ImagePicker.useMediaLibraryPermissions();
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
+
+  const handleChooseImage = async () => {
+    try {
+      // Check permissions 
+      if (!imageLibraryPermission?.granted) {
+        if (imageLibraryPermission?.canAskAgain) {
+          const { granted } = await requestImageLibraryPermission();
+          if (!granted) {
+            Alert.alert(
+              "Permission Required",
+              "Please enable media library access in your device settings to choose images."
+            );
+            return;
+          }
+        } else {
+          Alert.alert(
+            "Permission Required",
+            "Please enable media library access in your device settings to choose images."
+          );
+          return;
+        }
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: false,
+        quality: 1,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        setIsProcessingImage(true);
+        const imageUri = result.assets[0].uri;
+
+        const scanResults = await scanFromURLAsync(imageUri, ['qr']);
+
+        setIsProcessingImage(false);
+
+        if (scanResults && scanResults.length > 0) {
+          const qrData = scanResults[0].data;
+          onScanned({ data: qrData, type: 'qr' } as BarcodeScanningResult);
+        } else {
+          Alert.alert(
+            "No QR Code Found",
+            "The selected image does not contain a valid QR code. Please try another image."
+          );
+        }
+      }
+    } catch (error) {
+      setIsProcessingImage(false);
+      console.error("Error choosing image:", error);
+      Alert.alert(
+        "Error",
+        "Failed to process the image. Please try again."
+      );
+    }
+  };
+
   return (
-    <View style={styles.container}>
-      <CameraView
-        onBarcodeScanned={isScanned ? undefined : onScanned}
-        barcodeScannerSettings={{
-          barcodeTypes: ["qr"],
-        }}
-        style={StyleSheet.absoluteFillObject}
-      />
+    <Modal
+      visible={visible}
+      animationType="slide"
+      transparent={true}
+      onRequestClose={onClose}
+    >
+      <View style={styles.container}>
+        {/* Modal overlay with camera inside */}
+        <View style={styles.modalContainer}>
+          <CameraView
+            onBarcodeScanned={isScanned ? undefined : onScanned}
+            barcodeScannerSettings={{
+              barcodeTypes: ["qr"],
+            }}
+            style={StyleSheet.absoluteFillObject}
+          />
 
-      <View style={styles.topBar}>
-        <TouchableOpacity style={styles.topBarButton} onPress={onClose}>
-          <Text style={styles.topBarButtonText}>{"<"}</Text>
-        </TouchableOpacity>
-        <View style={styles.topBarTitle} />
-        <View style={{ width: 40 }} />
-      </View>
-
-      {/* Overlay for transparent effect */}
-      <View style={styles.maskContainer}>
-        <View style={styles.maskTop} />
-        <View style={styles.maskMiddle}>
-          <View style={styles.maskSide} />
-          <View style={styles.scanWindow}>
-            <View style={[styles.corner, styles.cornerTopLeft]} />
-            <View style={[styles.corner, styles.cornerTopRight]} />
-            <View style={[styles.corner, styles.cornerBottomLeft]} />
-            <View style={[styles.corner, styles.cornerBottomRight]} />
+          <View style={styles.topSection}>
+            <TouchableOpacity style={styles.exitButton} onPress={onClose}>
+              <ExitSymbol width={41} height={41} />
+            </TouchableOpacity>
+            <ScanCodeTitle width={244} height={66} style={styles.scanTitle} />
           </View>
-          <View style={styles.maskSide} />
-        </View>
-        <View style={styles.maskBottom}>
-          <Text style={styles.scanHelpText}>
-            Align the QR code with the frame to scan!
-          </Text>
-          <TouchableOpacity style={styles.chooseImageButton}>
-            <Text style={styles.chooseImageButtonText}>Choose image (Placeholder)</Text>
-          </TouchableOpacity>
+
+          <View style={styles.middleSection}>
+            <View style={styles.maskSide} />
+            <View style={styles.qrBox}>
+              {/* Corner brackets - replace with vector */}
+              <View style={[styles.corner, styles.cornerTopLeft]} />
+              <View style={[styles.corner, styles.cornerTopRight]} />
+              <View style={[styles.corner, styles.cornerBottomLeft]} />
+              <View style={[styles.corner, styles.cornerBottomRight]} />
+            </View>
+            <View style={styles.maskSide} />
+          </View>
+
+          <View style={styles.bottomSection}>
+            <Text style={styles.orText}>OR</Text>
+            <TouchableOpacity
+              style={styles.chooseImageButton}
+              onPress={handleChooseImage}
+              disabled={isLoading || isProcessingImage}
+            >
+              <ChooseImageButton width={width * 0.501} height={48} />
+            </TouchableOpacity>
+          </View>
+
+          {(isLoading || isProcessingImage) && (
+            <View style={styles.loadingOverlay}>
+              <ActivityIndicator size="large" color="#ffffff" />
+              <Text style={styles.loadingText}>
+                {isProcessingImage ? 'Processing Image...' : 'Verifying Permissions...'}
+              </Text>
+            </View>
+          )}
         </View>
       </View>
-
-      {isLoading && (
-        <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color="#ffffff" />
-          <Text style={styles.loadingText}>Verifying Permissions...</Text>
-        </View>
-      )}
-    </View>
+    </Modal>
   );
 }
 
-// View 1 Styles 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'black',
+    backgroundColor: 'transparent',
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -86,111 +161,102 @@ const styles = StyleSheet.create({
     marginTop: 10,
     fontSize: 16,
   },
-  topBar: {
+  modalContainer: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#D9D9D9',
-    height: 110,
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    paddingHorizontal: 25,
-    paddingBottom: 15,
-    zIndex: 10,
+    top: height * 0.12, 
+    width: width,
+    height: height * 0.88, 
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    overflow: 'hidden',
+    backgroundColor: 'black', 
   },
-  topBarButton: {
-    width: 40,
-    height: 40,
+  topSection: {
+    height: 220,
+    backgroundColor: 'rgba(64, 26, 121, 0.7)', 
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingBottom: 20,
+  },
+  exitButton: {
+    position: 'absolute',
+    top: 20, 
+    left: 25,
+    width: 41,
+    height: 41,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  topBarButtonText: {
-    fontSize: 28,
+  scanTitle: {
+    fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#000',
+    marginTop: 70,
   },
-  topBarTitle: {
-    height: 35,
-    width: 150,
-    backgroundColor: '#ADADAD',
-    borderRadius: 20,
-  },
-  maskContainer: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 1,
-  },
-  maskTop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-  },
-  maskMiddle: {
-    height: 250,
+  middleSection: {
+    height: width * 0.7, 
     flexDirection: 'row',
   },
   maskSide: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: 'rgba(64, 26, 121, 0.7)', 
   },
-  scanWindow: {
-    width: 250,
-    height: 250,
+  qrBox: {
+    width: width * 0.7, 
+    height: width * 0.7, 
+    backgroundColor: 'transparent',
     position: 'relative',
-  },
-  maskBottom: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    paddingTop: 40,
+    overflow: 'visible',
   },
   corner: {
     position: 'absolute',
     width: 50,
     height: 50,
-    borderColor: 'black',
-    borderWidth: 5,
+    borderColor: '#FFF',
+    borderWidth: 3,
+    zIndex: 10,
   },
   cornerTopLeft: {
-    top: 0,
-    left: 0,
+    top: -15,
+    left: -15,
     borderRightWidth: 0,
     borderBottomWidth: 0,
   },
   cornerTopRight: {
-    top: 0,
-    right: 0,
+    top: -15,
+    right: -15,
     borderLeftWidth: 0,
     borderBottomWidth: 0,
   },
   cornerBottomLeft: {
-    bottom: 0,
-    left: 0,
+    bottom: -15,
+    left: -15,
     borderRightWidth: 0,
     borderTopWidth: 0,
   },
   cornerBottomRight: {
-    bottom: 0,
-    right: 0,
+    bottom: -15,
+    right: -15,
     borderLeftWidth: 0,
     borderTopWidth: 0,
   },
-  scanHelpText: {
+  bottomSection: {
+    flex: 1,
+    backgroundColor: 'rgba(64, 26, 121, 0.7)', 
+    alignItems: 'center',
+    paddingTop: 60,
+  },
+  orText: {
     fontSize: 16,
-    color: 'white',
-    backgroundColor: 'transparent',
-    marginBottom: 30,
+    fontWeight: '700',
+    color: '#FFF',
+    fontFamily: 'Montserrat',
+    marginBottom: 25,
   },
   chooseImageButton: {
-    backgroundColor: '#ADADAD',
-    paddingVertical: 15,
-    paddingHorizontal: 40,
-    borderRadius: 30,
-  },
-  chooseImageButtonText: {
-    fontSize: 18,
-    color: '#333',
-    fontWeight: '500',
+    width: width * 0.501,
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

@@ -1,4 +1,4 @@
-import { Tabs, Link } from "expo-router";
+import { Tabs, Link, usePathname } from "expo-router";
 import { Image, TouchableOpacity, View, StyleSheet } from "react-native";
 import { CurvedTabBar } from "../../components/CurvedTabBar";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -7,6 +7,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 const queryClient = new QueryClient();
 
 export default function Layout() {
+  const pathname = usePathname();
+  const isProfileScreen = pathname === "/Profile";
   return (
     <QueryClientProvider client={queryClient}>
       <View style={styles.container}>
@@ -62,9 +64,16 @@ export default function Layout() {
               ),
             }}
           />
+          <Tabs.Screen
+            name="Profile"
+            options={{
+              tabBarButton: () => null,
+            }}
+          />
         </Tabs>
 
-        <View style={[styles.floatingButton, { top: 60 }]}>
+        {!isProfileScreen && (
+          <View style={[styles.floatingButton, { top: 60 }]}>
             <Link href="/Profile" asChild>
               <TouchableOpacity>
                 <Image
@@ -73,7 +82,8 @@ export default function Layout() {
                 />
               </TouchableOpacity>
             </Link>
-        </View>
+          </View>
+        )}
       </View>
 
     </QueryClientProvider>

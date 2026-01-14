@@ -110,6 +110,7 @@ export function CurvedTabBar({
   const bottomPadding = Platform.OS === 'android' ? Math.max(insets.bottom, 8) : insets.bottom;
   const totalHeight = TAB_BAR_HEIGHT + bottomPadding;
   const svgPath = getSvgPath(totalHeight);
+  const visibleRoutes = state.routes.filter((route) => route.name !== "Profile");
 
   return (
     <View style={styles.container}>
@@ -140,9 +141,9 @@ export function CurvedTabBar({
 
       {/* Tab buttons */}
       <View style={styles.buttonOverlay}>
-        {state.routes.map((route, index) => {
+        {visibleRoutes.map((route, index) => {
           const { options } = descriptors[route.key];
-          const isFocused = state.index === index;
+          const isFocused = state.index === state.routes.indexOf(route);
 
           const onPress = () => {
             const event = navigation.emit({
