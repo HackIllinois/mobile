@@ -20,7 +20,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function PointShop() {
   const screenWidth = Dimensions.get("window").width;
+  const screenHeight = Dimensions.get("window").height;
+  const pageHeight = screenHeight * 0.5; // 50% of screen height
+  const rowHeight = (pageHeight - 50) / 2; // Split between two rows with gap
   // data state
+  console.log("HELLO")
   const [shopItemData, setShopItemData] = useState<ShopItem[]>([]);
   // cart state
   const [cartIds, setCartIds] = useState<string[]>([]);
@@ -29,14 +33,14 @@ export default function PointShop() {
   const [currentPage, setCurrentPage] = useState(0);
 
   // get data
-  useEffect(() => {
-    const fetch = async () => {
-      const response: AxiosResponse = await api.get(
-        "https://adonix.hackillinois.org/shop/"
-      );
-      const data: ShopItem[] = response.data;
-      setShopItemData(data);
-    };
+  // useEffect(() => {
+  //   const fetch = async () => {
+  //     const response: AxiosResponse = await api.get(
+  //       "https://adonix.hackillinois.org/shop/"
+  //     );
+  //     const data: ShopItem[] = response.data;
+  //     setShopItemData(data);
+  //   };
     fetch();
   }, []);
 
@@ -110,13 +114,21 @@ export default function PointShop() {
           scrollEventThrottle={30}
         >
           {pages.map((page, pageIndex) => (
-            <View key={pageIndex} style={[styles.page, { width: screenWidth }]}>
-              <View style={styles.row}>
+            <View key={pageIndex} style={[styles.page, { width: screenWidth, height: pageHeight }]}>
+              {/* Left chevron - show if not first page */}
+              {pageIndex > 0 && (
+                <View style={[styles.chevronLeft, { height: pageHeight }]}>
+                  <Text style={styles.chevronText}>‹</Text>
+                </View>
+              )}
+
+              <View style={[styles.row, { height: rowHeight }]}>
                 {page[0] && (
                   <View style={styles.gridItem}>
                     <ShopItemCard
                       item={page[0]}
                       onPress={() => addShopItemToCart(page[0].itemId)}
+                      scale={0.2}
                     />
                   </View>
                 )}
@@ -125,11 +137,12 @@ export default function PointShop() {
                     <ShopItemCard
                       item={page[1]}
                       onPress={() => addShopItemToCart(page[1].itemId)}
+                      scale={0.2}
                     />
                   </View>
                 )}
               </View>
-              <View style={styles.row}>
+              <View style={[styles.row, { height: rowHeight }]}>
                 {page[2] && (
                   <View style={styles.gridItem}>
                     <ShopItemCard
@@ -147,6 +160,13 @@ export default function PointShop() {
                   </View>
                 )}
               </View>
+
+              {/* Right chevron - show if not last page */}
+              {pageIndex < pages.length - 1 && (
+                <View style={[styles.chevronRight, { height: pageHeight }]}>
+                  <Text style={styles.chevronText}>›</Text>
+                </View>
+              )}
             </View>
           ))}
         </ScrollView>
@@ -186,6 +206,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     gap: 10,
     padding: 20,
+    position: "relative",
   },
   row: {
     flexDirection: "row",
@@ -197,5 +218,28 @@ const styles = StyleSheet.create({
   gridItem: {
     flex: 1,
     aspectRatio: 1,
+  },
+  chevronLeft: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 10,
+    paddingHorizontal: 5,
+  },
+  chevronRight: {
+    position: "absolute",
+    right: 0,
+    top: 0,
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 10,
+    paddingHorizontal: 5,
+  },
+  chevronText: {
+    fontSize: 36,
+    color: "rgba(255, 255, 255, 0.8)",
+    fontWeight: "300",
   },
 });
