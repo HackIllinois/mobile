@@ -4,9 +4,8 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
-  StyleSheet,
   View,
-  Dimensions,
+  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -24,13 +23,12 @@ import QRCodeButtonSvg from '../assets/profile/profile-screen/qr-code-button.svg
 import EditButtonSvg from '../assets/profile/profile-screen/edit-button.svg';
 import BackgroundSvg from '../assets/profile/background.svg';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-
 interface UserProfile {
   userId: string;
   displayName: string;
   discordTag: string;
   avatarUrl: string | null;
+  avatarId?: string | null;  // Character ID (e.g., 'character2')
   points: number;
   pointsAccumulated: number;
   foodWave: number;
@@ -44,6 +42,14 @@ interface QrCodeResponse {
 }
 
 export default function ProfileScreen() {
+  const { width, height } = useWindowDimensions();
+
+  const figmaWidth = 393;
+  const figmaHeight = 852;
+  const scaleWidth = (size: number) => (width / figmaWidth) * size;
+  const scaleHeight = (size: number) => (height / figmaHeight) * size;
+  const scaleFontSize = (size: number) => Math.min(scaleWidth(size), scaleHeight(size));
+
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
@@ -132,7 +138,12 @@ export default function ProfileScreen() {
 
   if (isLoading && !profile) {
     return (
-      <SafeAreaView style={[styles.container, styles.centered]}>
+      <SafeAreaView style={{
+        flex: 1,
+        backgroundColor: '#F5F5F5',
+        justifyContent: 'center',
+        alignItems: 'center',
+      }}>
         <ActivityIndicator size="large" color="#888" />
       </SafeAreaView>
     );
@@ -140,68 +151,169 @@ export default function ProfileScreen() {
 
   if (!profile) {
     return (
-      <SafeAreaView style={[styles.container, styles.centered]}>
-        <Text style={styles.errorText}>Could not load profile.</Text>
-        <TouchableOpacity style={styles.button} onPress={fetchProfile}>
-          <Text style={styles.buttonText}>Try Again</Text>
+      <SafeAreaView style={{
+        flex: 1,
+        backgroundColor: '#F5F5F5',
+        justifyContent: 'center',
+        alignItems: 'center',
+      }}>
+        <Text style={{
+          color: '#FF5555',
+          fontSize: scaleFontSize(18),
+          marginBottom: scaleHeight(20),
+        }}>Could not load profile.</Text>
+        <TouchableOpacity style={{
+          backgroundColor: '#888',
+          padding: scaleWidth(15),
+          borderRadius: scaleWidth(8),
+          alignItems: 'center',
+          width: '100%',
+          marginBottom: scaleHeight(15),
+        }} onPress={fetchProfile}>
+          <Text style={{
+            color: '#FFFFFF',
+            fontSize: scaleFontSize(18),
+            fontWeight: 'bold',
+          }}>Try Again</Text>
         </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.button, styles.logoutButton]} 
+        <TouchableOpacity
+          style={{
+            backgroundColor: '#888',
+            padding: scaleWidth(15),
+            borderRadius: scaleWidth(8),
+            alignItems: 'center',
+            width: '100%',
+            marginBottom: scaleHeight(15),
+          }}
           onPress={handleLogout}
         >
-          <Text style={styles.buttonText}>Log Out</Text>
+          <Text style={{
+            color: '#FFFFFF',
+            fontSize: scaleFontSize(18),
+            fontWeight: 'bold',
+          }}>Log Out</Text>
         </TouchableOpacity>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={{
+      flex: 1,
+      backgroundColor: '#F5F5F5',
+      fontFamily: 'Montserrat',
+    }}>
       {/* Background */}
-      <View style={styles.backgroundWrapper}>
+      <View style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: width,
+        height: height,
+        zIndex: -1,
+      }}>
         <BackgroundSvg
-          width={SCREEN_WIDTH}
-          height={SCREEN_HEIGHT}
+          width={width}
+          height={height}
           preserveAspectRatio="xMidYMid slice"
         />
       </View>
 
       {/* Close Button */}
       <TouchableOpacity
-        style={styles.closeButton}
+        style={{
+          position: 'absolute',
+          left: scaleWidth(20),
+          top: scaleWidth(50),
+          width: scaleWidth(40),
+          height: scaleWidth(40),
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 100,
+        }}
         onPress={() => router.back()}
       >
-        <Text style={styles.closeButtonText}>✕</Text>
+        <Text style={{
+          color: '#FFFFFF',
+          fontSize: scaleFontSize(28),
+          fontWeight: '300',
+        }}>✕</Text>
       </TouchableOpacity>
 
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>PROFILE</Text>
+      <View style={{
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        position: 'relative',
+        height: scaleWidth(51),
+        marginTop: scaleWidth(25),
+      }}>
+        <Text style={{
+          position: 'absolute',
+          left: scaleWidth(31),
+          top: 0,
+          width: scaleWidth(222),
+          height: scaleWidth(51),
+          fontSize: scaleFontSize(26),
+          fontWeight: 'bold',
+          color: '#FFFFFF',
+          textAlign: 'left',
+          letterSpacing: scaleWidth(1.5),
+          fontFamily: 'Tsukimi Rounded',
+        }}>PROFILE</Text>
       </View>
 
-      <View style={styles.contentContainer}>
+      <View style={{ flex: 1 }}>
         <ProfileAvatar
           avatarUrl={profile.avatarUrl}
+          avatarId={profile.avatarId}
         />
 
         {/* Boxes */}
-        <View style={styles.boxContainer}>
+        <View style={{
+          position: 'absolute',
+          width: scaleWidth(313),
+          height: scaleWidth(253),
+          top: scaleWidth(332),
+          left: scaleWidth(36),
+          borderRadius: scaleWidth(2),
+          borderWidth: scaleWidth(4),
+          borderColor: 'transparent',
+        }}>
           {/* Back Box */}
-          <View style={styles.backBoxWrapper}>
+          <View style={{
+            position: 'absolute',
+            top: 0,
+            left: width * 0.053,
+          }}>
             <BackBoxSvg
-              width={SCREEN_WIDTH * (313 / 393)}
-              height={SCREEN_WIDTH * (253 / 393)}
+              width={scaleWidth(313)}
+              height={scaleWidth(253)}
             />
           </View>
 
           {/* Front Box */}
-          <View style={styles.frontBoxWrapper}>
+          <View style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+          }}>
             <FrontBoxSvg
-              width={SCREEN_WIDTH * (313 / 393)}
-              height={SCREEN_WIDTH * (253 / 393)}
+              width={scaleWidth(313)}
+              height={scaleWidth(253)}
             />
 
             {/* Content */}
-            <View style={styles.frontBoxContent}>
+            <View style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              paddingTop: scaleWidth(23.6),
+              paddingLeft: scaleWidth(31.4),
+              paddingRight: scaleWidth(23.6),
+              paddingBottom: scaleWidth(15.7),
+            }}>
               <UserStatsCard
                 displayName={profile.displayName}
                 foodWave={profile.foodWave}
@@ -216,49 +328,120 @@ export default function ProfileScreen() {
           {/* Buttons */}
           {/* QR Code Button */}
           <TouchableOpacity
-            style={styles.actionButton1}
+            style={{
+              position: 'absolute',
+              top: scaleWidth(-273),
+              left: scaleWidth(208),
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
             onPress={() => setShowQrModal(true)}
           >
             <ButtonSvg
-              width={SCREEN_WIDTH * (83.557 / 393)}
-              height={SCREEN_WIDTH * (83.557 / 393)}
+              width={scaleWidth(83.557)}
+              height={scaleWidth(83.557)}
             />
-            <View style={styles.buttonIconContainer1}>
+            <View style={{
+              position: 'absolute',
+              top: scaleWidth(7.24),
+              left: scaleWidth(16.71),
+              width: scaleWidth(50.134),
+              height: scaleWidth(50.134),
+            }}>
               <QRCodeButtonSvg
-                width={SCREEN_WIDTH * (50.134 / 393)}
-                height={SCREEN_WIDTH * (50.134 / 393)}
+                width={scaleWidth(50.134)}
+                height={scaleWidth(50.134)}
               />
             </View>
-            <Text style={styles.buttonText1}>QR CODE</Text>
+            <Text
+              style={{
+                position: 'absolute',
+                top: scaleWidth(62),
+                left: scaleWidth(12),
+                width: scaleWidth(60),
+                fontFamily: 'Tsukimi Rounded',
+                fontWeight: '700',
+                fontSize: scaleWidth(9),
+                lineHeight: scaleWidth(11),
+                letterSpacing: 0,
+                textAlign: 'center',
+                color: '#FFFFFF',
+              }}
+              numberOfLines={2}
+              adjustsFontSizeToFit={true}
+              minimumFontScale={0.7}
+            >QR CODE</Text>
           </TouchableOpacity>
 
           {/* Avatar Button */}
           <TouchableOpacity
-            style={styles.actionButton2}
+            style={{
+              position: 'absolute',
+              top: scaleWidth(-163),
+              left: scaleWidth(208),
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
             onPress={() => setShowAvatarModal(true)}
           >
             <ButtonSvg
-              width={SCREEN_WIDTH * (83.557 / 393)}
-              height={SCREEN_WIDTH * (83.557 / 393)}
+              width={scaleWidth(83.557)}
+              height={scaleWidth(83.557)}
             />
-            <View style={styles.buttonIconContainer2}>
+            <View style={{
+              position: 'absolute',
+              top: scaleWidth(7.24),
+              left: scaleWidth(16.71),
+              width: scaleWidth(50.134),
+              height: scaleWidth(50.134),
+            }}>
               <EditButtonSvg
-                width={SCREEN_WIDTH * (50.134 / 393)}
-                height={SCREEN_WIDTH * (50.134 / 393)}
+                width={scaleWidth(50.134)}
+                height={scaleWidth(50.134)}
               />
             </View>
-            <Text style={styles.buttonText2}>EDIT AVATAR</Text>
+            <Text
+              style={{
+                position: 'absolute',
+                top: scaleWidth(62),
+                left: scaleWidth(5),
+                width: scaleWidth(74),
+                fontFamily: 'Tsukimi Rounded',
+                fontWeight: '700',
+                fontSize: scaleWidth(9),
+                lineHeight: scaleWidth(11),
+                letterSpacing: 0,
+                textAlign: 'center',
+                color: '#FFFFFF',
+              }}
+              numberOfLines={2}
+              adjustsFontSizeToFit={true}
+              minimumFontScale={0.7}
+            >EDIT AVATAR</Text>
           </TouchableOpacity>
         </View>
       </View>
 
       {/* Logout Button */}
       <TouchableOpacity
-        style={styles.logoutButton}
+        style={{
+          position: 'absolute',
+          top: scaleWidth(60),
+          right: scaleWidth(20),
+          backgroundColor: '#E936F8',
+          borderRadius: scaleWidth(20),
+          paddingHorizontal: scaleWidth(16),
+          paddingVertical: scaleHeight(8),
+          zIndex: 100,
+        }}
         onPress={handleLogout}
         disabled={isLoading}
       >
-        <Text style={styles.logoutButtonText}>Log Out</Text>
+        <Text style={{
+          color: '#FFFFFF',
+          fontSize: scaleFontSize(14),
+          fontWeight: '600',
+        }}>Log Out</Text>
       </TouchableOpacity>
 
       <QRCodeModal
@@ -273,185 +456,14 @@ export default function ProfileScreen() {
       <AvatarSelectionModal
         visible={showAvatarModal}
         currentAvatarId={profile.avatarUrl?.split('/').pop()?.replace('.png', '').replace('.svg', '') || null}
+        displayName={profile.displayName}
+        discordTag={profile.discordTag}
         onClose={() => setShowAvatarModal(false)}
+        onAvatarSelected={(avatarUrl) => {
+          setProfile((prev) => prev ? { ...prev, avatarUrl } : null);
+        }}
       />
 
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F5F5F5',
-    fontFamily: 'Montserrat',
-  },
-  backgroundWrapper: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: SCREEN_WIDTH,
-    height: SCREEN_HEIGHT,
-    zIndex: -1,
-  },
-  centered: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  boxContainer: {
-    position: 'absolute',
-    width: SCREEN_WIDTH * (313 / 393),
-    height: SCREEN_WIDTH * (253 / 393),
-    top: SCREEN_WIDTH * ((462 - 130) / 393),
-    left: SCREEN_WIDTH * (36 / 393),
-    borderRadius: 2,
-    borderWidth: 4,
-    borderColor: 'transparent',
-  },
-  backBoxWrapper: {
-    position: 'absolute',
-    top: 0,
-    left: SCREEN_WIDTH * 0.053,
-  },
-  frontBoxWrapper: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-  },
-  frontBoxContent: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    paddingTop: SCREEN_WIDTH * 0.06,
-    paddingLeft: SCREEN_WIDTH * 0.08,
-    paddingRight: SCREEN_WIDTH * 0.06,
-    paddingBottom: SCREEN_WIDTH * 0.04,
-  },
-  actionButton1: {
-    position: 'absolute',
-    top: SCREEN_WIDTH * ((189 - 462) / 393), 
-    left: SCREEN_WIDTH * ((244 - 36) / 393), 
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  actionButton2: {
-    position: 'absolute',
-    top: SCREEN_WIDTH * ((299 - 462) / 393), 
-    left: SCREEN_WIDTH * ((244 - 36) / 393), 
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  buttonIconContainer1: {
-    position: 'absolute',
-    top: SCREEN_WIDTH * (7.24 / 393),
-    left: SCREEN_WIDTH * (16.71 / 393),
-    width: SCREEN_WIDTH * (50.134 / 393),
-    height: SCREEN_WIDTH * (50.134 / 393),
-  },
-  buttonIconContainer2: {
-    position: 'absolute',
-    top: SCREEN_WIDTH * (7.24 / 393),
-    left: SCREEN_WIDTH * (16.71 / 393),
-    width: SCREEN_WIDTH * (50.134 / 393),
-    height: SCREEN_WIDTH * (50.134 / 393),
-  },
-  buttonText1: {
-    position: 'absolute',
-    top: SCREEN_WIDTH * (62 / 393),
-    left: SCREEN_WIDTH * (12 / 393),
-    width: SCREEN_WIDTH * (60 / 393),
-    fontFamily: 'Tsukimi Rounded',
-    fontWeight: '700',
-    fontSize: SCREEN_WIDTH * (8.91 / 393),
-    lineHeight: SCREEN_WIDTH * (11 / 393),
-    letterSpacing: 0,
-    textAlign: 'center',
-    color: '#FFFFFF',
-  },
-  buttonText2: {
-    position: 'absolute',
-    top: SCREEN_WIDTH * (62 / 393),
-    left: SCREEN_WIDTH * (8 / 393),
-    width: SCREEN_WIDTH * (68 / 393),
-    fontFamily: 'Tsukimi Rounded',
-    fontWeight: '700',
-    fontSize: SCREEN_WIDTH * (8.91 / 393),
-    lineHeight: SCREEN_WIDTH * (11 / 393),
-    letterSpacing: 0,
-    textAlign: 'center',
-    color: '#FFFFFF',
-  },
-  errorText: {
-    color: '#FF5555',
-    fontSize: 18,
-    marginBottom: 20,
-  },
-  button: {
-    backgroundColor: '#888',
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    width: '100%',
-    marginBottom: 15,
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  logoutButton: {
-    position: 'absolute',
-    top: SCREEN_WIDTH * (60 / 393),
-    right: SCREEN_WIDTH * (20 / 393),
-    backgroundColor: '#E936F8',
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    zIndex: 100,
-  },
-  logoutButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  contentContainer: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    position: 'relative',
-    height: SCREEN_WIDTH * (51 / 393),
-    marginTop: SCREEN_WIDTH * ((55 - 30) / 393), 
-  },
-  headerTitle: {
-    position: 'absolute',
-    left: SCREEN_WIDTH * (31 / 393),
-    top: 0,
-    width: SCREEN_WIDTH * (222 / 393),
-    height: SCREEN_WIDTH * (51 / 393),
-    fontSize: 26,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    textAlign: 'left',
-    letterSpacing: 1.5,
-    fontFamily: 'Tsukimi Rounded',
-  },
-  closeButton: {
-    position: 'absolute',
-    left: SCREEN_WIDTH * (20 / 393),
-    top: SCREEN_WIDTH * (50 / 393),
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 100,
-  },
-  closeButtonText: {
-    color: '#FFFFFF',
-    fontSize: 28,
-    fontWeight: '300',
-  },
-});

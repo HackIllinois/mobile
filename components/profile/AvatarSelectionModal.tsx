@@ -4,10 +4,11 @@ import {
   Text,
   TouchableOpacity,
   Modal,
-  StyleSheet,
-  Dimensions,
   Animated,
+  useWindowDimensions,
+  ActivityIndicator,
 } from 'react-native';
+import api from '../../api';
 
 import ChooseTitleSvg from '../../assets/profile/avatar-screen/choose-title.svg';
 import UfoTractorBeamSvg from '../../assets/profile/avatar-screen/ufo-tractor-beam.svg';
@@ -15,72 +16,89 @@ import SelectAvatarButtonsSvg from '../../assets/profile/avatar-screen/select-av
 import BackgroundSvg from '../../assets/profile/background.svg';
 import NavBarSvg from '../../assets/profile/nav-bar.svg';
 
-import BlueGreyAvatarSvg from '../../assets/profile/avatar-screen/avatars/blue-grey.svg';
-import OrangeBlackAvatarSvg from '../../assets/profile/avatar-screen/avatars/orange-black.svg';
-import OrangeWhiteAvatarSvg from '../../assets/profile/avatar-screen/avatars/orange-white.svg';
-import PinkBlackAvatarSvg from '../../assets/profile/avatar-screen/avatars/pink-black.svg';
-import PurpleWhiteAvatarSvg from '../../assets/profile/avatar-screen/avatars/purple-white.svg';
-import RedWhiteAvatarSvg from '../../assets/profile/avatar-screen/avatars/red-white.svg';
-
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-
-const HEADER_WIDTH = SCREEN_WIDTH * (222 / 393);
-const HEADER_HEIGHT = SCREEN_WIDTH * (51 / 393);
-const HEADER_TOP = SCREEN_WIDTH * (55 / 393);
-const HEADER_LEFT = SCREEN_WIDTH * (31 / 393);
-
-const BUTTON_BORDER_WIDTH = SCREEN_WIDTH * (248 / 393);
-const BUTTON_BORDER_HEIGHT = SCREEN_WIDTH * (40 / 393);
-const BUTTON_BORDER_TOP = SCREEN_WIDTH * (125 / 393);
-const BUTTON_BORDER_LEFT = SCREEN_WIDTH * (74 / 393);
-
-const AVATAR_WIDTH = SCREEN_WIDTH * (156 / 393);
-const AVATAR_HEIGHT = SCREEN_WIDTH * (300 / 393);
-const AVATAR_TOP = SCREEN_WIDTH * (288 / 393);
-const AVATAR_LEFT = SCREEN_WIDTH * (125 / 393);
-
-const NAV_BUTTONS_WIDTH = SCREEN_WIDTH * (317 / 393);
-const NAV_BUTTONS_HEIGHT = SCREEN_WIDTH * (48 / 393);
-const NAV_BUTTONS_TOP = SCREEN_WIDTH * (667 / 393);
-const NAV_BUTTONS_LEFT = SCREEN_WIDTH * (38 / 393);
-
-const UFO_BEAM_WIDTH = SCREEN_WIDTH * (244 / 393);
-const UFO_BEAM_HEIGHT = SCREEN_WIDTH * (382 / 393);
-const UFO_BEAM_TOP = SCREEN_WIDTH * (270 / 393);
-const UFO_BEAM_LEFT = SCREEN_WIDTH * (78 / 393);
-
-const LEFT_AVATAR_WIDTH = SCREEN_WIDTH * (85.456 / 393);
-const LEFT_AVATAR_HEIGHT = SCREEN_WIDTH * (190 / 393);
-const LEFT_AVATAR_TOP = SCREEN_WIDTH * (340 / 393);
-const LEFT_AVATAR_LEFT = SCREEN_WIDTH * (16 / 393);
-
-const RIGHT_AVATAR_WIDTH = SCREEN_WIDTH * (100.976 / 393);
-const RIGHT_AVATAR_HEIGHT = SCREEN_WIDTH * (204 / 393);
-const RIGHT_AVATAR_TOP = SCREEN_WIDTH * (326 / 393);
-const RIGHT_AVATAR_LEFT = SCREEN_WIDTH * (287 / 393);
+import Character1AvatarSvg from '../../assets/profile/avatar-screen/avatars/character1.svg';
+import Character2AvatarSvg from '../../assets/profile/avatar-screen/avatars/character2.svg';
+import Character3AvatarSvg from '../../assets/profile/avatar-screen/avatars/character3.svg';
+import Character4AvatarSvg from '../../assets/profile/avatar-screen/avatars/character4.svg';
+import Character5AvatarSvg from '../../assets/profile/avatar-screen/avatars/character5.svg';
 
 interface AvatarSelectionModalProps {
   visible: boolean;
   currentAvatarId: string | null;
+  displayName: string;
+  discordTag: string;
   onClose: () => void;
+  onAvatarSelected: (avatarUrl: string) => void;
+}
+
+interface ProfileUpdateResponse {
+  data: {
+    avatarUrl: string;
+  };
 }
 
 const AVATARS = [
-  { id: 'blue-grey', component: BlueGreyAvatarSvg },
-  { id: 'orange-black', component: OrangeBlackAvatarSvg },
-  { id: 'orange-white', component: OrangeWhiteAvatarSvg },
-  { id: 'pink-black', component: PinkBlackAvatarSvg },
-  { id: 'purple-white', component: PurpleWhiteAvatarSvg },
-  { id: 'red-white', component: RedWhiteAvatarSvg },
+  { id: 'character1', component: Character1AvatarSvg },
+  { id: 'character2', component: Character2AvatarSvg },
+  { id: 'character3', component: Character3AvatarSvg },
+  { id: 'character4', component: Character4AvatarSvg },
+  { id: 'character5', component: Character5AvatarSvg },
 ];
 
 export const AvatarSelectionModal: React.FC<AvatarSelectionModalProps> = ({
   visible,
   currentAvatarId,
+  displayName,
+  discordTag,
   onClose,
+  onAvatarSelected,
 }) => {
+  const { width, height } = useWindowDimensions();
+
+  const figmaWidth = 393;
+  const figmaHeight = 852;
+  const scaleWidth = (size: number) => (width / figmaWidth) * size;
+  const scaleHeight = (size: number) => (height / figmaHeight) * size;
+  const scaleFontSize = (size: number) => Math.min(scaleWidth(size), scaleHeight(size));
+
+  const HEADER_WIDTH = scaleWidth(222);
+  const HEADER_HEIGHT = scaleWidth(51);
+  const HEADER_TOP = scaleWidth(55);
+  const HEADER_LEFT = scaleWidth(31);
+
+  const BUTTON_BORDER_WIDTH = scaleWidth(248);
+  const BUTTON_BORDER_HEIGHT = scaleWidth(40);
+  const BUTTON_BORDER_TOP = scaleWidth(125);
+  const BUTTON_BORDER_LEFT = scaleWidth(74);
+
+  const AVATAR_WIDTH = scaleWidth(156);
+  const AVATAR_HEIGHT = scaleWidth(300);
+  const AVATAR_TOP = scaleWidth(300);
+  const AVATAR_LEFT = scaleWidth(118);
+
+  const NAV_BUTTONS_WIDTH = scaleWidth(317);
+  const NAV_BUTTONS_HEIGHT = scaleWidth(48);
+  const NAV_BUTTONS_TOP = scaleWidth(667);
+  const NAV_BUTTONS_LEFT = scaleWidth(38);
+
+  const UFO_BEAM_WIDTH = scaleWidth(244);
+  const UFO_BEAM_HEIGHT = scaleWidth(382);
+  const UFO_BEAM_TOP = scaleWidth(270);
+  const UFO_BEAM_LEFT = scaleWidth(78);
+
+  const LEFT_AVATAR_WIDTH = scaleWidth(85.456);
+  const LEFT_AVATAR_HEIGHT = scaleWidth(190);
+  const LEFT_AVATAR_TOP = scaleWidth(352);
+  const LEFT_AVATAR_LEFT = scaleWidth(10);
+
+  const RIGHT_AVATAR_WIDTH = scaleWidth(100.976);
+  const RIGHT_AVATAR_HEIGHT = scaleWidth(204);
+  const RIGHT_AVATAR_TOP = scaleWidth(338);
+  const RIGHT_AVATAR_LEFT = scaleWidth(280);
+
   const [currentIndex, setCurrentIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const floatAnim = useRef(new Animated.Value(0)).current;
 
@@ -97,7 +115,6 @@ export const AvatarSelectionModal: React.FC<AvatarSelectionModalProps> = ({
     }
   }, [visible, currentAvatarId]);
 
-  // Floating animation effect
   useEffect(() => {
     if (visible) {
       const floatAnimation = Animated.loop(
@@ -131,8 +148,28 @@ export const AvatarSelectionModal: React.FC<AvatarSelectionModalProps> = ({
     );
   };
 
-  const handleSelect = () => {
-    onClose();
+  const handleSelect = async () => {
+    setIsUpdating(true);
+    setError(null);
+
+    try {
+      const selectedAvatarId = AVATARS[currentIndex].id;
+      const response = await api.put<ProfileUpdateResponse>('profile', {
+        displayName,
+        discordTag,
+        avatarId: selectedAvatarId,
+      });
+
+      if (response.data && response.data.avatarUrl) {
+        onAvatarSelected(response.data.avatarUrl);
+        onClose();
+      }
+    } catch (error: any) {
+      console.error('Failed to update avatar:', error);
+      setError(error.response?.data?.message || 'Failed to update avatar. Please try again.');
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   const AvatarComponent = AVATARS[currentIndex].component;
@@ -149,20 +186,55 @@ export const AvatarSelectionModal: React.FC<AvatarSelectionModalProps> = ({
       onRequestClose={onClose}
       presentationStyle="fullScreen"
     >
-      <View style={styles.modalContent}>
-          <View style={styles.backgroundWrapper}>
+      <View style={{
+        flex: 1,
+        width: width,
+        height: height,
+        backgroundColor: '#F5F5F5',
+        position: 'relative',
+      }}>
+          <View style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: width,
+            height: height,
+            zIndex: 0,
+          }}>
             <BackgroundSvg
-              width={SCREEN_WIDTH}
-              height={SCREEN_HEIGHT}
+              width={width}
+              height={height}
               preserveAspectRatio="xMidYMid slice"
             />
           </View>
 
           {/* Header */}
-          <Text style={styles.headerText}>PROFILE</Text>
+          <Text style={{
+            position: 'absolute',
+            top: HEADER_TOP,
+            left: HEADER_LEFT,
+            width: HEADER_WIDTH,
+            height: HEADER_HEIGHT,
+            fontSize: scaleFontSize(26),
+            fontWeight: 'bold',
+            color: '#FFFFFF',
+            textAlign: 'left',
+            letterSpacing: scaleWidth(1.5),
+            fontFamily: 'Tsukimi Rounded',
+            zIndex: 5,
+          }}>PROFILE</Text>
 
           {/* Choose Title */}
-          <View style={styles.chooseTitleContainer}>
+          <View style={{
+            position: 'absolute',
+            top: BUTTON_BORDER_TOP,
+            left: BUTTON_BORDER_LEFT,
+            width: BUTTON_BORDER_WIDTH,
+            height: BUTTON_BORDER_HEIGHT,
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 5,
+          }}>
             <ChooseTitleSvg
               width={BUTTON_BORDER_WIDTH}
               height={BUTTON_BORDER_HEIGHT}
@@ -170,7 +242,15 @@ export const AvatarSelectionModal: React.FC<AvatarSelectionModalProps> = ({
           </View>
 
           {/* UFO Beam */}
-          <View style={styles.ufoBeamContainer}>
+          <View style={{
+            position: 'absolute',
+            top: UFO_BEAM_TOP,
+            left: UFO_BEAM_LEFT,
+            width: UFO_BEAM_WIDTH,
+            height: UFO_BEAM_HEIGHT,
+            opacity: 0.5,
+            zIndex: 1,
+          }}>
             <UfoTractorBeamSvg
               width={UFO_BEAM_WIDTH}
               height={UFO_BEAM_HEIGHT}
@@ -178,21 +258,41 @@ export const AvatarSelectionModal: React.FC<AvatarSelectionModalProps> = ({
           </View>
 
           {/* Previous Avatar */}
-          <View style={styles.leftAvatarContainer}>
+          <TouchableOpacity
+            style={{
+              position: 'absolute',
+              top: LEFT_AVATAR_TOP,
+              left: LEFT_AVATAR_LEFT,
+              width: LEFT_AVATAR_WIDTH,
+              height: LEFT_AVATAR_HEIGHT,
+              justifyContent: 'center',
+              alignItems: 'center',
+              opacity: 0.5,
+              zIndex: 1,
+            }}
+            onPress={handlePreviousAvatar}
+            disabled={isUpdating}
+            activeOpacity={0.7}
+          >
             <PreviousAvatarComponent
               width={LEFT_AVATAR_WIDTH}
               height={LEFT_AVATAR_HEIGHT}
             />
-          </View>
+          </TouchableOpacity>
 
           {/* Center Avatar */}
           <Animated.View
-            style={[
-              styles.avatarContainer,
-              {
-                transform: [{ translateY: floatAnim }],
-              },
-            ]}
+            style={{
+              position: 'absolute',
+              top: AVATAR_TOP,
+              left: AVATAR_LEFT,
+              width: AVATAR_WIDTH,
+              height: AVATAR_HEIGHT,
+              justifyContent: 'center',
+              alignItems: 'center',
+              zIndex: 2,
+              transform: [{ translateY: floatAnim }],
+            }}
           >
             <AvatarComponent
               width={AVATAR_WIDTH}
@@ -201,188 +301,127 @@ export const AvatarSelectionModal: React.FC<AvatarSelectionModalProps> = ({
           </Animated.View>
 
           {/* Next Avatar */}
-          <View style={styles.rightAvatarContainer}>
+          <TouchableOpacity
+            style={{
+              position: 'absolute',
+              top: RIGHT_AVATAR_TOP,
+              left: RIGHT_AVATAR_LEFT,
+              width: RIGHT_AVATAR_WIDTH,
+              height: RIGHT_AVATAR_HEIGHT,
+              justifyContent: 'center',
+              alignItems: 'center',
+              opacity: 0.5,
+              zIndex: 1,
+            }}
+            onPress={handleNextAvatar}
+            disabled={isUpdating}
+            activeOpacity={0.7}
+          >
             <NextAvatarComponent
               width={RIGHT_AVATAR_WIDTH}
               height={RIGHT_AVATAR_HEIGHT}
             />
-          </View>
+          </TouchableOpacity>
 
           {/* Navigation Buttons */}
-          <View style={styles.navigationContainer}>
+          <View style={{
+            position: 'absolute',
+            top: NAV_BUTTONS_TOP,
+            left: NAV_BUTTONS_LEFT,
+            width: NAV_BUTTONS_WIDTH,
+            height: NAV_BUTTONS_HEIGHT,
+            zIndex: 3,
+          }}>
             <SelectAvatarButtonsSvg
               width={NAV_BUTTONS_WIDTH}
               height={NAV_BUTTONS_HEIGHT}
             />
             {/* Left arrow */}
             <TouchableOpacity
-              style={styles.leftArrowHitbox}
+              style={{
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                width: NAV_BUTTONS_WIDTH / 3,
+                height: NAV_BUTTONS_HEIGHT,
+              }}
               onPress={handlePreviousAvatar}
+              disabled={isUpdating}
             />
             {/* Center select button */}
-            {/* Just exit for now, TODO: API Handling */}
             <TouchableOpacity
-              style={styles.centerSelectHitbox}
+              style={{
+                position: 'absolute',
+                left: NAV_BUTTONS_WIDTH / 3,
+                top: 0,
+                width: NAV_BUTTONS_WIDTH / 3,
+                height: NAV_BUTTONS_HEIGHT,
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
               onPress={handleSelect}
-            />
+              disabled={isUpdating}
+            >
+              {isUpdating && (
+                <ActivityIndicator
+                  size="small"
+                  color="#FFFFFF"
+                  style={{
+                    position: 'absolute',
+                  }}
+                />
+              )}
+            </TouchableOpacity>
             {/* Right arrow */}
             <TouchableOpacity
-              style={styles.rightArrowHitbox}
+              style={{
+                position: 'absolute',
+                right: 0,
+                top: 0,
+                width: NAV_BUTTONS_WIDTH / 3,
+                height: NAV_BUTTONS_HEIGHT,
+              }}
               onPress={handleNextAvatar}
+              disabled={isUpdating}
             />
           </View>
 
           {error && (
-            <View style={styles.errorContainer}>
-              <Text style={styles.errorText}>{error}</Text>
+            <View style={{
+              position: 'absolute',
+              bottom: scaleWidth(100),
+              left: scaleWidth(40),
+              right: scaleWidth(40),
+              backgroundColor: 'rgba(255, 0, 0, 0.9)',
+              borderRadius: scaleWidth(10),
+              padding: scaleWidth(12),
+              zIndex: 10,
+            }}>
+              <Text style={{
+                color: '#FFFFFF',
+                fontSize: scaleFontSize(14),
+                fontWeight: '600',
+                textAlign: 'center',
+              }}>{error}</Text>
             </View>
           )}
 
           {/* Navbar */}
           {/* TODO: Doesn't work, make it fixed */}
-          <View style={styles.navbarWrapper}>
+          <View style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            width: width,
+            height: scaleWidth(108),
+            zIndex: 5,
+          }}>
             <NavBarSvg
-              width={SCREEN_WIDTH}
-              height={SCREEN_WIDTH * (108 / 393)}
+              width={width}
+              height={scaleWidth(108)}
             />
           </View>
       </View>
     </Modal>
   );
 };
-
-const styles = StyleSheet.create({
-  modalContent: {
-    flex: 1,
-    width: SCREEN_WIDTH,
-    height: SCREEN_HEIGHT,
-    backgroundColor: '#F5F5F5',
-    position: 'relative',
-  },
-  backgroundWrapper: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: SCREEN_WIDTH,
-    height: SCREEN_HEIGHT,
-    zIndex: 0,
-  },
-  navbarWrapper: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    width: SCREEN_WIDTH,
-    height: SCREEN_WIDTH * (108 / 393),
-    zIndex: 5,
-  },
-  headerText: {
-    position: 'absolute',
-    top: HEADER_TOP,
-    left: HEADER_LEFT,
-    width: HEADER_WIDTH,
-    height: HEADER_HEIGHT,
-    fontSize: 26,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    textAlign: 'left',
-    letterSpacing: 1.5,
-    fontFamily: 'Tsukimi Rounded',
-    zIndex: 5,
-  },
-  chooseTitleContainer: {
-    position: 'absolute',
-    top: BUTTON_BORDER_TOP,
-    left: BUTTON_BORDER_LEFT,
-    width: BUTTON_BORDER_WIDTH,
-    height: BUTTON_BORDER_HEIGHT,
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 5,
-  },
-  ufoBeamContainer: {
-    position: 'absolute',
-    top: UFO_BEAM_TOP,
-    left: UFO_BEAM_LEFT,
-    width: UFO_BEAM_WIDTH,
-    height: UFO_BEAM_HEIGHT,
-    opacity: 0.5,
-    zIndex: 1,
-  },
-  leftAvatarContainer: {
-    position: 'absolute',
-    top: LEFT_AVATAR_TOP,
-    left: LEFT_AVATAR_LEFT,
-    width: LEFT_AVATAR_WIDTH,
-    height: LEFT_AVATAR_HEIGHT,
-    justifyContent: 'center',
-    alignItems: 'center',
-    opacity: 0.5,
-    zIndex: 1,
-  },
-  avatarContainer: {
-    position: 'absolute',
-    top: AVATAR_TOP,
-    left: AVATAR_LEFT,
-    width: AVATAR_WIDTH,
-    height: AVATAR_HEIGHT,
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 2,
-  },
-  rightAvatarContainer: {
-    position: 'absolute',
-    top: RIGHT_AVATAR_TOP,
-    left: RIGHT_AVATAR_LEFT,
-    width: RIGHT_AVATAR_WIDTH,
-    height: RIGHT_AVATAR_HEIGHT,
-    justifyContent: 'center',
-    alignItems: 'center',
-    opacity: 0.5,
-    zIndex: 1,
-  },
-  navigationContainer: {
-    position: 'absolute',
-    top: NAV_BUTTONS_TOP,
-    left: NAV_BUTTONS_LEFT,
-    width: NAV_BUTTONS_WIDTH,
-    height: NAV_BUTTONS_HEIGHT,
-    zIndex: 3,
-  },
-  leftArrowHitbox: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    width: NAV_BUTTONS_WIDTH / 3,
-    height: NAV_BUTTONS_HEIGHT,
-  },
-  centerSelectHitbox: {
-    position: 'absolute',
-    left: NAV_BUTTONS_WIDTH / 3,
-    top: 0,
-    width: NAV_BUTTONS_WIDTH / 3,
-    height: NAV_BUTTONS_HEIGHT,
-  },
-  rightArrowHitbox: {
-    position: 'absolute',
-    right: 0,
-    top: 0,
-    width: NAV_BUTTONS_WIDTH / 3,
-    height: NAV_BUTTONS_HEIGHT,
-  },
-  errorContainer: {
-    position: 'absolute',
-    bottom: SCREEN_WIDTH * (100 / 393),
-    left: SCREEN_WIDTH * (40 / 393),
-    right: SCREEN_WIDTH * (40 / 393),
-    backgroundColor: 'rgba(255, 0, 0, 0.9)',
-    borderRadius: 10,
-    padding: 12,
-    zIndex: 10,
-  },
-  errorText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-});
