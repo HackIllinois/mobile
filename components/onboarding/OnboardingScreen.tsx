@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { StyleSheet } from "react-native";
+import { StyleSheet, Animated } from "react-native";
 import ScreenThree from "./Overview";
 import ScreenFour from "./Schedule";
 import ScreenFive from "./Scanner";
@@ -7,10 +7,13 @@ import ScreenSix from "./PointsShop";
 import ScreenSeven from "./Profile";
 
 type OnboardingProps = {
-  onFinish: () => void; 
+  onFinish: () => void;
+  cloudX1: Animated.Value;
+  cloudX2: Animated.Value;
+  starOpacity: Animated.Value;
 };
 
-export default function OnboardingScreens({ onFinish }: OnboardingProps) {
+export default function OnboardingScreens({ onFinish, cloudX1, cloudX2, starOpacity }: OnboardingProps) {
     const [currentScreen, setCurrentScreen] = useState(0);
 
     const onSkip = () => {
@@ -21,19 +24,23 @@ export default function OnboardingScreens({ onFinish }: OnboardingProps) {
         setCurrentScreen((prev) => prev + 1);
     }
 
+    const onPlanetPress = (index: number) => {
+        setCurrentScreen(index);
+    }
+
     switch (currentScreen) {
         case 0:
-            return <ScreenThree onFinish={onSkip} onStart={onNext} />;
+            return <ScreenThree onFinish={onSkip} onStart={onNext} currentScreen={currentScreen} onPlanetPress={onPlanetPress} cloudX1={cloudX1} cloudX2={cloudX2} starOpacity={starOpacity} />;
         case 1:
-            return <ScreenFour onFinish={onSkip} onStart={onNext} />;
+            return <ScreenFour onFinish={onSkip} onStart={onNext} currentScreen={currentScreen} onPlanetPress={onPlanetPress} cloudX1={cloudX1} cloudX2={cloudX2} starOpacity={starOpacity} />;
         case 2:
-            return <ScreenFive onFinish={onSkip} onStart={onNext} />;
+            return <ScreenFive onFinish={onSkip} onStart={onNext} currentScreen={currentScreen} onPlanetPress={onPlanetPress} cloudX1={cloudX1} cloudX2={cloudX2} starOpacity={starOpacity} />;
         case 3:
-            return <ScreenSix onFinish={onSkip} onStart={onNext} />;
+            return <ScreenSix onFinish={onSkip} onStart={onNext} currentScreen={currentScreen} onPlanetPress={onPlanetPress} cloudX1={cloudX1} cloudX2={cloudX2} starOpacity={starOpacity} />;
         case 4:
-            return <ScreenSeven onFinish={onSkip} onStart={onSkip} />;
+            return <ScreenSeven onFinish={onSkip} onStart={onSkip} currentScreen={currentScreen} onPlanetPress={onPlanetPress} cloudX1={cloudX1} cloudX2={cloudX2} starOpacity={starOpacity} />;
         default:
-            return <ScreenThree onFinish={onSkip} onStart={onNext} />;
+            return <ScreenThree onFinish={onSkip} onStart={onNext} currentScreen={currentScreen} onPlanetPress={onPlanetPress} cloudX1={cloudX1} cloudX2={cloudX2} starOpacity={starOpacity} />;
     }
 }
 

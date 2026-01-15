@@ -12,6 +12,7 @@ type Props = {
   clockwise?: boolean;
   offsetX?: number;
   offsetY?: number;
+  RocketComponent?: React.ComponentType<{ width: number; height: number }>;
 };
 
 export default function RocketOrbit({
@@ -24,6 +25,7 @@ export default function RocketOrbit({
   clockwise = false,
   offsetX = 0,
   offsetY = 0,
+  RocketComponent = OrbitingRocket,
 }: Props) {
   const spin = useRef(new Animated.Value(0)).current;
 
@@ -84,7 +86,7 @@ export default function RocketOrbit({
           }}
         >
           <Animated.View style={{ transform: [{ rotate: rocketRotate }] }}>
-            <OrbitingRocket width={size} height={size} />
+            <RocketComponent width={size} height={size} />
           </Animated.View>
         </View>
       </Animated.View>

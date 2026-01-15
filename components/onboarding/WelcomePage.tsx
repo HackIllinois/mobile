@@ -1,19 +1,21 @@
-import { useEffect, useRef } from "react";
-import { StyleSheet, View, Text, TouchableOpacity, Animated, Easing, useWindowDimensions } from "react-native";
+import { StyleSheet, View, Text, TouchableOpacity, Animated, useWindowDimensions } from "react-native";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import Hackastra from "../../assets/onboarding/welcome/hackastra.svg";
 import HalfRocket from "../../assets/onboarding/welcome/half-rocket.svg";
 import Clouds from "../../assets/onboarding/loading/clouds.svg";
 import TinyStars from "../../assets/onboarding/loading/tiny stars.svg";
-import StartButton from "../../assets/onboarding/welcome/start-button.svg"; 
+import StartButton from "../../assets/onboarding/welcome/start-button.svg";
 
 type OnSkipProps = {
   onFinish: () => void;
   onStart: () => void;
+  cloudX1: Animated.Value;
+  cloudX2: Animated.Value;
+  starOpacity: Animated.Value;
 };
 
-export default function WelcomePage({ onFinish, onStart }: OnSkipProps) {
+export default function WelcomePage({ onFinish, onStart, cloudX1, cloudX2, starOpacity }: OnSkipProps) {
     const router = useRouter();
     const { width, height } = useWindowDimensions();
     const figmaWidth = 393;
@@ -22,65 +24,6 @@ export default function WelcomePage({ onFinish, onStart }: OnSkipProps) {
     const scaleWidth = (size: number) => (width / figmaWidth) * size;
     const scaleHeight = (size: number) => (height / figmaHeight) * size;
     const scaleFontSize = (size: number) => Math.min(scaleWidth(size), scaleHeight(size));
-
-    const cloudX1 = useRef(new Animated.Value(0)).current;
-    const cloudX2 = useRef(new Animated.Value(0)).current;
-    const starOpacity = useRef(new Animated.Value(0.8)).current;
-
-    useEffect(() => {
-        // Cloud animation
-        Animated.loop(
-            Animated.sequence([
-                Animated.timing(cloudX1, {
-                    toValue: 30,
-                    duration: 8000,
-                    easing: Easing.inOut(Easing.ease),
-                    useNativeDriver: true,
-                }),
-                Animated.timing(cloudX1, {
-                    toValue: 0,
-                    duration: 8000,
-                    easing: Easing.inOut(Easing.ease),
-                    useNativeDriver: true,
-                }),
-            ])
-        ).start();
-
-        Animated.loop(
-            Animated.sequence([
-                Animated.timing(cloudX2, {
-                    toValue: 40,
-                    duration: 10000,
-                    easing: Easing.inOut(Easing.ease),
-                    useNativeDriver: true,
-                }),
-                Animated.timing(cloudX2, {
-                    toValue: 0,
-                    duration: 10000,
-                    easing: Easing.inOut(Easing.ease),
-                    useNativeDriver: true,
-                }),
-            ])
-        ).start();
-
-        // Star twinkling animation
-        Animated.loop(
-            Animated.sequence([
-                Animated.timing(starOpacity, {
-                    toValue: 0.4,
-                    duration: 1000,
-                    easing: Easing.inOut(Easing.ease),
-                    useNativeDriver: true,
-                }),
-                Animated.timing(starOpacity, {
-                    toValue: 0.8,
-                    duration: 1000,
-                    easing: Easing.inOut(Easing.ease),
-                    useNativeDriver: true,
-                }),
-            ])
-        ).start();
-    }, []);
 
     const onSkip = () => {
         onFinish();
