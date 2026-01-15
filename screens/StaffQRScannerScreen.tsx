@@ -4,6 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
 import axios, { AxiosResponse } from 'axios';
 import api from '../api';
+import { Svg, SvgUri } from 'react-native-svg';
+import ButtonSvg from '../assets/qr-scanner/button.svg';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -402,7 +404,7 @@ export default function StaffQRScannerScreen() {
         resizeMode="cover"
       >
         <SafeAreaView style={styles.safeArea}>
-          <Text style={styles.menuTitle}>STAFF SCANNER</Text>
+          <Text style={styles.menuTitle} numberOfLines={1} adjustsFontSizeToFit>STAFF SCANNER</Text>
 
           <TouchableOpacity
             style={styles.menuButtonFirst}
@@ -411,8 +413,13 @@ export default function StaffQRScannerScreen() {
               handleScanPress();
             }}
           >
-            <Text style={styles.menuButtonText}>Meeting Attendance</Text>
-            <Text style={styles.menuButtonArrow}>{">"}</Text>
+            <View style={styles.buttonContainer}>
+              <ButtonSvg width={300} height={70} style={styles.buttonSvg} />
+              <View style={styles.buttonTextContainer}>
+                <Text style={styles.menuButtonText}>Meeting Attendance</Text>
+                <Text style={styles.menuButtonArrow}>{">"}</Text>
+              </View>
+            </View>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -422,8 +429,13 @@ export default function StaffQRScannerScreen() {
                 setIsEventModalVisible(true);
             }}
           >
-            <Text style={styles.menuButtonText}>Attendee Check-in</Text>
-            <Text style={styles.menuButtonArrow}>{">"}</Text>
+            <View style={styles.buttonContainer}>
+              <ButtonSvg width={300} height={70} style={styles.buttonSvg} />
+              <View style={styles.buttonTextContainer}>
+                <Text style={styles.menuButtonText}>Attendee Check-in</Text>
+                <Text style={styles.menuButtonArrow}>{">"}</Text>
+              </View>
+            </View>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -433,8 +445,13 @@ export default function StaffQRScannerScreen() {
               handleScanPress();
             }}
           >
-            <Text style={styles.menuButtonText}>Points Shop</Text>
-            <Text style={styles.menuButtonArrow}>{">"}</Text>
+            <View style={styles.buttonContainer}>
+              <ButtonSvg width={300} height={70} style={styles.buttonSvg} />
+              <View style={styles.buttonTextContainer}>
+                <Text style={styles.menuButtonText}>Points Shop</Text>
+                <Text style={styles.menuButtonArrow}>{">"}</Text>
+              </View>
+            </View>
           </TouchableOpacity>
 
           {/* Render the EventSelectModal component */}
@@ -481,37 +498,48 @@ const styles = StyleSheet.create({
     },
     menuTitle: {
       position: 'absolute',
-      width: SCREEN_WIDTH * 0.565,
-      height: SCREEN_HEIGHT * 0.063, 
-      top: SCREEN_HEIGHT * 0.068, 
-      left: SCREEN_WIDTH * 0.079, 
+      width: SCREEN_WIDTH * 0.8,
+      height: SCREEN_HEIGHT * 0.063,
+      top: SCREEN_HEIGHT * 0.068,
+      left: SCREEN_WIDTH * 0.079,
       fontSize: 28,
       fontWeight: 'bold',
       color: 'white',
       fontFamily: 'Tsukimi-Rounded-Bold',
     },
     menuButton: {
-      backgroundColor: '#D9D9D9',
-      padding: 20,
-      borderRadius: 15,
-      width: 300,
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
       marginBottom: 20,
       alignSelf: 'center',
+      width: 300,
+      height: 70,
     },
     menuButtonFirst: {
-      backgroundColor: '#D9D9D9',
-      padding: 20,
-      borderRadius: 15,
-      width: 300,
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
       marginTop: 120,
       marginBottom: 20,
       alignSelf: 'center',
+      width: 300,
+      height: 70,
+    },
+    buttonContainer: {
+      width: 300,
+      height: 70,
+      position: 'relative',
+    },
+    buttonSvg: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+    },
+    buttonTextContainer: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      width: '100%',
+      height: '100%',
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 20,
     },
     menuButtonSecondary: {
       backgroundColor: '#D9D9D9',
@@ -538,12 +566,14 @@ const styles = StyleSheet.create({
     menuButtonText: {
       fontSize: 18,
       fontWeight: '500',
-      color: 'black',
+      color: 'white',
       textAlign: 'center',
+      fontFamily: 'Tsukimi-Rounded-Bold',
     },
     menuButtonArrow: {
       fontSize: 24,
       fontWeight: 'bold',
-      color: '#000000',
+      color: 'white',
+      fontFamily: 'Tsukimi-Rounded-Bold',
     },
 });
