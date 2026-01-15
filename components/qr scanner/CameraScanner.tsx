@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Dimensions, Modal, Alert } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Dimensions, Modal, Alert, PanResponder } from 'react-native';
 import { CameraView, BarcodeScanningResult, scanFromURLAsync } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import ExitSymbol from '../../assets/qr-scanner/exit-symbol.svg';
@@ -14,6 +14,7 @@ interface CameraScannerViewProps {
   onClose: () => void;
   isLoading: boolean;
   isScanned: boolean;
+  scanModeLabel?: string;
 }
 
 export default function CameraScannerView({
@@ -21,10 +22,23 @@ export default function CameraScannerView({
   onScanned,
   onClose,
   isLoading,
-  isScanned
+  isScanned,
+  scanModeLabel
 }: CameraScannerViewProps) {
   const [imageLibraryPermission, requestImageLibraryPermission] = ImagePicker.useMediaLibraryPermissions();
   const [isProcessingImage, setIsProcessingImage] = useState(false);
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderRelease: (_, gestureState) => {
+        if (gestureState.dy > 80 && Math.abs(gestureState.dx) < 50) {
+          onClose();
+        }
+      },
+    })
+  ).current;
 
   const handleChooseImage = async () => {
     try {
@@ -90,8 +104,14 @@ export default function CameraScannerView({
       onRequestClose={onClose}
     >
       <View style={styles.container}>
+        {/* Backdrop - tap to dismiss */}
+        <TouchableOpacity
+          style={styles.backdrop}
+          activeOpacity={1}
+          onPress={onClose}
+        />
         {/* Modal overlay with camera inside */}
-        <View style={styles.modalContainer}>
+        <View style={styles.modalContainer} {...panResponder.panHandlers}>
           <CameraView
             onBarcodeScanned={isScanned ? undefined : onScanned}
             barcodeScannerSettings={{
@@ -101,9 +121,14 @@ export default function CameraScannerView({
           />
 
           <View style={styles.topSection}>
-            <TouchableOpacity style={styles.exitButton} onPress={onClose}>
-              <ExitSymbol width={41} height={41} />
-            </TouchableOpacity>
+            <View style={styles.headerRow}>
+              <TouchableOpacity style={styles.exitButton} onPress={onClose}>
+                <ExitSymbol width={41} height={41} />
+              </TouchableOpacity>
+              {scanModeLabel && (
+                <Text style={styles.scanModeLabel}>{scanModeLabel}</Text>
+              )}
+            </View>
             <ScanCodeTitle width={244} height={66} style={styles.scanTitle} />
           </View>
 
@@ -149,6 +174,14 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'transparent',
   },
+  backdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: height * 0.12,
+    backgroundColor: 'transparent',
+  },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
@@ -173,19 +206,35 @@ const styles = StyleSheet.create({
   },
   topSection: {
     height: 220,
-    backgroundColor: 'rgba(64, 26, 121, 0.7)', 
+    backgroundColor: 'rgba(64, 26, 121, 0.7)',
     justifyContent: 'center',
     alignItems: 'center',
     paddingBottom: 20,
   },
+  headerRow: {
+    position: 'absolute',
+    top: 20,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 25,
+  },
   exitButton: {
     position: 'absolute',
-    top: 20, 
     left: 25,
     width: 41,
     height: 41,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  scanModeLabel: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '600',
+    fontFamily: 'Montserrat',
+    textAlign: 'center',
   },
   scanTitle: {
     fontSize: 24,

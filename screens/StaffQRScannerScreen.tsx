@@ -122,6 +122,7 @@ export default function StaffQRScannerScreen() {
     const [scanResult, setScanResult] = useState<ScanResult | null>(null);
     const [isScanning, setIsScanning] = useState(false);
     const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+    const [selectedEventName, setSelectedEventName] = useState<string | null>(null);
     const [isEventModalVisible, setIsEventModalVisible] = useState(false);
     const [scanMode, setScanMode] = useState<'attendance' | 'attendeeCheckin' | 'shopRedeem' | null>(null);
     const [mealEvents, setMealEvents] = useState<{ label: string, id: string }[]>([]);
@@ -372,6 +373,7 @@ export default function StaffQRScannerScreen() {
         setIsScanning(false);
         setScanMode(null);
         setSelectedEventId(null);
+        setSelectedEventName(null);
         setScanned(false);
     }
     
@@ -387,6 +389,8 @@ export default function StaffQRScannerScreen() {
     
     const handleEventSelected = (eventId: string) => {
       setSelectedEventId(eventId);
+      const selectedEvent = mealEvents.find(event => event.id === eventId);
+      setSelectedEventName(selectedEvent?.label || null);
       setIsEventModalVisible(false);
       handleScanPress(); // Now, open the camera
     };
@@ -473,6 +477,11 @@ export default function StaffQRScannerScreen() {
         onClose={handleCloseScanner}
         isLoading={isLoading}
         isScanned={scanned}
+        scanModeLabel={
+          scanMode === 'attendance' ? 'Meeting Attendance' :
+          scanMode === 'attendeeCheckin' ? (selectedEventName ? `${selectedEventName}` : 'Attendee Check-in') :
+          scanMode === 'shopRedeem' ? 'Points Shop' : undefined
+        }
       />
 
       {/* Scan Result Modal */}
@@ -504,8 +513,11 @@ const styles = StyleSheet.create({
       left: SCREEN_WIDTH * 0.079,
       fontSize: 28,
       fontWeight: 'bold',
-      color: 'white',
+      color: '#D0F5FF',
       fontFamily: 'Tsukimi-Rounded-Bold',
+      textShadowColor: 'rgba(243, 77, 255, 0.9)',
+      textShadowOffset: { width: 0, height: 0 },
+      textShadowRadius: 20,
     },
     menuButton: {
       marginBottom: 20,
