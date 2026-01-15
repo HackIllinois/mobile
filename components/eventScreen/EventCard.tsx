@@ -10,6 +10,7 @@ interface EventCardProps {
   handleSave: (eventId: string) => void;
   onShowMenu: (event: Event) => void;
   saved: boolean;
+  showTime: boolean;
 }
 
 const formatTime = (timestamp: number): string => {
@@ -21,13 +22,18 @@ const formatTime = (timestamp: number): string => {
   });
 };
 
-export function EventCard({ event, index, onPress, handleSave, onShowMenu, saved }: EventCardProps) {
+export function EventCard({ event, index, onPress, handleSave, onShowMenu, saved, showTime }: EventCardProps) {
   const handlePress = () => onPress(event);
   const handleSavePress = () => handleSave(event.eventId);
   const handleShowMenuPress = () => onShowMenu(event);
   
   return (
     <View style={styles.container}>
+      {showTime && (
+        <Text style={styles.dateText}>
+          {formatTime(event.startTime)}
+        </Text>
+      )}
       <View style={styles.cardContainer}>
         <View style={styles.backgroundCard} />
         
@@ -83,9 +89,6 @@ export function EventCard({ event, index, onPress, handleSave, onShowMenu, saved
           </LinearGradient>
         </Pressable>      
       </View>
-      <Text style={styles.dateText}>
-        {formatTime(event.startTime)}
-      </Text>
     </View>
   );
 }
@@ -210,6 +213,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: '#ffffffff',
     textAlign: 'center',
-    marginTop: 30,
-  }
+    marginBottom: 25,
+  },
 });
