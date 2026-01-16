@@ -12,12 +12,13 @@ export default function CartButton({ onPress, itemCount }: CartButtonProps) {
         style={styles.button}
         onPress={onPress}
         activeOpacity={0.4}
+        hitSlop={120}
       >
         <Text style={styles.text}>Cart</Text>
       </TouchableOpacity>
       {itemCount > 0 && (
         <View style={styles.badge}>
-          <Text style={styles.badgeText}>{itemCount}</Text>
+          <Text style={styles.badgeText}>+{itemCount}</Text>
         </View>
       )}
     </View>
@@ -26,27 +27,23 @@ export default function CartButton({ onPress, itemCount }: CartButtonProps) {
 
 const styles = StyleSheet.create({
   button: {
-    backgroundColor: "#2e2440",
-    borderRadius: 24,
-    paddingVertical: 5,
-    paddingHorizontal: 10,
+    backgroundColor: "transparent",
+    paddingVertical: 4,
+    paddingHorizontal: 22,
     alignItems: "center",
     justifyContent: "center",
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: "#5a4a6e",
   },
   text: {
-    color: "#e8dff0",
-    fontSize: 16,
+    fontFamily: "Tsukimi Rounded",
+    color: "#ffffffff",
+    fontSize: 18,
     fontWeight: "600",
-    letterSpacing: 1,
   },
   badge: {
     position: "absolute",
     top: -6,
     right: -6,
-    backgroundColor: "#9b6dcc",
+    backgroundColor: "rgba(0, 0, 0, 0.3)",
     borderRadius: 10,
     minWidth: 20,
     height: 20,
@@ -55,7 +52,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 5,
   },
   badgeText: {
-    color: "#fff",
+    color: "#ffffffff",
     fontSize: 12,
     fontWeight: "700",
   },
