@@ -1,7 +1,8 @@
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, RefreshControl, Animated } from 'react-native'; // Added Animated
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, RefreshControl, Animated } from 'react-native'; 
+import * as Haptics from 'expo-haptics';
 import { useFonts, TsukimiRounded_700Bold } from '@expo-google-fonts/tsukimi-rounded';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useCallback, useState, useMemo, useEffect, useRef } from 'react'; // Added useRef
+import { useCallback, useState, useMemo, useEffect, useRef } from 'react'; 
 import { useEvents } from '../../lib/fetchEvents';
 import { EventCard } from '../../components/eventScreen/EventCard';
 import EventDetailModal from '../../components/eventScreen/EventDetailModal';
@@ -53,6 +54,7 @@ export default function EventScreen() {
   };
 
   const onRefresh = useCallback(async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setIsRefreshing(true);
     await refetch();
     setIsRefreshing(false);
@@ -66,7 +68,6 @@ export default function EventScreen() {
       d.getDate() === today.getDate()
     );
   };
-
   const uniqueDays = (() => {
     if (!events.length) return [];
     const dateMap = new Map<string, Date>();
@@ -86,10 +87,23 @@ export default function EventScreen() {
           id: dateKey,
           label: `${dayNum} - ${weekDay}`,
           date,
-          image: require("../../assets/event/planet.png")
         };
       });
   })();
+
+  const hasInitialSelection = useRef(false);
+
+  useEffect(() => {
+    if (!hasInitialSelection.current && uniqueDays.length > 0) {
+      const todayEntry = uniqueDays.find(day => isToday(day.date));
+      
+      if (todayEntry) {
+        setSelectedDay(todayEntry.id);
+      }
+      
+      hasInitialSelection.current = true;
+    }
+  }, [uniqueDays]);
 
   const sectionTitleText = useMemo(() => {
     if (!selectedDay) {
@@ -161,9 +175,18 @@ export default function EventScreen() {
   const renderContent = () => {
     if (loading && events.length === 0 && !isRefreshing) {
       return (
-        <View style={styles.emptyContainer}>
-          <ActivityIndicator color="#00f0ff" size="large" />
+        <View style={[styles.emptyContainer, { marginTop: 100 }]}>
+          <ActivityIndicator color="#6100a2" size="large" />
           <Text style={styles.emptyText}>Loading Events...</Text>
+        </View>
+      );
+    }
+
+    if(isRefreshing) {
+      return (
+        <View style={[styles.emptyContainer, { marginTop: 100 }]}>
+          <ActivityIndicator color="#7229a3" size="large" />
+          <Text style={styles.emptyText}>Refreshing...</Text>
         </View>
       );
     }
@@ -198,12 +221,11 @@ export default function EventScreen() {
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         
-        // This is the Magic Line:
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { y: scrollY } } }],
           { useNativeDriver: true }
         )}
-        scrollEventThrottle={16} // Ensures smooth 60fps updates
+        scrollEventThrottle={16}
 
         refreshControl={
           <RefreshControl
@@ -223,7 +245,7 @@ export default function EventScreen() {
     <StarryBackground scrollY={scrollY}>
       <View style={[styles.container, { paddingTop: insets.top }]}>
         
-        <View style={[styles.header, { marginTop: insets.top, marginLeft: insets.left + 15, flexDirection: 'column', alignItems: 'flex-start', backgroundColor: 'transparent' }]}>
+        <View style={[styles.header, { marginLeft: insets.left + 20, backgroundColor: 'transparent', marginBottom: 0 }]}>
           <Text style={styles.title}>Schedule</Text>
         </View>
 
@@ -303,18 +325,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 10,
+    gap: 13,
     padding: 20
   },
   title: {
     fontFamily: 'TsukimiRounded_700Bold',
     fontSize: 35,
-    color: '#D0F5FF', 
-    textShadowColor: 'rgba(243, 77, 255, 0.9)', 
-    textShadowOffset: { width: 0, height: 0 },   
-    textShadowRadius: 20,                        
-    letterSpacing: 4, 
+    color: '#D0F5FF',
+    textShadowColor: 'rgba(243, 74, 255, 0.6)', 
+    textShadowOffset: { width: 0, height: 0 },    
+    textShadowRadius: 15, 
+    letterSpacing: 5,
     textTransform: 'uppercase',
+    backgroundColor: 'transparent',
   },
   text: {
     fontSize: 14,
@@ -365,9 +388,9 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   emptyText: {
-    color: '#fff',
-    fontSize: 16,
-    marginTop: 10,
+    fontFamily: 'TsukimiRounded_700Bold',
+    color: '#D0F5FF',
+    fontSize: 22,
   },
   retryButton: {
     marginTop: 10,
