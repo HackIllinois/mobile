@@ -72,7 +72,11 @@ export default function CartItem({
             onPress={onDecrement}
             activeOpacity={0.6}
           >
-            <Text style={styles.buttonText}>-</Text>
+            <Image
+              source={require("../../assets/point shop/point-shop-minus.png")}
+              style={styles.buttonIcon}
+              resizeMode="contain"
+            />
           </TouchableOpacity>
           <Text style={styles.quantity}>{quantity}</Text>
           <TouchableOpacity
@@ -80,7 +84,11 @@ export default function CartItem({
             onPress={handleIncrement}
             activeOpacity={0.6}
           >
-            <Text style={styles.buttonText}>+</Text>
+            <Image
+              source={require("../../assets/point shop/point-shop-plus.png")}
+              style={styles.buttonIcon}
+              resizeMode="contain"
+            />
           </TouchableOpacity>
         </View>
       </View>
@@ -99,12 +107,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 12,
     paddingHorizontal: 8,
-    backgroundColor: "#c4b4d4",
+    backgroundColor: "#4d3f62",
     borderRadius: 12,
     marginBottom: 8,
     gap: 12,
     borderWidth: 1,
-    borderColor: "#a893be",
+    borderColor: "#5a4570",
   },
   floatingContainer: {
     position: "absolute",
@@ -123,7 +131,7 @@ const styles = StyleSheet.create({
   floatingText: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#2e2440",
+    color: "#e8dff0",
   },
   image: {
     width: 50,
@@ -134,7 +142,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     fontWeight: "500",
-    color: "#2e2440",
+    color: "#e8dff0",
   },
   quantityContainer: {
     flexDirection: "row",
@@ -145,9 +153,13 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: "#2e2440",
+    backgroundColor: "#6B4E8C",
     alignItems: "center",
     justifyContent: "center",
+  },
+  buttonIcon: {
+    width: 8,
+    height: 8,
   },
   buttonText: {
     fontSize: 18,
@@ -157,7 +169,7 @@ const styles = StyleSheet.create({
   quantity: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#2e2440",
+    color: "#e8dff0",
     minWidth: 20,
     textAlign: "center",
   },

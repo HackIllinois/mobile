@@ -18,6 +18,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import TypeWriter from "react-native-typewriter";
 import ShopItemCard from "../../components/point shop/ShopItemCard";
 import CartButton from "../../components/point shop/CartButton";
+import Points from "../../components/point shop/Points";
 import CartModal from "../../components/point shop/CartModal";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -166,11 +167,8 @@ export default function PointShop() {
           resizeMode="contain"
         />
         <View style={styles.contentContainer}>
-          <View style={[styles.cartButtonContainer, { marginBottom: spacing.cartMargin }]}>
-            <CartButton
-              itemCount={cartIds.length}
-              onPress={() => !isTutorialActive && setShowCartModal(true)}
-            />
+          <View style={[styles.pointsContainer, { marginBottom: spacing.cartMargin }]}>
+            <Points />
           </View>
 
           <View style={[styles.scrollContainer, { height: spacing.rowHeight }]}>
@@ -284,6 +282,11 @@ export default function PointShop() {
         </Pressable>
       </Modal>
 
+      <CartButton
+        itemCount={cartIds.length}
+        onPress={() => !isTutorialActive && setShowCartModal(true)}
+      />
+
       <CartModal
         visible={showCartModal}
         onClose={() => setShowCartModal(false)}
@@ -316,7 +319,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "flex-end",
   },
-  cartButtonContainer: {
+  pointsContainer: {
     alignSelf: "center",
   },
   scrollContainer: {
