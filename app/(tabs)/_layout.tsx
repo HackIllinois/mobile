@@ -84,6 +84,18 @@ export default function Layout() {
             </Link>
           </View>
         )}
+
+        { <View style={[styles.floatingButton, { top: 120 }]}>
+            <Link href="/MentorSupport" asChild>
+              <TouchableOpacity>
+                <Image
+                  source={require("../../assets/profile.png")}
+                  style={{ width: 30, height: 30, tintColor: '#e1d8f4ff' }}
+                />
+              </TouchableOpacity>
+            </Link>
+          </View>
+          }
       </View>
 
     </QueryClientProvider>
