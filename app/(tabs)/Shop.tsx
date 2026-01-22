@@ -18,6 +18,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import TypeWriter from "react-native-typewriter";
 import ShopItemCard from "../../components/point shop/ShopItemCard";
 import CartButton from "../../components/point shop/CartButton";
+import Points from "../../components/point shop/Points";
 import CartModal from "../../components/point shop/CartModal";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -89,9 +90,10 @@ export default function PointShop() {
       .then((response) => setShopItemData(response.data));
   }, []);
 
-  const midpoint = Math.ceil(shopItemData.length / 2);
-  const topPages = chunkItems(shopItemData.slice(0, midpoint));
-  const bottomPages = chunkItems(shopItemData.slice(midpoint));
+  const nonRaffleItems = shopItemData.filter((item) => !item.isRaffle);
+  const raffleItems = shopItemData.filter((item) => item.isRaffle);
+  const topPages = chunkItems(nonRaffleItems);
+  const bottomPages = chunkItems(raffleItems);
 
   const handleTutorialTap = async () => {
     if (tutorialStep === null) return;
@@ -111,7 +113,12 @@ export default function PointShop() {
   };
 
   const addToCart = (itemId: string) => {
-    if (!isTutorialActive) setCartIds((ids) => [...ids, itemId]);
+    if (!isTutorialActive) {
+      setCartIds((ids) => [...ids, itemId]);
+      api.post(`/shop/cart/${itemId}`).catch((error) => {
+        console.error("Failed to add item to cart:", error);
+      });
+    }
   };
 
   const removeFromCart = (itemId: string) => {
@@ -131,13 +138,26 @@ export default function PointShop() {
     }]);
   };
 
-  const renderShopRow = (pages: ShopItem[][]) =>
+  const [topPageIndex, setTopPageIndex] = useState(0);
+  const [bottomPageIndex, setBottomPageIndex] = useState(0);
+
+  const handleTopScroll = (event: any) => {
+    const page = Math.round(event.nativeEvent.contentOffset.x / SCREEN_WIDTH);
+    setTopPageIndex(page);
+  };
+
+  const handleBottomScroll = (event: any) => {
+    const page = Math.round(event.nativeEvent.contentOffset.x / SCREEN_WIDTH);
+    setBottomPageIndex(page);
+  };
+
+  const renderShopRow = (pages: ShopItem[][], scale: number = 1) =>
     pages.map((page, pageIndex) => (
       <View key={pageIndex} style={[styles.page, { width: SCREEN_WIDTH }]}>
         <View style={styles.row}>
           {page.map((item) => (
             <View key={item.itemId} style={styles.gridItem}>
-              <ShopItemCard item={item} onPress={() => addToCart(item.itemId)} />
+              <ShopItemCard item={item} onPress={() => addToCart(item.itemId)} scale={scale} />
             </View>
           ))}
         </View>
@@ -153,35 +173,60 @@ export default function PointShop() {
           resizeMode="contain"
         />
         <View style={styles.contentContainer}>
-          <View style={[styles.cartButtonContainer, { marginBottom: spacing.cartMargin }]}>
-            <CartButton
-              itemCount={cartIds.length}
-              onPress={() => !isTutorialActive && setShowCartModal(true)}
-            />
+          <View style={[styles.pointsContainer, { marginBottom: spacing.cartMargin }]}>
+            <Points />
           </View>
 
           <View style={[styles.scrollContainer, { height: spacing.rowHeight }]}>
+            {/* Fixed left chevron for top row */}
+            {topPageIndex > 0 && (
+              <View style={styles.chevronLeft}>
+                <Animated.Text style={styles.chevronText}>‹</Animated.Text>
+              </View>
+            )}
             <ScrollView
               horizontal
               pagingEnabled
               showsHorizontalScrollIndicator={false}
               scrollEnabled={!isTutorialActive}
+              onScroll={handleTopScroll}
+              scrollEventThrottle={16}
             >
-              {renderShopRow(topPages)}
+              {renderShopRow(topPages, 1)}
             </ScrollView>
+            {/* Fixed right chevron for top row */}
+            {topPageIndex < topPages.length - 1 && (
+              <View style={styles.chevronRight}>
+                <Animated.Text style={styles.chevronText}>›</Animated.Text>
+              </View>
+            )}
           </View>
 
           <View style={{ height: spacing.rowSpacer }} />
 
           <View style={[styles.scrollContainer, { height: spacing.rowHeight }]}>
+            {/* Fixed left chevron for bottom row */}
+            {bottomPageIndex > 0 && (
+              <View style={styles.chevronLeft}>
+                <Animated.Text style={styles.chevronText}>‹</Animated.Text>
+              </View>
+            )}
             <ScrollView
               horizontal
               pagingEnabled
               showsHorizontalScrollIndicator={false}
               scrollEnabled={!isTutorialActive}
+              onScroll={handleBottomScroll}
+              scrollEventThrottle={16}
             >
-              {renderShopRow(bottomPages)}
+              {renderShopRow(bottomPages, 1)}
             </ScrollView>
+            {/* Fixed right chevron for bottom row */}
+            {bottomPageIndex < bottomPages.length - 1 && (
+              <View style={styles.chevronRight}>
+                <Animated.Text style={styles.chevronText}>›</Animated.Text>
+              </View>
+            )}
           </View>
         </View>
       </SafeAreaView>
@@ -243,6 +288,11 @@ export default function PointShop() {
         </Pressable>
       </Modal>
 
+      <CartButton
+        itemCount={cartIds.length}
+        onPress={() => !isTutorialActive && setShowCartModal(true)}
+      />
+
       <CartModal
         visible={showCartModal}
         onClose={() => setShowCartModal(false)}
@@ -275,11 +325,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "flex-end",
   },
-  cartButtonContainer: {
+  pointsContainer: {
     alignSelf: "center",
   },
-  scrollContainer: {},
-  page: {},
+  scrollContainer: {
+    overflow: "visible",
+  },
+  page: {
+    position: "relative",
+    height: "100%",
+  },
   row: {
     flexDirection: "row",
     justifyContent: "flex-start",
@@ -291,6 +346,31 @@ const styles = StyleSheet.create({
   gridItem: {
     width: (SCREEN_WIDTH - 40 - 24) / 2,
     aspectRatio: 0.9,
+  },
+  chevronLeft: {
+    position: "absolute",
+    left: 10,
+    top: 0,
+    bottom: 0,
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 100,
+    opacity: .4
+  },
+  chevronRight: {
+    position: "absolute",
+    right: 10,
+    top: 0,
+    bottom: 0,
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 100,
+    opacity: .4
+  },
+  chevronText: {
+    fontSize: 28,
+    color: "#ffffffff",
+    fontWeight: "bold",
   },
   tutorialOverlay: {
     ...StyleSheet.absoluteFillObject,
