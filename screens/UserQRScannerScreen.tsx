@@ -145,7 +145,7 @@ export default function UserQRScannerScreen() {
         resizeMode="cover"
       >
         <SafeAreaView style={styles.safeArea}>
-          <Text style={styles.menuTitle} numberOfLines={1} adjustsFontSizeToFit>USER SCANNER</Text>
+          <Text style={styles.menuTitle} numberOfLines={1} adjustsFontSizeToFit>SCANNER</Text>
 
           <TouchableOpacity style={styles.menuButton} onPress={handleScanPress}>
             <View style={styles.buttonContainer}>
@@ -166,6 +166,7 @@ export default function UserQRScannerScreen() {
         onClose={() => setIsScanning(false)}
         isLoading={isLoading}
         isScanned={scanned}
+        scanModeLabel="Event Check-in"
       />
 
       {/* Scan Result Modal */}
@@ -197,8 +198,11 @@ const styles = StyleSheet.create({
     left: SCREEN_WIDTH * 0.079,
     fontSize: 28,
     fontWeight: 'bold',
-    color: 'white',
+    color: '#D0F5FF',
     fontFamily: 'Tsukimi-Rounded-Bold',
+    textShadowColor: 'rgba(243, 77, 255, 0.9)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 20,
   },
   menuButton: {
     marginTop: 120,

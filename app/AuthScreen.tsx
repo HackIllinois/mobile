@@ -142,7 +142,7 @@ export default function AuthScreen({ navigation }: any) {
         {loadingGoogle ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={styles.buttonText}>Sign in with Google</Text>
+          <Text style={styles.buttonText}>Staff Signin</Text>
         )}
       </TouchableOpacity>
 
@@ -155,7 +155,7 @@ export default function AuthScreen({ navigation }: any) {
             {loadingGitHub ? (
             <ActivityIndicator color="#fff" />
             ) : (
-            <Text style={styles.buttonText}>Sign in with GitHub</Text>
+            <Text style={styles.buttonText}>Attendee Signin</Text>
             )}
         </TouchableOpacity>
 
