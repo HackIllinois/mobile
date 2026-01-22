@@ -10,6 +10,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ShopItem } from "../../types";
 import CartItem from "./CartItem";
+import api from "../../api";
 
 interface CartModalProps {
   visible: boolean;
@@ -96,8 +97,18 @@ export default function CartModal({
                   key={item.itemId}
                   item={item}
                   quantity={quantity}
-                  onIncrement={() => onAddItem(item.itemId)}
-                  onDecrement={() => onRemoveItem(item.itemId)}
+                  onIncrement={() => {
+                    onAddItem(item.itemId);
+                    api.post(`/shop/cart/${item.itemId}`).catch((error) => {
+                      console.error("Failed to add item to cart:", error);
+                    });
+                  }}
+                  onDecrement={() => {
+                    onRemoveItem(item.itemId);
+                    api.delete(`/shop/cart/${item.itemId}`).catch((error) => {
+                      console.error("Failed to remove item from cart:", error);
+                    });
+                  }}
                 />
               ))
             )}

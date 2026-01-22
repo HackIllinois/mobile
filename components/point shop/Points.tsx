@@ -21,7 +21,7 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#6B4E8C",
+    backgroundColor: "#5B415B",
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 20,
@@ -43,13 +43,13 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   icon: {
-    width: 24,
-    height: 24,
+    width: 20,
+    height: 20,
   },
   text: {
     fontFamily: "Tsukimi Rounded",
     color: "#FFFFFF",
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
   },
 });

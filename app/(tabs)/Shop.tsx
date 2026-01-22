@@ -90,9 +90,10 @@ export default function PointShop() {
       .then((response) => setShopItemData(response.data));
   }, []);
 
-  const midpoint = Math.ceil(shopItemData.length / 2);
-  const topPages = chunkItems(shopItemData.slice(0, midpoint));
-  const bottomPages = chunkItems(shopItemData.slice(midpoint));
+  const nonRaffleItems = shopItemData.filter((item) => !item.isRaffle);
+  const raffleItems = shopItemData.filter((item) => item.isRaffle);
+  const topPages = chunkItems(nonRaffleItems);
+  const bottomPages = chunkItems(raffleItems);
 
   const handleTutorialTap = async () => {
     if (tutorialStep === null) return;
@@ -112,7 +113,12 @@ export default function PointShop() {
   };
 
   const addToCart = (itemId: string) => {
-    if (!isTutorialActive) setCartIds((ids) => [...ids, itemId]);
+    if (!isTutorialActive) {
+      setCartIds((ids) => [...ids, itemId]);
+      api.post(`/shop/cart/${itemId}`).catch((error) => {
+        console.error("Failed to add item to cart:", error);
+      });
+    }
   };
 
   const removeFromCart = (itemId: string) => {

@@ -75,6 +75,10 @@ class API {
     return this.axiosInstance.put(url, data, config);
   }
 
+  async delete<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
+    return this.axiosInstance.delete(url, config);
+  }
+
   private redirectToSignIn(): void {
     // TODO: redirect to sign in page
     console.log("REDIRECT TO SIGN IN PAGE");
