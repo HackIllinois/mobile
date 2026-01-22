@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "transparent" },
   headerOverlay: {
     position: "absolute",
-    top: height * 0.06,
+    top: height * 0.08,
     left: 0,
     right: 0,
     alignItems: "center",
