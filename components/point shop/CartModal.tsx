@@ -5,10 +5,12 @@ import {
   TouchableOpacity,
   Text,
   ScrollView,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ShopItem } from "../../types";
 import CartItem from "./CartItem";
+import api from "../../api";
 
 interface CartModalProps {
   visible: boolean;
@@ -95,8 +97,18 @@ export default function CartModal({
                   key={item.itemId}
                   item={item}
                   quantity={quantity}
-                  onIncrement={() => onAddItem(item.itemId)}
-                  onDecrement={() => onRemoveItem(item.itemId)}
+                  onIncrement={() => {
+                    onAddItem(item.itemId);
+                    api.post(`/shop/cart/${item.itemId}`).catch((error) => {
+                      console.error("Failed to add item to cart:", error);
+                    });
+                  }}
+                  onDecrement={() => {
+                    onRemoveItem(item.itemId);
+                    api.delete(`/shop/cart/${item.itemId}`).catch((error) => {
+                      console.error("Failed to remove item from cart:", error);
+                    });
+                  }}
                 />
               ))
             )}
@@ -105,7 +117,14 @@ export default function CartModal({
           <View style={styles.footer}>
             <View style={styles.totalRow}>
               <Text style={styles.totalLabel}>total</Text>
-              <Text style={styles.totalValue}>🪙 {totalPoints}</Text>
+              <View style={styles.totalValueContainer}>
+                <Image
+                  source={require("../../assets/point shop/point-shop-diamonds.png")}
+                  style={styles.diamondIcon}
+                  resizeMode="contain"
+                />
+                <Text style={styles.totalValue}>{totalPoints}</Text>
+              </View>
             </View>
             <TouchableOpacity
               style={[
@@ -133,14 +152,14 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
   },
   modalContainer: {
-    backgroundColor: "#d4c4e0",
+    backgroundColor: "#3d2f52",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     height: "60%",
     padding: 20,
     justifyContent: "space-between",
     borderWidth: 1,
-    borderColor: "#a893be",
+    borderColor: "#5a4570",
     borderBottomWidth: 0,
   },
   closeButton: {
@@ -155,13 +174,13 @@ const styles = StyleSheet.create({
   },
   closeButtonText: {
     fontSize: 24,
-    color: "#4a3a5c",
+    color: "#c4b4d4",
     fontWeight: "300",
   },
   title: {
     fontSize: 20,
     fontWeight: "700",
-    color: "#2e2440",
+    color: "#e8dff0",
     marginBottom: 20,
     letterSpacing: 1,
   },
@@ -175,7 +194,7 @@ const styles = StyleSheet.create({
   },
   emptyMessage: {
     fontSize: 16,
-    color: "#6b5a7c",
+    color: "#a893be",
     fontWeight: "500",
     letterSpacing: 0.5,
     textAlign: "center",
@@ -190,20 +209,30 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 12,
     borderTopWidth: 1,
-    borderTopColor: "#a893be",
+    borderTopColor: "#5a4570",
   },
   totalLabel: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#2e2440",
+    color: "#e8dff0",
+  },
+  totalValueContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  diamondIcon: {
+    width: 24,
+    height: 24,
   },
   totalValue: {
+    fontFamily: "Tsukimi Rounded",
     fontSize: 18,
     fontWeight: "700",
-    color: "#2e2440",
+    color: "#e8dff0",
   },
   purchaseButton: {
-    backgroundColor: "#2e2440",
+    backgroundColor: "#6B4E8C",
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: "center",

@@ -78,7 +78,7 @@ export default function Layout() {
               <TouchableOpacity>
                 <Image
                   source={require("../../assets/profile.png")}
-                  style={{ width: 30, height: 30, tintColor: '#9A6AFF' }}
+                  style={{ width: 30, height: 30, tintColor: '#e1d8f4ff' }}
                 />
               </TouchableOpacity>
             </Link>
