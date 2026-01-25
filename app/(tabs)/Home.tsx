@@ -19,7 +19,7 @@ export type StageKey =
   | "hacking"
   | "closing";
 
-const STAGE_ORDER: StageKey[] = ["checkin", "scavenger", "opening", "showcase", "hacking", "closing"];
+const STAGE_ORDER: StageKey[] = ["checkin", "scavenger", "opening", "hacking", "showcase",  "closing"];
 const stageIndex = (s: StageKey) => STAGE_ORDER.indexOf(s);
 
 interface Orbit {
@@ -62,14 +62,60 @@ export default function HomeScreen() {
   const targetDate = new Date("2026-02-27T18:00:00");
   const [timeLeft, setTimeLeft] = useState(getTimeRemaining(targetDate));
 
-  // replace later with actual stage logic based on timings
-  const [currentStage, setCurrentStage] = useState<StageKey>("opening");
+  const SCHEDULE = useMemo(() => {
+    const checkinStart = new Date("2026-02-27T14:00:00-06:00");
+    const checkinEnd   = new Date("2026-02-27T17:00:00-06:00");
+
+    const scavStart = new Date("2026-02-27T15:00:00-06:00");
+    const scavEnd   = new Date("2026-02-27T17:00:00-06:00");
+
+    const openingStart = new Date("2026-02-27T17:00:00-06:00");
+    const openingEnd   = new Date("2026-02-27T18:00:00-06:00");
+
+    const showcaseStart = new Date("2026-02-28T17:00:00-06:00");
+    const showcaseEnd   = new Date("2026-02-28T19:00:00-06:00");
+
+    const closingStart = new Date("2026-03-01T15:00:00-06:00");
+    const closingEnd   = new Date("2026-03-01T16:00:00-06:00");
+
+    const hackingStart = openingEnd;
+    const hackingEnd   = showcaseStart;
+
+    return {
+      checkin:   { start: checkinStart,   end: checkinEnd },
+      scavenger:{ start: scavStart,       end: scavEnd },
+      opening:  { start: openingStart,   end: openingEnd },
+      hacking:  { start: hackingStart,   end: hackingEnd },
+      showcase: { start: showcaseStart,  end: showcaseEnd },
+      closing:  { start: closingStart,   end: closingEnd },
+    } satisfies Record<StageKey, { start: Date; end: Date }>;
+  }, []);
+  
+  const computeStage = (now: Date): StageKey => {
+
+    let best: StageKey = "checkin";
+    for (const key of STAGE_ORDER) {
+      if (now >= SCHEDULE[key].start) best = key;
+    }
+
+    if (now > SCHEDULE.closing.end) return "closing";
+    return best;
+  };
+
+  
+
+  const [currentStage, setCurrentStage] = useState<StageKey>(() => computeStage(new Date()));
+
+  useEffect(() => {
+    const id = setInterval(() => setCurrentStage(computeStage(new Date())), 1000);
+    return () => clearInterval(id);
+  }, [SCHEDULE]);
 
   const anchorX = width / 2;
   const anchorY = height * 0.25;
   const orbitGap = width * 0.17;
   const orbitScale = 1.2;
-  const orbitMultipliers = [1.5, 1.2, 1.2, 1.2, 1.15];
+  const orbitMultipliers = [1.7, 1.2, 1.2, 1.2, 1.15];
 
   const orbits: Orbit[] = Array.from({ length: 6 }, (_, i) => ({
     radius: orbitScale * (i + 1) * orbitGap * orbitMultipliers[i],
@@ -80,8 +126,8 @@ export default function HomeScreen() {
   const items: EventItem[] = [
     { eventKey: "closing", x: anchorX, y: anchorY, size: 150, fixed: true },
 
-    { eventKey: "hacking", orbit: orbits[0], angle: 140, size: 90, offsetY: -6, jigglePx: 14, jigglePeriodMs: 5200 },
-    { eventKey: "showcase", orbit: orbits[1], angle: 60, size: 90, jigglePx: 12, jigglePeriodMs: 6100 },
+    { eventKey: "showcase", orbit: orbits[0], angle: 140, size: 80, offsetY: -6, jigglePx: 14, jigglePeriodMs: 5200 },
+    { eventKey: "hacking", orbit: orbits[1], angle: 60, size: 90, jigglePx: 12, jigglePeriodMs: 6100 },
     { eventKey: "opening", orbit: orbits[2], angle: 105, size: 90, jigglePx: 10, jigglePeriodMs: 6900 },
     { eventKey: "scavenger", orbit: orbits[3], angle: 70, size: 90, jigglePx: 12, jigglePeriodMs: 7600 },
     { eventKey: "checkin", orbit: orbits[4], angle: 100, size: 90, offsetY: -8, jigglePx: 9, jigglePeriodMs: 8400 },
