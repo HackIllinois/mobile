@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { AxiosResponse } from "axios";
 import api from "../../api";
 import { ShopItem } from "../../types";
@@ -13,6 +13,7 @@ import {
   Image,
   Modal,
   Animated,
+  LayoutChangeEvent,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import TypeWriter from "react-native-typewriter";
@@ -22,7 +23,7 @@ import Points from "../../components/point shop/Points";
 import CartModal from "../../components/point shop/CartModal";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CHUNK_SIZE = 2;
 const TUTORIAL_KEY = "@shop_tutorial_completed";
 
@@ -31,11 +32,41 @@ const tutorialTexts = [
   "Use your earned points to buy items.\nSwipe to see more on each row.",
   "Spend em' wisely. Good luck with your journey...",
 ];
+// Background image dimensions: 1728 x 3273
+const IMAGE_WIDTH = 1728;
+const IMAGE_HEIGHT = 3273;
+const IMAGE_ASPECT_RATIO = IMAGE_HEIGHT / IMAGE_WIDTH; // ~1.894
 
-const getSpacing = (screenHeight: number) => {
-  if (screenHeight < 700) return { cartMargin: 0, rowSpacer: 0, bottomPadding: 0, rowHeight: 175 };
-  if (screenHeight < 850) return { cartMargin: 35, rowSpacer: 40, bottomPadding: 0, rowHeight: 180 };
-  return { cartMargin: 20, rowSpacer: 30, bottomPadding: 10, rowHeight: 190 };
+const getSpacing = (containerWidth: number, containerHeight: number) => {
+  // Calculate how resizeMode="cover" affects the background
+  const containerRatio = containerHeight / containerWidth;
+  
+  // With "cover", the image scales to fill the container while maintaining aspect ratio
+  // Scale factor is the larger of the two possible scales
+  const scaleX = containerWidth / IMAGE_WIDTH;
+  const scaleY = containerHeight / IMAGE_HEIGHT;
+  const coverScale = Math.max(scaleX, scaleY);
+  
+  // Calculate the visible portion of the image (0 to 1)
+  // This tells us how much of the image is being cropped
+  const visibleWidth = containerWidth / (coverScale * IMAGE_WIDTH);
+  const visibleHeight = containerHeight / (coverScale * IMAGE_HEIGHT);
+  
+  // Use the ratio of visible height as the primary factor
+  // When container is wider: visibleHeight < 1 (top/bottom cropped) -> compact
+  // When container is taller: visibleHeight = 1, visibleWidth < 1 (sides cropped) -> more space
+  
+  // Normalize based on visible height (0.7 to 1.0 range maps to 0 to 1)
+  const t = Math.min(Math.max((visibleHeight - 0.7) / 0.3, 0), 1);
+  
+  // Define spacing values that scale with the visible portion
+  // Now that rows hug their content, we distribute remaining space via margins/padding
+  const pointsMargin = 15 + t * 25;  // 15 to 40 - space below points display
+  const rowSpacer = 20 + t * 30;     // 20 to 50 - space between shop rows
+  const bottomPadding = 20 + t * 30; // 60 to 90 - space at bottom to avoid cart overlap
+  const topPadding = t * 20;         // 0 to 20 - optional space at top of content
+  
+  return { pointsMargin, rowSpacer, bottomPadding, topPadding };
 };
 
 const chunkItems = (items: ShopItem[]): ShopItem[][] => {
@@ -47,7 +78,13 @@ const chunkItems = (items: ShopItem[]): ShopItem[][] => {
 };
 
 export default function PointShop() {
-  const spacing = getSpacing(SCREEN_HEIGHT);
+  const [containerDimensions, setContainerDimensions] = useState({ width: 1, height: 1 });
+  const spacing = getSpacing(containerDimensions.width, containerDimensions.height);
+
+  const onContainerLayout = useCallback((event: LayoutChangeEvent) => {
+    const { width, height } = event.nativeEvent.layout;
+    setContainerDimensions({ width, height });
+  }, []);
 
   const [shopItemData, setShopItemData] = useState<ShopItem[]>([]);
   const [cartIds, setCartIds] = useState<string[]>([]);
@@ -129,13 +166,7 @@ export default function PointShop() {
   };
 
   const handlePurchase = () => {
-    Alert.alert("Purchase completed", "", [{
-      text: "OK",
-      onPress: () => {
-        setCartIds([]);
-        setShowCartModal(false);
-      },
-    }]);
+    setCartIds([]);
   };
 
   const [topPageIndex, setTopPageIndex] = useState(0);
@@ -153,7 +184,7 @@ export default function PointShop() {
 
   const renderShopRow = (pages: ShopItem[][], scale: number = 1) =>
     pages.map((page, pageIndex) => (
-      <View key={pageIndex} style={[styles.page, { width: SCREEN_WIDTH }]}>
+      <View key={pageIndex} style={styles.page}>
         <View style={styles.row}>
           {page.map((item) => (
             <View key={item.itemId} style={styles.gridItem}>
@@ -172,12 +203,12 @@ export default function PointShop() {
           style={styles.titleImage}
           resizeMode="contain"
         />
-        <View style={styles.contentContainer}>
-          <View style={[styles.pointsContainer, { marginBottom: spacing.cartMargin }]}>
+        <View style={[styles.contentContainer, { paddingTop: spacing.topPadding }]} onLayout={onContainerLayout}>
+          <View style={[styles.pointsContainer, { marginBottom: spacing.pointsMargin }]}>
             <Points />
           </View>
 
-          <View style={[styles.scrollContainer, { height: spacing.rowHeight }]}>
+          <View style={styles.scrollContainer}>
             {/* Fixed left chevron for top row */}
             {topPageIndex > 0 && (
               <View style={styles.chevronLeft}>
@@ -204,7 +235,7 @@ export default function PointShop() {
 
           <View style={{ height: spacing.rowSpacer }} />
 
-          <View style={[styles.scrollContainer, { height: spacing.rowHeight }]}>
+          <View style={styles.scrollContainer}>
             {/* Fixed left chevron for bottom row */}
             {bottomPageIndex > 0 && (
               <View style={styles.chevronLeft}>
@@ -329,23 +360,23 @@ const styles = StyleSheet.create({
     alignSelf: "center",
   },
   scrollContainer: {
+    width: "100%",
     overflow: "visible",
   },
   page: {
-    position: "relative",
-    height: "100%",
+    width: SCREEN_WIDTH,
   },
   row: {
     flexDirection: "row",
     justifyContent: "flex-start",
-    alignItems: "center",
+    alignItems: "flex-start",
     width: "100%",
     paddingHorizontal: 20,
     gap: 24,
   },
   gridItem: {
     width: (SCREEN_WIDTH - 40 - 24) / 2,
-    aspectRatio: 0.9,
+    height: ((SCREEN_WIDTH - 40 - 24) / 2) / 0.9, // height = width / aspectRatio
   },
   chevronLeft: {
     position: "absolute",
