@@ -6,8 +6,8 @@ import * as Haptics from "expo-haptics";
 interface CartItemProps {
   item: ShopItem;
   quantity: number;
-  onIncrement: () => void;
-  onDecrement: () => void;
+  onIncrement: () => Promise<boolean>;
+  onDecrement: () => Promise<boolean>;
 }
 
 export default function CartItem({
@@ -19,29 +19,32 @@ export default function CartItem({
   const floatAnim = useRef(new Animated.Value(0)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
 
-  const handleIncrement = () => {
+  const handleIncrement = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onIncrement();
+    const success = await onIncrement();
 
-    // Reset animations
-    floatAnim.setValue(0);
-    opacityAnim.setValue(1);
+    // Only animate if the API call succeeded
+    if (success) {
+      // Reset animations
+      floatAnim.setValue(0);
+      opacityAnim.setValue(1);
 
-    // Start animations
-    Animated.parallel([
-      Animated.timing(floatAnim, {
-        toValue: -50,
-        duration: 600,
-        easing: Easing.out(Easing.ease),
-        useNativeDriver: true,
-      }),
-      Animated.timing(opacityAnim, {
-        toValue: 0,
-        duration: 600,
-        easing: Easing.in(Easing.ease),
-        useNativeDriver: true,
-      }),
-    ]).start();
+      // Start animations
+      Animated.parallel([
+        Animated.timing(floatAnim, {
+          toValue: -50,
+          duration: 600,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacityAnim, {
+          toValue: 0,
+          duration: 600,
+          easing: Easing.in(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
   };
 
   return (

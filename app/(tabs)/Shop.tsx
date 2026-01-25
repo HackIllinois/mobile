@@ -32,35 +32,20 @@ const tutorialTexts = [
   "Use your earned points to buy items.\nSwipe to see more on each row.",
   "Spend em' wisely. Good luck with your journey...",
 ];
-// Background image dimensions: 1728 x 3273
+
 const IMAGE_WIDTH = 1728;
 const IMAGE_HEIGHT = 3273;
-const IMAGE_ASPECT_RATIO = IMAGE_HEIGHT / IMAGE_WIDTH; // ~1.894
+const IMAGE_ASPECT_RATIO = IMAGE_HEIGHT / IMAGE_WIDTH;
 
 const getSpacing = (containerWidth: number, containerHeight: number) => {
-  // Calculate how resizeMode="cover" affects the background
   const containerRatio = containerHeight / containerWidth;
   
-  // With "cover", the image scales to fill the container while maintaining aspect ratio
-  // Scale factor is the larger of the two possible scales
   const scaleX = containerWidth / IMAGE_WIDTH;
   const scaleY = containerHeight / IMAGE_HEIGHT;
   const coverScale = Math.max(scaleX, scaleY);
-  
-  // Calculate the visible portion of the image (0 to 1)
-  // This tells us how much of the image is being cropped
   const visibleWidth = containerWidth / (coverScale * IMAGE_WIDTH);
   const visibleHeight = containerHeight / (coverScale * IMAGE_HEIGHT);
-  
-  // Use the ratio of visible height as the primary factor
-  // When container is wider: visibleHeight < 1 (top/bottom cropped) -> compact
-  // When container is taller: visibleHeight = 1, visibleWidth < 1 (sides cropped) -> more space
-  
-  // Normalize based on visible height (0.7 to 1.0 range maps to 0 to 1)
   const t = Math.min(Math.max((visibleHeight - 0.7) / 0.3, 0), 1);
-  
-  // Define spacing values that scale with the visible portion
-  // Now that rows hug their content, we distribute remaining space via margins/padding
   const pointsMargin = 15 + t * 25;  // 15 to 40 - space below points display
   const rowSpacer = 20 + t * 30;     // 20 to 50 - space between shop rows
   const bottomPadding = 20 + t * 30; // 60 to 90 - space at bottom to avoid cart overlap
@@ -92,8 +77,23 @@ export default function PointShop() {
   const [tutorialStep, setTutorialStep] = useState<number | null>(null);
   const [isTutorialActive, setIsTutorialActive] = useState(false);
   const [typewriterKey, setTypewriterKey] = useState(0);
+  const [userPoints, setUserPoints] = useState<number>(0);
 
   const tutorialAnim = useRef(new Animated.Value(0)).current;
+
+  // Fetch user profile to get points
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response: any = await api.get('profile');
+        setUserPoints(response.data.points ?? 0);
+      } catch (error) {
+        console.error("Failed to fetch profile:", error);
+        setUserPoints(0);
+      }
+    };
+    fetchProfile();
+  }, []);
 
   useEffect(() => {
     if (isTutorialActive && tutorialStep !== null) {
@@ -149,20 +149,32 @@ export default function PointShop() {
     }
   };
 
-  const addToCart = (itemId: string) => {
+  const addToCart = async (itemId: string): Promise<boolean> => {
     if (!isTutorialActive) {
-      setCartIds((ids) => [...ids, itemId]);
-      api.post(`/shop/cart/${itemId}`).catch((error) => {
+      try {
+        await api.post(`/shop/cart/${itemId}`);
+        setCartIds((ids) => [...ids, itemId]);
+        return true;
+      } catch (error) {
         console.error("Failed to add item to cart:", error);
-      });
+        return false;
+      }
     }
+    return false;
   };
 
-  const removeFromCart = (itemId: string) => {
-    setCartIds((ids) => {
-      const index = ids.indexOf(itemId);
-      return index === -1 ? ids : [...ids.slice(0, index), ...ids.slice(index + 1)];
-    });
+  const removeFromCart = async (itemId: string): Promise<boolean> => {
+    try {
+      await api.delete(`/shop/cart/${itemId}`);
+      setCartIds((ids) => {
+        const index = ids.indexOf(itemId);
+        return index === -1 ? ids : [...ids.slice(0, index), ...ids.slice(index + 1)];
+      });
+      return true;
+    } catch (error) {
+      console.error("Failed to remove item from cart:", error);
+      return false;
+    }
   };
 
   const handlePurchase = () => {
@@ -205,7 +217,7 @@ export default function PointShop() {
         />
         <View style={[styles.contentContainer, { paddingTop: spacing.topPadding }]} onLayout={onContainerLayout}>
           <View style={[styles.pointsContainer, { marginBottom: spacing.pointsMargin }]}>
-            <Points />
+            <Points points={userPoints} />
           </View>
 
           <View style={styles.scrollContainer}>

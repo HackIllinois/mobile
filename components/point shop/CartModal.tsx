@@ -20,8 +20,8 @@ interface CartModalProps {
   onClose: () => void;
   cartIds: string[];
   shopItemData: ShopItem[];
-  onAddItem: (itemId: string) => void;
-  onRemoveItem: (itemId: string) => void;
+  onAddItem: (itemId: string) => Promise<boolean>;
+  onRemoveItem: (itemId: string) => Promise<boolean>;
   onPurchase: () => void;
 }
 
@@ -34,11 +34,11 @@ export default function CartModal({
   onRemoveItem,
   onPurchase,
 }: CartModalProps) {
-  const [qrCodeData, setQrCodeData] = useState<string | null>(null);
+  const [qrCodeData, setQrCodeData] = useState<string | null>();
 
   useEffect(() => {
     if (visible) {
-      setQrCodeData(null);
+      // setQrCodeData(null);
     }
   }, [visible]);
 
@@ -75,7 +75,7 @@ export default function CartModal({
 
   const handlePurchasePress = async () => {
     try {
-      const response = await api.get<any>("/shop/cart/qr/");
+      const response = await api.get<any>("/shop/cart/qr");
       if (response.data && response.data.QRCode) {
         setQrCodeData(response.data.QRCode);
         onPurchase();
@@ -145,21 +145,8 @@ export default function CartModal({
                       key={item.itemId}
                       item={item}
                       quantity={quantity}
-                      onIncrement={() => {
-                        onAddItem(item.itemId);
-                        api.post(`/shop/cart/${item.itemId}`).catch((error) => {
-                          console.error("Failed to add item to cart:", error);
-                        });
-                      }}
-                      onDecrement={() => {
-                        onRemoveItem(item.itemId);
-                        api.delete(`/shop/cart/${item.itemId}`).catch((error) => {
-                          console.error(
-                            "Failed to remove item from cart:",
-                            error
-                          );
-                        });
-                      }}
+                      onIncrement={() => onAddItem(item.itemId)}
+                      onDecrement={() => onRemoveItem(item.itemId)}
                     />
                   ))
                 )}
