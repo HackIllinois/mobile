@@ -14,7 +14,6 @@ import { Event } from '../../types';
 export default function EventScreen() {
   const insets = useSafeAreaInsets();
   
-  // 1. Create the Scroll Value Tracker
   const scrollY = useRef(new Animated.Value(0)).current;
 
   const { events = [], loading, error, refetch } = useEvents();
@@ -167,7 +166,7 @@ export default function EventScreen() {
         handleSave={handleSave}
         onShowMenu={handleShowMenu}
         saved={savedEventIds.has(item.eventId)}
-        showTime={showTime} // <--- Pass this new prop
+        showTime={showTime}
       />
     );
   };
@@ -206,13 +205,12 @@ export default function EventScreen() {
         return (
           <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>
-                No events scheduled {selectedDay !== null ? 'for this day' : ''}.
+                {selectedSave ? "No saved events found" : "No events scheduled " + (selectedDay !== null ? 'for this day' : '')}
               </Text>
           </View>
         );
     }
 
-    // 2. Use Animated.FlatList and attach the onScroll event
     return (
       <Animated.FlatList
         data={[...filteredEvents].sort((a, b) => a.startTime - b.startTime)}
@@ -241,7 +239,6 @@ export default function EventScreen() {
   };
 
   return (
-    // 3. Pass scrollY to the Background
     <StarryBackground scrollY={scrollY}>
       <View style={[styles.container, { paddingTop: insets.top }]}>
         
@@ -335,9 +332,8 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(243, 74, 255, 0.6)', 
     textShadowOffset: { width: 0, height: 0 },    
     textShadowRadius: 15, 
-    letterSpacing: 5,
+    letterSpacing: 1,
     textTransform: 'uppercase',
-    backgroundColor: 'transparent',
   },
   text: {
     fontSize: 14,

@@ -73,19 +73,19 @@ export function EventCard({ event, index, onPress, handleSave, onShowMenu, saved
                   {event.locations[0]?.description || 'TBA'}
               </Text>
           )}
-          
-          <Text numberOfLines={1} ellipsizeMode="tail" style={styles.description}>
-              {event.description}
-          </Text>
-          
-          {event.eventType === "MEAL" && (
-            <TouchableOpacity 
-              style={styles.menuButton} 
-              onPress={handleShowMenuPress}
-            >
-              <Text style={styles.menuButtonText}>Show Menu</Text>
-            </TouchableOpacity>
-          )}
+          <View style={styles.buttonContainer}>
+            <Text numberOfLines={1} ellipsizeMode="tail" style={styles.description}>
+                {event.description}
+            </Text>
+            {event.eventType === "MEAL" && (
+                <TouchableOpacity 
+                  style={styles.menuButton} 
+                  onPress={handleShowMenuPress}
+                >
+                  <Text style={styles.menuButtonText}>Show Menu</Text>
+                </TouchableOpacity>
+              )}
+          </View>
           </LinearGradient>
         </Pressable>      
       </View>
@@ -157,12 +157,12 @@ const styles = StyleSheet.create({
     marginRight: 10, 
   },
   buttonContainer: {
-    flexDirection: 'row',
+    flexDirection: 'column',
     alignItems: 'center',
-    flexShrink: 0, 
+    flex: 0,
   },
   saveButton: {
-    padding: 4, 
+    padding: 4,
   },
   menuButton: {
     paddingVertical: 8,
@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
     borderColor: '#ffffffff',
     borderWidth: 1.5,
     marginTop: 10, 
-    alignSelf: 'flex-start',
+    alignSelf: 'flex-end',
   },
   menuButtonText: {
     color: '#ffffffff',
@@ -204,6 +204,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#ffffffff',
     marginBottom: 5,
+    alignSelf: 'flex-start',
   },
   dateDescription: {
     justifyContent: 'center',
