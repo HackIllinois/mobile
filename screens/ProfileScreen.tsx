@@ -159,30 +159,46 @@ export default function ProfileScreen() {
       }}>
         <Text style={{
           color: '#FF5555',
-          fontSize: scaleFontSize(18),
-          marginBottom: scaleHeight(20),
+          fontSize: scaleFontSize(30),
+          textAlign: 'center',
+          width: '80%',
+          marginBottom: scaleHeight(30),
         }}>Could not load profile.</Text>
+        <Text style={{
+          color: '#180161',
+          fontSize: scaleFontSize(18),
+          textAlign: 'center',
+          width: '80%',
+          marginBottom: scaleHeight(5),
+        }}>Staff currently do not have profiles.</Text>
+        <Text style={{
+          color: '#180161',
+          fontSize: scaleFontSize(18),
+          textAlign: 'center',
+          width: '80%',
+          marginBottom: scaleHeight(20),
+        }}>If you are an attendee, please email contact@hackillinois.org for support.</Text>
         <TouchableOpacity style={{
-          backgroundColor: '#888',
+          backgroundColor: '#180161',
           padding: scaleWidth(15),
-          borderRadius: scaleWidth(8),
+          borderRadius: scaleWidth(40),
           alignItems: 'center',
-          width: '100%',
-          marginBottom: scaleHeight(15),
+          width: '30%',
+          marginBottom: scaleHeight(70),
         }} onPress={fetchProfile}>
           <Text style={{
             color: '#FFFFFF',
-            fontSize: scaleFontSize(18),
+            fontSize: scaleFontSize(16),
             fontWeight: 'bold',
           }}>Try Again</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={{
-            backgroundColor: '#888',
+            backgroundColor: '#FF5555',
             padding: scaleWidth(15),
-            borderRadius: scaleWidth(8),
+            borderRadius: scaleWidth(40),
             alignItems: 'center',
-            width: '100%',
+            width: '50%',
             marginBottom: scaleHeight(15),
           }}
           onPress={handleLogout}
@@ -201,7 +217,6 @@ export default function ProfileScreen() {
     <SafeAreaView style={{
       flex: 1,
       backgroundColor: '#F5F5F5',
-      fontFamily: 'Montserrat',
     }}>
       {/* Background */}
       <View style={{
