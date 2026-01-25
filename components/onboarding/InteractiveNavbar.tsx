@@ -1,39 +1,52 @@
 import React from "react";
 import { TouchableOpacity, View, useWindowDimensions } from "react-native";
-import Navbar from "../../assets/onboarding/navbar.svg";
-import RocketOrbit from "../home/RocketOrbit";
-import SmallRocket from "../../assets/onboarding/small-rocket.svg";
+import Navbar1 from "../../assets/onboarding/navbar1.svg";
+import Navbar2 from "../../assets/onboarding/navbar2.svg";
+import Navbar3 from "../../assets/onboarding/navbar3.svg";
+import Navbar4 from "../../assets/onboarding/navbar4.svg";
+import Navbar5 from "../../assets/onboarding/navbar5.svg";
+import Navbar6 from "../../assets/onboarding/navbar6.svg";
+import Navbar7 from "../../assets/onboarding/navbar7.svg";
 
 type InteractiveNavbarProps = {
     currentScreen: number;
     onPlanetPress: (index: number) => void;
 };
 
-const SidewaysRocket = (props: any) => (
-    <View style={{ transform: [{ rotate: '270deg' }] }}>
-        <SmallRocket {...props} />
-    </View>
-);
+const navbarConfigs = [
+    { component: Navbar1, heightRatio: 0.15 },
+    { component: Navbar2, heightRatio: 0.15 },
+    { component: Navbar3, heightRatio: 0.15 },
+    { component: Navbar4, heightRatio: 0.15 },
+    { component: Navbar5, heightRatio: 0.15 },
+    { component: Navbar6, heightRatio: 0.15 },
+    { component: Navbar7, heightRatio: 0.15 },
+];
+
+const getScreenOffset = (currentScreen: number): number => {
+    if (currentScreen <= 1) return 0;
+    if (currentScreen >= 5) return 4;
+    return currentScreen - 1;
+};
 
 export default function InteractiveNavbar({ currentScreen, onPlanetPress }: InteractiveNavbarProps) {
     const { width } = useWindowDimensions();
 
     const navbarWidth = width * 0.85;
-    const navbarHeight = navbarWidth * 0.0885;
+    const currentConfig = navbarConfigs[currentScreen] || navbarConfigs[0];
+    const navbarHeight = navbarWidth * currentConfig.heightRatio;
 
-    const planetWidth = navbarWidth / 6;
+    const planetWidth = navbarWidth / 3;
+
+    const screenOffset = getScreenOffset(currentScreen);
 
     const planets = [
-        { index: 0, x: planetWidth * 0.5 },
-        { index: 1, x: planetWidth * 1.5 },
-        { index: 2, x: planetWidth * 2.5 },
-        { index: 3, x: planetWidth * 3.5 },
-        { index: 4, x: planetWidth * 4.5 },
-        { index: 5, x: planetWidth * 5.5 },
+        { position: 0, screenIndex: screenOffset, x: planetWidth * 0.5 },
+        { position: 1, screenIndex: screenOffset + 1, x: planetWidth * 1.5 },
+        { position: 2, screenIndex: screenOffset + 2, x: planetWidth * 2.5 },
     ];
 
-    const currentPlanet = planets[currentScreen];
-    const planetSize = planetWidth * 0.8; 
+    const NavbarComponent = currentConfig.component;
 
     return (
         <View style={{
@@ -41,7 +54,7 @@ export default function InteractiveNavbar({ currentScreen, onPlanetPress }: Inte
             height: navbarHeight,
         }}>
             {/* Navbar */}
-            <Navbar
+            <NavbarComponent
                 width={navbarWidth}
                 height={navbarHeight}
             />
@@ -49,8 +62,8 @@ export default function InteractiveNavbar({ currentScreen, onPlanetPress }: Inte
             {/* Touchable planet overlays */}
             {planets.map((planet) => (
                 <TouchableOpacity
-                    key={planet.index}
-                    onPress={() => onPlanetPress(planet.index)}
+                    key={planet.position}
+                    onPress={() => onPlanetPress(planet.screenIndex)}
                     style={{
                         position: 'absolute',
                         left: planet.x - planetWidth / 2,
@@ -61,20 +74,6 @@ export default function InteractiveNavbar({ currentScreen, onPlanetPress }: Inte
                     activeOpacity={0.7}
                 />
             ))}
-
-            {/* Rocket orbiting the current planet */}
-            {currentPlanet && (
-                <RocketOrbit
-                    centerX={currentPlanet.x - planetWidth * 0.30}
-                    centerY={navbarHeight / 2}
-                    orbitRadius={planetSize * 0.4}
-                    size={planetWidth * 0.35}
-                    periodMs={5000}
-                    startAngleDeg={0}
-                    clockwise={false}
-                    RocketComponent={SidewaysRocket}
-                />
-            )}
         </View>
     );
 }

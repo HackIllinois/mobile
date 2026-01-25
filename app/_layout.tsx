@@ -13,7 +13,7 @@ import { AnimationProvider, useAnimations } from "../contexts/OnboardingAnimatio
 // Onboarding testing:
 // true = show onboarding every reload
 // false = normal behavior
-const TESTING_MODE = false;
+const TESTING_MODE = true;
 
 function RootLayoutContent() {
   const [showLoading, setShowLoading] = useState(true);
@@ -100,9 +100,13 @@ function RootLayoutContent() {
   }, [showAnimation]);
 
   const handleOnboardingFinish = async () => {
+    // Update UI immediately for instant response
+    setShowWelcome(false);
+    setShowOnboarding(false);
+
+    // Save to storage in the background
     try {
       await AsyncStorage.setItem("hasCompletedOnboarding", "true");
-      setShowOnboarding(false);
     } catch (e) {
       console.error("Error saving onboarding status:", e);
     }

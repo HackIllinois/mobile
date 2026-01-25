@@ -8,14 +8,14 @@ import InteractiveNavbar from "./InteractiveNavbar";
 type OnSkipProps = {
   onFinish: () => void;
   onStart: () => void;
-  currentScreen: number;
-  onPlanetPress: (index: number) => void;
   cloudX1: Animated.Value;
   cloudX2: Animated.Value;
   starOpacity: Animated.Value;
+  currentScreen: number;
+  goToScreen: (index: number) => void;
 };
 
-export default function ScreenThree({ onFinish, onStart, currentScreen, onPlanetPress, cloudX1, cloudX2, starOpacity }: OnSkipProps) {
+export default function ScreenThree({ onFinish, onStart, cloudX1, cloudX2, starOpacity, currentScreen, goToScreen }: OnSkipProps) {
     const { width, height } = useWindowDimensions();
 
     const figmaWidth = 393;
@@ -37,6 +37,7 @@ export default function ScreenThree({ onFinish, onStart, currentScreen, onPlanet
     const HEADER_LEFT = scaleWidth(29);
     const NEXT_BUTTON_WIDTH = scaleWidth(135);
     const NEXT_BUTTON_HEIGHT = scaleHeight(44);
+    const NAVBAR_HEIGHT = scaleHeight(35);
 
     return (
         <LinearGradient
@@ -86,15 +87,26 @@ export default function ScreenThree({ onFinish, onStart, currentScreen, onPlanet
             {/* Navbar */}
             <View style={{
                 position: 'absolute',
-                top: scaleHeight(80),
+                top: scaleHeight(64),
                 width: '100%',
                 alignItems: 'center',
             }}>
-                <InteractiveNavbar
-                    currentScreen={currentScreen}
-                    onPlanetPress={onPlanetPress}
-                />
+                <InteractiveNavbar currentScreen={currentScreen} onPlanetPress={goToScreen} />
             </View>
+
+            {/* Screenshot inside iPhone */}
+            <Image
+                source={require("../../assets/onboarding/Points Shop.png")}
+                style={{
+                    position: 'absolute',
+                    top: IPHONE_TOP + scaleHeight(8),
+                    left: IPHONE_LEFT + scaleWidth(7),
+                    width: IPHONE_WIDTH - scaleWidth(14),
+                    height: IPHONE_HEIGHT - scaleHeight(16),
+                    borderRadius: scaleWidth(20),
+                }}
+                resizeMode="cover"
+            />
 
             {/* iPhone */}
             <Image
