@@ -2,6 +2,11 @@ import { Tabs, Link, usePathname } from "expo-router";
 import { Image, TouchableOpacity, View, StyleSheet } from "react-native";
 import { CurvedTabBar } from "../../components/CurvedTabBar";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import HomeSvg from "../../assets/navbar/Home.svg";
+import CalendarSvg from "../../assets/navbar/Calendar.svg";
+import QrCodeSvg from "../../assets/navbar/Camera.svg";
+import ShopSvg from "../../assets/navbar/Shop.svg";
+import DuelsSvg from "../../assets/navbar/Duels.svg";
 
 // Create a single QueryClient instance
 const queryClient = new QueryClient();
@@ -23,10 +28,7 @@ export default function Layout() {
             name="Home"
             options={{
               tabBarIcon: ({ color, size }) => (
-                <Image
-                  source={require("../../assets/house.png")}
-                  style={{ width: size, height: size, tintColor: color }}
-                />
+                <HomeSvg width={90} height={90} />
               ),
             }}
           />
@@ -35,10 +37,7 @@ export default function Layout() {
             name="Shop"
             options={{
               tabBarIcon: ({ color, size }) => (
-                <Image
-                  source={require("../../assets/cart.png")}
-                  style={{ width: size, height: size, tintColor: color }}
-                />
+                <ShopSvg width={90} height={90} />
               ),
             }}
           />
@@ -46,10 +45,7 @@ export default function Layout() {
             name="Scan"
             options={{
               tabBarIcon: ({ color, size }) => (
-                <Image
-                  source={require("../../assets/qr.png")}
-                  style={{ width: size, height: size, tintColor: color }}
-                />
+                <QrCodeSvg width={90} height={90} />
               ),
             }}
           />
@@ -57,15 +53,12 @@ export default function Layout() {
             name="Event"
             options={{
               tabBarIcon: ({ color, size }) => (
-                <Image
-                  source={require("../../assets/calendar.png")}
-                  style={{ width: size, height: size, tintColor: color }}
-                />
+                <CalendarSvg width={90} height={90} />
               ),
             }}
           />
           <Tabs.Screen
-            name="Profile"
+            name="Duels"
             options={{
               tabBarButton: () => null,
             }}
