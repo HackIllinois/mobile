@@ -6,8 +6,11 @@ import {
   Text,
   ScrollView,
   Image,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import QRCode from "react-native-qrcode-svg";
+import { useEffect, useState } from "react";
 import { ShopItem } from "../../types";
 import CartItem from "./CartItem";
 import api from "../../api";
@@ -17,8 +20,8 @@ interface CartModalProps {
   onClose: () => void;
   cartIds: string[];
   shopItemData: ShopItem[];
-  onAddItem: (itemId: string) => void;
-  onRemoveItem: (itemId: string) => void;
+  onAddItem: (itemId: string) => Promise<boolean>;
+  onRemoveItem: (itemId: string) => Promise<boolean>;
   onPurchase: () => void;
 }
 
@@ -31,6 +34,14 @@ export default function CartModal({
   onRemoveItem,
   onPurchase,
 }: CartModalProps) {
+  const [qrCodeData, setQrCodeData] = useState<string | null>();
+
+  useEffect(() => {
+    if (visible) {
+      // setQrCodeData(null);
+    }
+  }, [visible]);
+
   const calculateTotal = (): number => {
     return cartIds.reduce((total, itemId) => {
       const item = shopItemData.find((shopItem) => shopItem.itemId === itemId);
@@ -62,6 +73,31 @@ export default function CartModal({
   const totalPoints = calculateTotal();
   const cartItems = getCartItemsWithQuantities();
 
+  const handlePurchasePress = async () => {
+    try {
+      const response = await api.get<any>("/shop/cart/qr");
+      if (response.data && response.data.QRCode) {
+        setQrCodeData(response.data.QRCode);
+        onPurchase();
+      }
+    } catch (error: any) {
+      const data = error.response?.data;
+      if (data) {
+        if (
+          data.error === "InsufficientQuantity" ||
+          data.error === "InsufficientFunds" ||
+          data.error === "NotFound"
+        ) {
+          Alert.alert(data.error, data.message);
+        } else {
+          Alert.alert("Error", "An unexpected error occurred.");
+        }
+      } else {
+        Alert.alert("Error", "Failed to connect to server.");
+      }
+    }
+  };
+
   return (
     <Modal
       visible={visible}
@@ -80,63 +116,69 @@ export default function CartModal({
             <Text style={styles.closeButtonText}>✕</Text>
           </TouchableOpacity>
 
-          <Text style={styles.title}>IN YOUR CART</Text>
-
-          <ScrollView
-            style={styles.body}
-            contentContainerStyle={styles.bodyContent}
-            showsVerticalScrollIndicator={false}
-          >
-            {isEmpty ? (
-              <Text style={styles.emptyMessage}>
-                YOUR CART IS CURRENTLY EMPTY
-              </Text>
-            ) : (
-              cartItems.map(({ item, quantity }) => (
-                <CartItem
-                  key={item.itemId}
-                  item={item}
-                  quantity={quantity}
-                  onIncrement={() => {
-                    onAddItem(item.itemId);
-                    api.post(`/shop/cart/${item.itemId}`).catch((error) => {
-                      console.error("Failed to add item to cart:", error);
-                    });
-                  }}
-                  onDecrement={() => {
-                    onRemoveItem(item.itemId);
-                    api.delete(`/shop/cart/${item.itemId}`).catch((error) => {
-                      console.error("Failed to remove item from cart:", error);
-                    });
-                  }}
-                />
-              ))
-            )}
-          </ScrollView>
-
-          <View style={styles.footer}>
-            <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>total</Text>
-              <View style={styles.totalValueContainer}>
-                <Image
-                  source={require("../../assets/point shop/point-shop-diamonds.png")}
-                  style={styles.diamondIcon}
-                  resizeMode="contain"
-                />
-                <Text style={styles.totalValue}>{totalPoints}</Text>
+          {qrCodeData ? (
+            <View style={styles.qrContainer}>
+              <Text style={styles.title}>SCAN QR CODE</Text>
+              <View style={styles.qrCodeWrapper}>
+                <QRCode value={qrCodeData} size={200} />
               </View>
+              <Text style={styles.qrInstruction}>
+                Show this to a shopkeeper to collect your items.
+              </Text>
             </View>
-            <TouchableOpacity
-              style={[
-                styles.purchaseButton,
-                isEmpty && styles.purchaseButtonDisabled,
-              ]}
-              disabled={isEmpty}
-              onPress={onPurchase}
-            >
-              <Text style={styles.purchaseButtonText}>COMPLETE PURCHASE</Text>
-            </TouchableOpacity>
-          </View>
+          ) : (
+            <>
+              <Text style={styles.title}>IN YOUR CART</Text>
+
+              <ScrollView
+                style={styles.body}
+                contentContainerStyle={styles.bodyContent}
+                showsVerticalScrollIndicator={false}
+              >
+                {isEmpty ? (
+                  <Text style={styles.emptyMessage}>
+                    YOUR CART IS CURRENTLY EMPTY
+                  </Text>
+                ) : (
+                  cartItems.map(({ item, quantity }) => (
+                    <CartItem
+                      key={item.itemId}
+                      item={item}
+                      quantity={quantity}
+                      onIncrement={() => onAddItem(item.itemId)}
+                      onDecrement={() => onRemoveItem(item.itemId)}
+                    />
+                  ))
+                )}
+              </ScrollView>
+
+              <View style={styles.footer}>
+                <View style={styles.totalRow}>
+                  <Text style={styles.totalLabel}>total</Text>
+                  <View style={styles.totalValueContainer}>
+                    <Image
+                      source={require("../../assets/point shop/point-shop-diamonds.png")}
+                      style={styles.diamondIcon}
+                      resizeMode="contain"
+                    />
+                    <Text style={styles.totalValue}>{totalPoints}</Text>
+                  </View>
+                </View>
+                <TouchableOpacity
+                  style={[
+                    styles.purchaseButton,
+                    isEmpty && styles.purchaseButtonDisabled,
+                  ]}
+                  disabled={isEmpty}
+                  onPress={handlePurchasePress}
+                >
+                  <Text style={styles.purchaseButtonText}>
+                    COMPLETE PURCHASE
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          )}
         </SafeAreaView>
       </View>
     </Modal>
@@ -247,5 +289,23 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
     letterSpacing: 1,
+  },
+  qrContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 20,
+  },
+  qrCodeWrapper: {
+    padding: 20,
+    backgroundColor: "white",
+    borderRadius: 20,
+  },
+  qrInstruction: {
+    fontSize: 16,
+    color: "#e8dff0",
+    textAlign: "center",
+    maxWidth: "80%",
+    lineHeight: 24,
   },
 });

@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { AxiosResponse } from "axios";
 import api from "../../api";
 import { ShopItem } from "../../types";
@@ -13,6 +13,7 @@ import {
   Image,
   Modal,
   Animated,
+  LayoutChangeEvent,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import TypeWriter from "react-native-typewriter";
@@ -22,7 +23,7 @@ import Points from "../../components/point shop/Points";
 import CartModal from "../../components/point shop/CartModal";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CHUNK_SIZE = 2;
 const TUTORIAL_KEY = "@shop_tutorial_completed";
 
@@ -32,10 +33,25 @@ const tutorialTexts = [
   "Spend em' wisely. Good luck with your journey...",
 ];
 
-const getSpacing = (screenHeight: number) => {
-  if (screenHeight < 700) return { cartMargin: 0, rowSpacer: 0, bottomPadding: 0, rowHeight: 175 };
-  if (screenHeight < 850) return { cartMargin: 35, rowSpacer: 40, bottomPadding: 0, rowHeight: 180 };
-  return { cartMargin: 20, rowSpacer: 30, bottomPadding: 10, rowHeight: 190 };
+const IMAGE_WIDTH = 1728;
+const IMAGE_HEIGHT = 3273;
+const IMAGE_ASPECT_RATIO = IMAGE_HEIGHT / IMAGE_WIDTH;
+
+const getSpacing = (containerWidth: number, containerHeight: number) => {
+  const containerRatio = containerHeight / containerWidth;
+  
+  const scaleX = containerWidth / IMAGE_WIDTH;
+  const scaleY = containerHeight / IMAGE_HEIGHT;
+  const coverScale = Math.max(scaleX, scaleY);
+  const visibleWidth = containerWidth / (coverScale * IMAGE_WIDTH);
+  const visibleHeight = containerHeight / (coverScale * IMAGE_HEIGHT);
+  const t = Math.min(Math.max((visibleHeight - 0.7) / 0.3, 0), 1);
+  const pointsMargin = 15 + t * 25;  // 15 to 40 - space below points display
+  const rowSpacer = 20 + t * 30;     // 20 to 50 - space between shop rows
+  const bottomPadding = 20 + t * 30; // 60 to 90 - space at bottom to avoid cart overlap
+  const topPadding = t * 20;         // 0 to 20 - optional space at top of content
+  
+  return { pointsMargin, rowSpacer, bottomPadding, topPadding };
 };
 
 const chunkItems = (items: ShopItem[]): ShopItem[][] => {
@@ -47,7 +63,13 @@ const chunkItems = (items: ShopItem[]): ShopItem[][] => {
 };
 
 export default function PointShop() {
-  const spacing = getSpacing(SCREEN_HEIGHT);
+  const [containerDimensions, setContainerDimensions] = useState({ width: 1, height: 1 });
+  const spacing = getSpacing(containerDimensions.width, containerDimensions.height);
+
+  const onContainerLayout = useCallback((event: LayoutChangeEvent) => {
+    const { width, height } = event.nativeEvent.layout;
+    setContainerDimensions({ width, height });
+  }, []);
 
   const [shopItemData, setShopItemData] = useState<ShopItem[]>([]);
   const [cartIds, setCartIds] = useState<string[]>([]);
@@ -55,8 +77,23 @@ export default function PointShop() {
   const [tutorialStep, setTutorialStep] = useState<number | null>(null);
   const [isTutorialActive, setIsTutorialActive] = useState(false);
   const [typewriterKey, setTypewriterKey] = useState(0);
+  const [userPoints, setUserPoints] = useState<number>(0);
 
   const tutorialAnim = useRef(new Animated.Value(0)).current;
+
+  // Fetch user profile to get points
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response: any = await api.get('profile');
+        setUserPoints(response.data.points ?? 0);
+      } catch (error) {
+        console.error("Failed to fetch profile:", error);
+        setUserPoints(0);
+      }
+    };
+    fetchProfile();
+  }, []);
 
   useEffect(() => {
     if (isTutorialActive && tutorialStep !== null) {
@@ -112,30 +149,36 @@ export default function PointShop() {
     }
   };
 
-  const addToCart = (itemId: string) => {
+  const addToCart = async (itemId: string): Promise<boolean> => {
     if (!isTutorialActive) {
-      setCartIds((ids) => [...ids, itemId]);
-      api.post(`/shop/cart/${itemId}`).catch((error) => {
+      try {
+        await api.post(`/shop/cart/${itemId}`);
+        setCartIds((ids) => [...ids, itemId]);
+        return true;
+      } catch (error) {
         console.error("Failed to add item to cart:", error);
+        return false;
+      }
+    }
+    return false;
+  };
+
+  const removeFromCart = async (itemId: string): Promise<boolean> => {
+    try {
+      await api.delete(`/shop/cart/${itemId}`);
+      setCartIds((ids) => {
+        const index = ids.indexOf(itemId);
+        return index === -1 ? ids : [...ids.slice(0, index), ...ids.slice(index + 1)];
       });
+      return true;
+    } catch (error) {
+      console.error("Failed to remove item from cart:", error);
+      return false;
     }
   };
 
-  const removeFromCart = (itemId: string) => {
-    setCartIds((ids) => {
-      const index = ids.indexOf(itemId);
-      return index === -1 ? ids : [...ids.slice(0, index), ...ids.slice(index + 1)];
-    });
-  };
-
   const handlePurchase = () => {
-    Alert.alert("Purchase completed", "", [{
-      text: "OK",
-      onPress: () => {
-        setCartIds([]);
-        setShowCartModal(false);
-      },
-    }]);
+    setCartIds([]);
   };
 
   const [topPageIndex, setTopPageIndex] = useState(0);
@@ -153,7 +196,7 @@ export default function PointShop() {
 
   const renderShopRow = (pages: ShopItem[][], scale: number = 1) =>
     pages.map((page, pageIndex) => (
-      <View key={pageIndex} style={[styles.page, { width: SCREEN_WIDTH }]}>
+      <View key={pageIndex} style={styles.page}>
         <View style={styles.row}>
           {page.map((item) => (
             <View key={item.itemId} style={styles.gridItem}>
@@ -172,12 +215,12 @@ export default function PointShop() {
           style={styles.titleImage}
           resizeMode="contain"
         />
-        <View style={styles.contentContainer}>
-          <View style={[styles.pointsContainer, { marginBottom: spacing.cartMargin }]}>
-            <Points />
+        <View style={[styles.contentContainer, { paddingTop: spacing.topPadding }]} onLayout={onContainerLayout}>
+          <View style={[styles.pointsContainer, { marginBottom: spacing.pointsMargin }]}>
+            <Points points={userPoints} />
           </View>
 
-          <View style={[styles.scrollContainer, { height: spacing.rowHeight }]}>
+          <View style={styles.scrollContainer}>
             {/* Fixed left chevron for top row */}
             {topPageIndex > 0 && (
               <View style={styles.chevronLeft}>
@@ -204,7 +247,7 @@ export default function PointShop() {
 
           <View style={{ height: spacing.rowSpacer }} />
 
-          <View style={[styles.scrollContainer, { height: spacing.rowHeight }]}>
+          <View style={styles.scrollContainer}>
             {/* Fixed left chevron for bottom row */}
             {bottomPageIndex > 0 && (
               <View style={styles.chevronLeft}>
@@ -329,23 +372,23 @@ const styles = StyleSheet.create({
     alignSelf: "center",
   },
   scrollContainer: {
+    width: "100%",
     overflow: "visible",
   },
   page: {
-    position: "relative",
-    height: "100%",
+    width: SCREEN_WIDTH,
   },
   row: {
     flexDirection: "row",
     justifyContent: "flex-start",
-    alignItems: "center",
+    alignItems: "flex-start",
     width: "100%",
     paddingHorizontal: 20,
     gap: 24,
   },
   gridItem: {
     width: (SCREEN_WIDTH - 40 - 24) / 2,
-    aspectRatio: 0.9,
+    height: ((SCREEN_WIDTH - 40 - 24) / 2) / 0.9, // height = width / aspectRatio
   },
   chevronLeft: {
     position: "absolute",
