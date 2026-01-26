@@ -2,9 +2,8 @@ import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Dimensions, Modal, Alert, PanResponder } from 'react-native';
 import { CameraView, BarcodeScanningResult, scanFromURLAsync } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
-import ExitSymbol from '../../assets/qr-scanner/exit-symbol.svg';
+import { Ionicons } from '@expo/vector-icons';
 import ChooseImageButton from '../../assets/qr-scanner/choose-image-button.svg';
-import ScanCodeTitle from '../../assets/qr-scanner/scan-code-title.svg';
 
 const { width, height } = Dimensions.get('window');
 
@@ -123,13 +122,16 @@ export default function CameraScannerView({
           <View style={styles.topSection}>
             <View style={styles.headerRow}>
               <TouchableOpacity style={styles.exitButton} onPress={onClose}>
-                <ExitSymbol width={41} height={41} />
+                <Ionicons name="arrow-back" size={28} color="#FFF" />
               </TouchableOpacity>
-              {scanModeLabel && (
-                <Text style={styles.scanModeLabel}>{scanModeLabel}</Text>
-              )}
             </View>
-            <ScanCodeTitle width={244} height={66} style={styles.scanTitle} />
+            <View style={styles.titleContainer}>
+              <Text style={styles.scanTitleText}>Scan QR Code</Text>
+              {scanModeLabel && (
+                <Text style={styles.scanReasonText}>for {scanModeLabel}</Text>
+              )}
+              <Text style={styles.instructionText}>Place QR inside the frame to scan</Text>
+            </View>
           </View>
 
           <View style={styles.middleSection}>
@@ -213,7 +215,7 @@ const styles = StyleSheet.create({
   },
   headerRow: {
     position: 'absolute',
-    top: 20,
+    top: 35,
     left: 0,
     right: 0,
     flexDirection: 'row',
@@ -223,24 +225,38 @@ const styles = StyleSheet.create({
   },
   exitButton: {
     position: 'absolute',
-    left: 25,
+    left: 15,
     width: 41,
-    height: 41,
+    height: 45,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  scanModeLabel: {
+  titleContainer: {
+    alignItems: 'center',
+    marginTop: 50,
+  },
+  scanTitleText: {
+    fontSize: 40,
+    fontWeight: 'bold',
     color: '#FFF',
-    fontSize: 16,
-    fontWeight: '600',
     fontFamily: 'Montserrat',
     textAlign: 'center',
   },
-  scanTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#000',
-    marginTop: 70,
+  scanReasonText: {
+    fontSize: 40,
+    fontWeight: '600',
+    color: '#FFF',
+    fontFamily: 'Montserrat',
+    textAlign: 'center',
+    marginTop: 4,
+  },
+  instructionText: {
+    fontSize: 18,
+    fontWeight: '400',
+    color: '#E9E9E9',
+    fontFamily: 'Montserrat',
+    textAlign: 'center',
+    marginTop: 10,
   },
   middleSection: {
     height: width * 0.7, 

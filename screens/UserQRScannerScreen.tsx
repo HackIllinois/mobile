@@ -6,6 +6,7 @@ import axios from 'axios';
 import api from '../api';
 import { Svg, SvgUri } from 'react-native-svg';
 import ButtonSvg from '../assets/qr-scanner/button.svg';
+import PageTitle from '../assets/qr-scanner/page title.svg';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -145,7 +146,7 @@ export default function UserQRScannerScreen() {
         resizeMode="cover"
       >
         <SafeAreaView style={styles.safeArea}>
-          <Text style={styles.menuTitle} numberOfLines={1} adjustsFontSizeToFit>SCANNER</Text>
+          <PageTitle style={styles.menuTitle} />
 
           <TouchableOpacity style={styles.menuButton} onPress={handleScanPress}>
             <View style={styles.buttonContainer}>
@@ -192,17 +193,8 @@ const styles = StyleSheet.create({
   },
   menuTitle: {
     position: 'absolute',
-    width: SCREEN_WIDTH * 0.8,
-    height: SCREEN_HEIGHT * 0.063,
-    top: SCREEN_HEIGHT * 0.068,
-    left: SCREEN_WIDTH * 0.079,
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#D0F5FF',
-    fontFamily: 'Tsukimi-Rounded-Bold',
-    textShadowColor: 'rgba(243, 77, 255, 0.9)',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 20,
+    top: SCREEN_HEIGHT * 0.05,
+    left: SCREEN_WIDTH * 0.05,
   },
   menuButton: {
     marginTop: 120,
