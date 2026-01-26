@@ -87,7 +87,7 @@ export default function ScreenThree({ onFinish, onStart, cloudX1, cloudX2, starO
             {/* Navbar */}
             <View style={{
                 position: 'absolute',
-                top: scaleHeight(60),
+                top: scaleHeight(82),
                 width: '100%',
                 alignItems: 'center',
             }}>
