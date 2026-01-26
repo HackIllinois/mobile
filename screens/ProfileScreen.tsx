@@ -22,6 +22,7 @@ import ButtonSvg from '../assets/profile/profile-screen/button.svg';
 import QRCodeButtonSvg from '../assets/profile/profile-screen/qr-code-button.svg';
 import EditButtonSvg from '../assets/profile/profile-screen/edit-button.svg';
 import BackgroundSvg from '../assets/profile/background.svg';
+import LogoutButtonSvg from '../assets/profile/profile-screen/logout-button.svg';
 
 interface UserProfile {
   userId: string;
@@ -128,12 +129,27 @@ export default function ProfileScreen() {
     }, [profile, fetchQrCode]) 
   );
 
-  const handleLogout = async () => {
-    await SecureStore.deleteItemAsync("jwt");
-    setProfile(null);
-    setQrInfo(null);
-    Alert.alert("Logged out", "You have been logged out successfully.");
-    router.replace("/AuthScreen");
+  const handleLogout = () => {
+    Alert.alert(
+      "Log Out",
+      "Are you sure you want to log out?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Log Out",
+          style: "destructive",
+          onPress: async () => {
+            await SecureStore.deleteItemAsync("jwt");
+            setProfile(null);
+            setQrInfo(null);
+            router.replace("/AuthScreen");
+          }
+        }
+      ]
+    );
   };
 
   if (isLoading && !profile) {
@@ -159,30 +175,46 @@ export default function ProfileScreen() {
       }}>
         <Text style={{
           color: '#FF5555',
-          fontSize: scaleFontSize(18),
-          marginBottom: scaleHeight(20),
+          fontSize: scaleFontSize(30),
+          textAlign: 'center',
+          width: '80%',
+          marginBottom: scaleHeight(30),
         }}>Could not load profile.</Text>
+        <Text style={{
+          color: '#180161',
+          fontSize: scaleFontSize(18),
+          textAlign: 'center',
+          width: '80%',
+          marginBottom: scaleHeight(5),
+        }}>Staff currently do not have profiles.</Text>
+        <Text style={{
+          color: '#180161',
+          fontSize: scaleFontSize(18),
+          textAlign: 'center',
+          width: '80%',
+          marginBottom: scaleHeight(20),
+        }}>If you are an attendee, please email contact@hackillinois.org for support.</Text>
         <TouchableOpacity style={{
-          backgroundColor: '#888',
+          backgroundColor: '#180161',
           padding: scaleWidth(15),
-          borderRadius: scaleWidth(8),
+          borderRadius: scaleWidth(40),
           alignItems: 'center',
-          width: '100%',
-          marginBottom: scaleHeight(15),
+          width: '30%',
+          marginBottom: scaleHeight(70),
         }} onPress={fetchProfile}>
           <Text style={{
             color: '#FFFFFF',
-            fontSize: scaleFontSize(18),
+            fontSize: scaleFontSize(16),
             fontWeight: 'bold',
           }}>Try Again</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={{
-            backgroundColor: '#888',
+            backgroundColor: '#FF5555',
             padding: scaleWidth(15),
-            borderRadius: scaleWidth(8),
+            borderRadius: scaleWidth(40),
             alignItems: 'center',
-            width: '100%',
+            width: '50%',
             marginBottom: scaleHeight(15),
           }}
           onPress={handleLogout}
@@ -201,7 +233,6 @@ export default function ProfileScreen() {
     <SafeAreaView style={{
       flex: 1,
       backgroundColor: '#F5F5F5',
-      fontFamily: 'Montserrat',
     }}>
       {/* Background */}
       <View style={{
@@ -219,46 +250,45 @@ export default function ProfileScreen() {
         />
       </View>
 
-      {/* Close Button */}
-      <TouchableOpacity
-        style={{
-          position: 'absolute',
-          left: scaleWidth(20),
-          top: scaleWidth(50),
-          width: scaleWidth(40),
-          height: scaleWidth(40),
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 100,
-        }}
-        onPress={() => router.back()}
-      >
-        <Text style={{
-          color: '#FFFFFF',
-          fontSize: scaleFontSize(28),
-          fontWeight: '300',
-        }}>✕</Text>
-      </TouchableOpacity>
-
+      {/* Page Title with layered glow */}
       <View style={{
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        position: 'relative',
-        height: scaleWidth(51),
-        marginTop: scaleWidth(25),
+        marginLeft: scaleWidth(20),
+        marginTop: scaleWidth(0),
+        marginBottom: scaleWidth(30),
       }}>
+        {/* Glow layers */}
         <Text style={{
           position: 'absolute',
-          left: scaleWidth(31),
-          top: 0,
-          width: scaleWidth(222),
-          height: scaleWidth(51),
+          fontSize: scaleFontSize(26),
+          fontWeight: 'bold',
+          color: 'transparent',
+          letterSpacing: scaleWidth(1.5),
+          fontFamily: 'Tsukimi Rounded',
+          textShadowColor: 'rgba(243, 77, 255, 0.4)',
+          textShadowOffset: { width: 0, height: 0 },
+          textShadowRadius: 15,
+        }}>PROFILE</Text>
+        <Text style={{
+          position: 'absolute',
+          fontSize: scaleFontSize(26),
+          fontWeight: 'bold',
+          color: 'transparent',
+          letterSpacing: scaleWidth(1.5),
+          fontFamily: 'Tsukimi Rounded',
+          textShadowColor: 'rgba(243, 77, 255, 0.6)',
+          textShadowOffset: { width: 0, height: 0 },
+          textShadowRadius: 8,
+        }}>PROFILE</Text>
+        {/* Main text */}
+        <Text style={{
           fontSize: scaleFontSize(26),
           fontWeight: 'bold',
           color: '#FFFFFF',
-          textAlign: 'left',
           letterSpacing: scaleWidth(1.5),
           fontFamily: 'Tsukimi Rounded',
+          textShadowColor: 'rgba(243, 77, 255, 0.9)',
+          textShadowOffset: { width: 0, height: 0 },
+          textShadowRadius: 4,
         }}>PROFILE</Text>
       </View>
 
@@ -426,22 +456,18 @@ export default function ProfileScreen() {
       <TouchableOpacity
         style={{
           position: 'absolute',
-          top: scaleWidth(60),
-          right: scaleWidth(20),
-          backgroundColor: '#E936F8',
-          borderRadius: scaleWidth(20),
-          paddingHorizontal: scaleWidth(16),
-          paddingVertical: scaleHeight(8),
+          top: scaleWidth(55),
+          right: scaleWidth(10),
+          marginTop: scaleWidth(5),
           zIndex: 100,
         }}
         onPress={handleLogout}
         disabled={isLoading}
       >
-        <Text style={{
-          color: '#FFFFFF',
-          fontSize: scaleFontSize(14),
-          fontWeight: '600',
-        }}>Log Out</Text>
+        <LogoutButtonSvg
+          width={scaleWidth(70)}
+          height={scaleWidth(28)}
+        />
       </TouchableOpacity>
 
       <QRCodeModal
