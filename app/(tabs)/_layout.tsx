@@ -64,12 +64,6 @@ export default function Layout() {
               ),
             }}
           />
-          <Tabs.Screen
-            name="Profile"
-            options={{
-              tabBarButton: () => null,
-            }}
-          />
         </Tabs>
 
         {!isProfileScreen && (
@@ -85,17 +79,6 @@ export default function Layout() {
           </View>
         )}
 
-        { <View style={[styles.floatingButton, { top: 120 }]}>
-            <Link href="/MentorSupport" asChild>
-              <TouchableOpacity>
-                <Image
-                  source={require("../../assets/profile.png")}
-                  style={{ width: 30, height: 30, tintColor: '#e1d8f4ff' }}
-                />
-              </TouchableOpacity>
-            </Link>
-          </View>
-          }
       </View>
 
     </QueryClientProvider>
