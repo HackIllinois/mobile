@@ -6,7 +6,7 @@ import HomeIcon from '../assets/navbar/Home.svg';
 import EventsIcon from '../assets/navbar/Calendar.svg';
 import QrCodeIcon from '../assets/navbar/Camera.svg';
 import PointsIcon from '../assets/navbar/Shop.svg';
-import ProfileIcon from '../assets/navbar/Duels.svg';
+import DuelsIcon from '../assets/navbar/Duels.svg';
 
 const { width } = Dimensions.get('window');
 const BAR_HEIGHT = 85;
@@ -18,17 +18,19 @@ const ICON_MAP: Record<string, any> = {
   Event: EventsIcon,
   Scan: QrCodeIcon,
   Shop: PointsIcon,
-  Profile: ProfileIcon,
+  Duels: DuelsIcon,
 };
 
 const TAB_POSITIONS: Record<string, number> = {
   Home: 0.10,    
   Event: 0.28,   
   Shop: 0.72,    
-  Profile: 0.90,
+  Duels: 0.90,
 };
 
 export const CurvedTabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
+  // Debug: Log available routes to verify Duels is discovered
+  console.log('Available routes:', state.routes.map(r => r.name));
   
   return (
     <View style={styles.tabBarContainer}>
@@ -45,6 +47,21 @@ export const CurvedTabBar = ({ state, descriptors, navigation }: BottomTabBarPro
           const { options } = descriptors[route.key];
           const isFocused = state.index === index;
           const Icon = ICON_MAP[route.name];
+
+          // Debug: Log each route being processed
+          if (route.name === 'Duels') {
+            console.log('Duels route found:', {
+              routeName: route.name,
+              hasIcon: !!Icon,
+              href: options.href,
+              positionPercent: TAB_POSITIONS[route.name],
+            });
+          }
+
+          // Skip routes that are excluded from tab bar (e.g., Profile with href: null)
+          if (options.href === null) {
+            return null;
+          }
 
           const onPress = () => {
             const event = navigation.emit({
@@ -87,7 +104,7 @@ export const CurvedTabBar = ({ state, descriptors, navigation }: BottomTabBarPro
             );
           }
 
-          // 2. REGULAR BUTTONS (Home, Event, Shop, Profile)
+          // 2. REGULAR BUTTONS (Home, Event, Shop, Duels)
           // We get the specific % position from our config map
           const positionPercent = TAB_POSITIONS[route.name];
           
@@ -101,14 +118,20 @@ export const CurvedTabBar = ({ state, descriptors, navigation }: BottomTabBarPro
               style={[
                 styles.tabButton,
                 { left: width * positionPercent },
+                route.name === 'Duels' && { zIndex: 5, backgroundColor: 'transparent' }, // Ensure Duels is visible
               ]}
             >
-              {Icon && (
+              {Icon ? (
                 <Icon
                   width={ICON_SIZE}
                   height={ICON_SIZE}
                   color={isFocused ? '#DF4F44' : 'rgba(255, 255, 255, 0.6)'}
                 />
+              ) : (
+                // Fallback for debugging - should not appear if icon loads
+                route.name === 'Duels' && (
+                  <View style={{ width: ICON_SIZE, height: ICON_SIZE, backgroundColor: 'red', borderRadius: 4 }} />
+                )
               )}
             </Pressable>
           );

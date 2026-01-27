@@ -7,8 +7,30 @@ const userShipImage = require('../../assets/duels/duels-ship-user.png');
 const enemyShipImage = require('../../assets/duels/duels-ship-enemy.png');
 const buttonImage = require('../../assets/duels/duels-button.png');
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import LocalConnectionModule from '../../modules/local-connection';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Lazy import to prevent blocking route discovery
+let LocalConnectionModule: any;
+try {
+  LocalConnectionModule = require('../../modules/local-connection').default;
+} catch (e) {
+  console.warn('LocalConnectionModule not available:', e);
+  // Create a mock module for development
+  LocalConnectionModule = {
+    InitPeerName: () => {},
+    getOpponentName: () => null,
+    setConnectionMedium: () => {},
+    startAdvertising: () => {},
+    startScanning: () => {},
+    stopAdvertising: () => {},
+    stopScanning: () => {},
+    joinRoom: () => {},
+    acceptInvitation: () => {},
+    EndConnection: () => {},
+    sendData: async () => {},
+    addListener: () => ({ remove: () => {} }),
+  };
+}
 
 // ======================
 // TYPES

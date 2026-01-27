@@ -60,7 +60,15 @@ export default function Layout() {
           <Tabs.Screen
             name="Duels"
             options={{
-              tabBarButton: () => null,
+              tabBarIcon: ({ color, size }) => (
+                <DuelsSvg width={90} height={90} />
+              ),
+            }}
+          />
+          <Tabs.Screen
+            name="Profile"
+            options={{
+              href: null, // Exclude from tab bar, accessed via Link
             }}
           />
         </Tabs>
