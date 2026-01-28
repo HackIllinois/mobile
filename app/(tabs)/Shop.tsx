@@ -21,7 +21,7 @@ import ShopItemCard from "../../components/point shop/ShopItemCard";
 import CartButton from "../../components/point shop/CartButton";
 import Points from "../../components/point shop/Points";
 import CartModal from "../../components/point shop/CartModal";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CHUNK_SIZE = 2;
@@ -35,24 +35,24 @@ const tutorialTexts = [
 
 const IMAGE_WIDTH = 1728;
 const IMAGE_HEIGHT = 3273;
-const IMAGE_ASPECT_RATIO = IMAGE_HEIGHT / IMAGE_WIDTH;
 
-const getSpacing = (containerWidth: number, containerHeight: number) => {
-  const containerRatio = containerHeight / containerWidth;
-  
+const TITLE_IMAGE_Y = 150;     // Where title image should appear
+const POINTS_IMAGE_Y = 1080;   // Where points display should appear
+const MERCH_ROW_IMAGE_Y = 1250;  // Where merch cards should appear (below "merch" label)
+const RAFFLE_ROW_IMAGE_Y = 2150; // Where raffle cards should appear (below "raffle" label)
+
+const imageYToScreenY = (
+  imageY: number,
+  containerWidth: number,
+  containerHeight: number
+): number => {
   const scaleX = containerWidth / IMAGE_WIDTH;
   const scaleY = containerHeight / IMAGE_HEIGHT;
   const coverScale = Math.max(scaleX, scaleY);
-  const visibleWidth = containerWidth / (coverScale * IMAGE_WIDTH);
-  const visibleHeight = containerHeight / (coverScale * IMAGE_HEIGHT);
-  const t = Math.min(Math.max((visibleHeight - 0.7) / 0.3, 0), 1);
-  const pointsMargin = 15 + t * 25;  // 15 to 40 - space below points display
-  const rowSpacer = 20 + t * 30;     // 20 to 50 - space between shop rows
-  const bottomPadding = 20 + t * 30; // 60 to 90 - space at bottom to avoid cart overlap
-  const topPadding = t * 20;         // 0 to 20 - optional space at top of content
-  
-  return { pointsMargin, rowSpacer, bottomPadding, topPadding };
+  const offsetY = (IMAGE_HEIGHT * coverScale - containerHeight) / 2;
+  return (imageY * coverScale) - offsetY;
 };
+
 
 const chunkItems = (items: ShopItem[]): ShopItem[][] => {
   const chunks: ShopItem[][] = [];
@@ -63,13 +63,19 @@ const chunkItems = (items: ShopItem[]): ShopItem[][] => {
 };
 
 export default function PointShop() {
-  const [containerDimensions, setContainerDimensions] = useState({ width: 1, height: 1 });
-  const spacing = getSpacing(containerDimensions.width, containerDimensions.height);
+  const insets = useSafeAreaInsets();
+  const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
+  
+  const containerWidth = screenWidth;
+  const containerHeight = screenHeight;
+  
+  const safeAreaAdjustment = insets.top - 57; // baseline of ~57 (average)
+  
+  const TITLE_Y = imageYToScreenY(TITLE_IMAGE_Y, containerWidth, containerHeight) + safeAreaAdjustment;
+  const POINTS_Y = imageYToScreenY(POINTS_IMAGE_Y, containerWidth, containerHeight) + safeAreaAdjustment;
+  const TOP_ROW_Y = imageYToScreenY(MERCH_ROW_IMAGE_Y, containerWidth, containerHeight) + safeAreaAdjustment;
+  const BOTTOM_ROW_Y = imageYToScreenY(RAFFLE_ROW_IMAGE_Y, containerWidth, containerHeight) + safeAreaAdjustment;
 
-  const onContainerLayout = useCallback((event: LayoutChangeEvent) => {
-    const { width, height } = event.nativeEvent.layout;
-    setContainerDimensions({ width, height });
-  }, []);
 
   const [shopItemData, setShopItemData] = useState<ShopItem[]>([]);
   const [cartIds, setCartIds] = useState<string[]>([]);
@@ -209,70 +215,71 @@ export default function PointShop() {
 
   return (
     <ImageBackground source={require("../../assets/point-shop/point-shop-background.png")} style={styles.container} resizeMode="cover">
-      <SafeAreaView style={[styles.safeArea, { paddingBottom: spacing.bottomPadding }]} edges={["top"]}>
+      {/* Title */}
+      <View style={{ position: "absolute", top: TITLE_Y, left: 20, zIndex: 10 }}>
         <Image
           source={require("../../assets/point-shop/point-shop-title.png")}
           style={styles.titleImage}
           resizeMode="contain"
         />
-        <View style={[styles.contentContainer, { paddingTop: spacing.topPadding }]} onLayout={onContainerLayout}>
-          <View style={[styles.pointsContainer, { marginBottom: spacing.pointsMargin }]}>
-            <Points points={userPoints} />
-          </View>
+      </View>
 
-          <View style={styles.scrollContainer}>
-            {/* Fixed left chevron for top row */}
-            {topPageIndex > 0 && (
-              <View style={styles.chevronLeft}>
-                <Animated.Text style={styles.chevronText}>‹</Animated.Text>
-              </View>
-            )}
-            <ScrollView
-              horizontal
-              pagingEnabled
-              showsHorizontalScrollIndicator={false}
-              scrollEnabled={!isTutorialActive}
-              onScroll={handleTopScroll}
-              scrollEventThrottle={16}
-            >
-              {renderShopRow(topPages, 1)}
-            </ScrollView>
-            {/* Fixed right chevron for top row */}
-            {topPageIndex < topPages.length - 1 && (
-              <View style={styles.chevronRight}>
-                <Animated.Text style={styles.chevronText}>›</Animated.Text>
-              </View>
-            )}
-          </View>
+      {/* Points */}
+      <View style={{ position: "absolute", top: POINTS_Y, width: "100%", alignItems: "center", zIndex: 10 }}>
+        <Points points={userPoints} />
+      </View>
 
-          <View style={{ height: spacing.rowSpacer }} />
-
-          <View style={styles.scrollContainer}>
-            {/* Fixed left chevron for bottom row */}
-            {bottomPageIndex > 0 && (
-              <View style={styles.chevronLeft}>
-                <Animated.Text style={styles.chevronText}>‹</Animated.Text>
-              </View>
-            )}
-            <ScrollView
-              horizontal
-              pagingEnabled
-              showsHorizontalScrollIndicator={false}
-              scrollEnabled={!isTutorialActive}
-              onScroll={handleBottomScroll}
-              scrollEventThrottle={16}
-            >
-              {renderShopRow(bottomPages, 1)}
-            </ScrollView>
-            {/* Fixed right chevron for bottom row */}
-            {bottomPageIndex < bottomPages.length - 1 && (
-              <View style={styles.chevronRight}>
-                <Animated.Text style={styles.chevronText}>›</Animated.Text>
-              </View>
-            )}
-          </View>
+      {/* Top Row - Merch */}
+      <View style={{ position: "absolute", top: TOP_ROW_Y, width: "100%" }}>
+        <View style={styles.scrollContainer}>
+          {topPageIndex > 0 && (
+            <View style={styles.chevronLeft}>
+              <Animated.Text style={styles.chevronText}>‹</Animated.Text>
+            </View>
+          )}
+          <ScrollView
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            scrollEnabled={!isTutorialActive}
+            onScroll={handleTopScroll}
+            scrollEventThrottle={16}
+          >
+            {renderShopRow(topPages, 1)}
+          </ScrollView>
+          {topPageIndex < topPages.length - 1 && (
+            <View style={styles.chevronRight}>
+              <Animated.Text style={styles.chevronText}>›</Animated.Text>
+            </View>
+          )}
         </View>
-      </SafeAreaView>
+      </View>
+
+      {/* Bottom Row - Raffle */}
+      <View style={{ position: "absolute", top: BOTTOM_ROW_Y, width: "100%" }}>
+        <View style={styles.scrollContainer}>
+          {bottomPageIndex > 0 && (
+            <View style={styles.chevronLeft}>
+              <Animated.Text style={styles.chevronText}>‹</Animated.Text>
+            </View>
+          )}
+          <ScrollView
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            scrollEnabled={!isTutorialActive}
+            onScroll={handleBottomScroll}
+            scrollEventThrottle={16}
+          >
+            {renderShopRow(bottomPages, 1)}
+          </ScrollView>
+          {bottomPageIndex < bottomPages.length - 1 && (
+            <View style={styles.chevronRight}>
+              <Animated.Text style={styles.chevronText}>›</Animated.Text>
+            </View>
+          )}
+        </View>
+      </View>
 
       <Modal
         visible={isTutorialActive && tutorialStep !== null}
@@ -357,11 +364,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   titleImage: {
-    width: 200,
-    height: 60,
-    marginLeft: 20,
-    marginTop: 10,
-    alignSelf: "flex-start",
+    width: 140,
+    marginLeft: 10,
   },
   contentContainer: {
     flex: 1,
