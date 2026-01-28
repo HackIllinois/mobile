@@ -68,9 +68,9 @@ export function EventCard({ event, index, onPress, handleSave, onShowMenu, saved
 
           {event.sponsor && <Text style={styles.secondaryText}>{event.sponsor}</Text>}
           
-          {event.locations[0]?.description && (
+          {event.locations?.[0]?.description && (
               <Text numberOfLines={1} ellipsizeMode="tail" style={styles.location}>
-                  {event.locations[0]?.description || 'TBA'}
+                  {event.locations?.[0]?.description || 'TBA'}
               </Text>
           )}
           <View style={styles.buttonContainer}>

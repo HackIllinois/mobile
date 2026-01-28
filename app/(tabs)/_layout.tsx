@@ -85,6 +85,7 @@ export default function Layout() {
             </Link>
           </View>
         )}
+
       </View>
 
     </QueryClientProvider>
