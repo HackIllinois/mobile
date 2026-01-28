@@ -22,6 +22,7 @@ import MenuModal from '../../components/eventScreen/MenuModal';
 import StarryBackground from '../../components/eventScreen/StarryBackground';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Event } from '../../types';
+import Title from "../../assets/event/page title.svg";
 
 type ScheduleMode = 'events' | 'mentorship';
 
@@ -273,7 +274,9 @@ export default function EventScreen() {
   const renderEvent = ({ item, index }: { item: any; index: number }) => {
     const previousItem = filteredItems[index - 1];
     const showTime = index === 0 || previousItem?.startTime !== item.startTime;
-
+    const showDateSeparator = index > 0 && 
+      new Date(item.startTime * 1000).toDateString() !== 
+      new Date(previousItem.startTime * 1000).toDateString();
     const showDateEverywhere = selectedDay === null; // "main page" (no specific day selected)
     const timeHeaderText = showDateEverywhere
       ? `${formatTime(item.startTime)}`
@@ -284,6 +287,7 @@ export default function EventScreen() {
 
       return (
         <View style={{ marginBottom: 40 }}>
+          {showDateSeparator && <View style={styles.daySeparator} />}
           {showTime && <Text style={styles.timeHeader}>{timeHeaderText}</Text>}
 
           {/* date on each card when no specific day selected */}
@@ -385,8 +389,8 @@ export default function EventScreen() {
   return (
     <StarryBackground scrollY={scrollY}>
       <View style={[styles.container, { paddingTop: insets.top }]}>
-        <View style={[styles.header, { marginLeft: insets.left + 20, backgroundColor: 'transparent', marginBottom: 0 }]}>
-          <Text style={styles.title}>Schedule</Text>
+        <View style={{marginLeft: insets.left, marginBottom: -80, marginTop: -30}}> 
+          <Title/>
         </View>
 
         {eventDays.length > 0 && (
@@ -469,7 +473,6 @@ export default function EventScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -500,6 +503,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '800',
     color: '#fff',
+  },
+  daySeparator: {
+    height: 9,
+    backgroundColor: 'rgba(255, 0, 191, 0.82)',
+    marginBottom: 50, 
+    marginTop: 10, 
+    borderRadius: 4,
+
   },
 
   dayButton: {
