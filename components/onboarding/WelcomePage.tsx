@@ -1,5 +1,4 @@
 import { StyleSheet, View, Text, TouchableOpacity, Animated, useWindowDimensions } from "react-native";
-import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import Hackastra from "../../assets/onboarding/welcome/hackastra.svg";
 import HalfRocket from "../../assets/onboarding/welcome/half-rocket.svg";
@@ -16,7 +15,6 @@ type OnSkipProps = {
 };
 
 export default function WelcomePage({ onFinish, onStart, cloudX1, cloudX2, starOpacity }: OnSkipProps) {
-    const router = useRouter();
     const { width, height } = useWindowDimensions();
     const figmaWidth = 393;
     const figmaHeight = 852;
@@ -24,11 +22,6 @@ export default function WelcomePage({ onFinish, onStart, cloudX1, cloudX2, starO
     const scaleWidth = (size: number) => (width / figmaWidth) * size;
     const scaleHeight = (size: number) => (height / figmaHeight) * size;
     const scaleFontSize = (size: number) => Math.min(scaleWidth(size), scaleHeight(size));
-
-    const onSkip = () => {
-        onFinish();
-        router.replace("(tabs)/Home");
-    }
 
     return (
         <LinearGradient
@@ -135,10 +128,10 @@ export default function WelcomePage({ onFinish, onStart, cloudX1, cloudX2, starO
                 <TouchableOpacity onPress={onStart}>
                     <StartButton
                         width={scaleWidth(143)}
-                        height={scaleHeight(94)}
+                        height={scaleHeight(98)}
                     />
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.skipButton, { paddingVertical: height * 0.01 }]} onPress={onSkip}>
+                <TouchableOpacity style={[styles.skipButton, { paddingVertical: height * 0.01 }]} onPress={onFinish}>
                     <Text style={[styles.skipButtonText, { fontSize: scaleFontSize(18) }]}>Skip</Text>
                 </TouchableOpacity>
             </View>

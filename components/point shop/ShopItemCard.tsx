@@ -5,7 +5,7 @@ import * as Haptics from "expo-haptics";
 
 interface ShopItemCardProps {
   item: ShopItem;
-  onPress: () => void;
+  onPress: () => Promise<boolean>;
   scale?: number;
 }
 
@@ -13,29 +13,34 @@ const ShopItemCard = memo(({ item, onPress, scale = 1 }: ShopItemCardProps) => {
   const floatAnim = useRef(new Animated.Value(0)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
 
-  const handlePress = () => {
+  const handlePress = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onPress();
+    
+    // Wait for API call to complete
+    const success = await onPress();
 
-    // Reset animations
-    floatAnim.setValue(0);
-    opacityAnim.setValue(1);
+    // Only animate if the API call succeeded
+    if (success) {
+      // Reset animations
+      floatAnim.setValue(0);
+      opacityAnim.setValue(1);
 
-    // Start animations
-    Animated.parallel([
-      Animated.timing(floatAnim, {
-        toValue: -15,
-        duration: 600,
-        easing: Easing.out(Easing.ease),
-        useNativeDriver: true,
-      }),
-      Animated.timing(opacityAnim, {
-        toValue: 0,
-        duration: 600,
-        easing: Easing.in(Easing.ease),
-        useNativeDriver: true,
-      }),
-    ]).start();
+      // Start animations
+      Animated.parallel([
+        Animated.timing(floatAnim, {
+          toValue: -15,
+          duration: 600,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacityAnim, {
+          toValue: 0,
+          duration: 600,
+          easing: Easing.in(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
   };
 
   return (
@@ -62,7 +67,7 @@ const ShopItemCard = memo(({ item, onPress, scale = 1 }: ShopItemCardProps) => {
       >
         <View style={styles.backgroundContainer}>
           <Image 
-            source={require("../../assets/point shop/point shop case.png")} 
+            source={require("../../assets/point-shop/point-shop-case.png")} 
             style={styles.backgroundImage}
             resizeMode="stretch"
           />

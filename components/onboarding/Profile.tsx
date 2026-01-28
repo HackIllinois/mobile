@@ -2,20 +2,20 @@ import { StyleSheet, View, Image, Text, TouchableOpacity, Animated, useWindowDim
 import { LinearGradient } from "expo-linear-gradient";
 import Clouds from "../../assets/onboarding/loading/clouds.svg";
 import TinyStars from "../../assets/onboarding/loading/tiny stars.svg";
-import GetStartedButton from "../../assets/onboarding/get-started-button.svg";
+import NextButton from "../../assets/onboarding/next-button.svg";
 import InteractiveNavbar from "./InteractiveNavbar";
 
 type OnSkipProps = {
   onFinish: () => void;
   onStart: () => void;
-  currentScreen: number;
-  onPlanetPress: (index: number) => void;
   cloudX1: Animated.Value;
   cloudX2: Animated.Value;
   starOpacity: Animated.Value;
+  currentScreen: number;
+  goToScreen: (index: number) => void;
 };
 
-export default function ScreenThree({ onFinish, onStart, currentScreen, onPlanetPress, cloudX1, cloudX2, starOpacity }: OnSkipProps) {
+export default function ScreenThree({ onFinish, onStart, cloudX1, cloudX2, starOpacity, currentScreen, goToScreen }: OnSkipProps) {
     const { width, height } = useWindowDimensions();
 
     const figmaWidth = 393;
@@ -35,8 +35,9 @@ export default function ScreenThree({ onFinish, onStart, currentScreen, onPlanet
     const HEADER_WIDTH = scaleWidth(335);
     const HEADER_TOP = scaleHeight(632);
     const HEADER_LEFT = scaleWidth(29);
-    const GET_STARTED_BUTTON_WIDTH = scaleWidth(135);
-    const GET_STARTED_BUTTON_HEIGHT = scaleHeight(44);
+    const NEXT_BUTTON_WIDTH = scaleWidth(135);
+    const NEXT_BUTTON_HEIGHT = scaleHeight(44);
+    const NAVBAR_HEIGHT = scaleHeight(35);
 
     return (
         <LinearGradient
@@ -86,15 +87,26 @@ export default function ScreenThree({ onFinish, onStart, currentScreen, onPlanet
             {/* Navbar */}
             <View style={{
                 position: 'absolute',
-                top: scaleHeight(80),
+                top: scaleHeight(82),
                 width: '100%',
                 alignItems: 'center',
             }}>
-                <InteractiveNavbar
-                    currentScreen={currentScreen}
-                    onPlanetPress={onPlanetPress}
-                />
+                <InteractiveNavbar currentScreen={currentScreen} onPlanetPress={goToScreen} />
             </View>
+
+            {/* Screenshot inside iPhone */}
+            <Image
+                source={require("../../assets/onboarding/Profile.png")}
+                style={{
+                    position: 'absolute',
+                    top: IPHONE_TOP + scaleHeight(8),
+                    left: IPHONE_LEFT + scaleWidth(7),
+                    width: IPHONE_WIDTH - scaleWidth(14),
+                    height: IPHONE_HEIGHT - scaleHeight(16),
+                    borderRadius: scaleWidth(20),
+                }}
+                resizeMode="cover"
+            />
 
             {/* iPhone */}
             <Image
@@ -147,7 +159,7 @@ export default function ScreenThree({ onFinish, onStart, currentScreen, onPlanet
                 <Text style={[styles.skipButtonText, { fontSize: scaleFontSize(18) }]}>SKIP</Text>
             </TouchableOpacity>
 
-            {/* Get Started button */}
+            {/* Next button */}
             <TouchableOpacity
                 onPress={onStart}
                 style={{
@@ -156,9 +168,9 @@ export default function ScreenThree({ onFinish, onStart, currentScreen, onPlanet
                     left: width * 0.5 + scaleWidth(27.5),
                 }}
             >
-                <GetStartedButton
-                    width={GET_STARTED_BUTTON_WIDTH}
-                    height={GET_STARTED_BUTTON_HEIGHT}
+                <NextButton
+                    width={NEXT_BUTTON_WIDTH}
+                    height={NEXT_BUTTON_HEIGHT}
                 />
             </TouchableOpacity>
         </LinearGradient>

@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { StyleSheet, Animated } from "react-native";
+import { Animated } from "react-native";
 import ScreenThree from "./Overview";
 import ScreenFour from "./Schedule";
 import ScreenFive from "./Scanner";
 import ScreenSix from "./PointsShop";
 import ScreenSeven from "./Profile";
+import ScreenEight from "./Mentorship";
+import ScreenNine from "./Duels";
 
 type OnboardingProps = {
   onFinish: () => void;
@@ -24,76 +26,26 @@ export default function OnboardingScreens({ onFinish, cloudX1, cloudX2, starOpac
         setCurrentScreen((prev) => prev + 1);
     }
 
-    const onPlanetPress = (index: number) => {
+    const goToScreen = (index: number) => {
         setCurrentScreen(index);
     }
 
     switch (currentScreen) {
         case 0:
-            return <ScreenThree onFinish={onSkip} onStart={onNext} currentScreen={currentScreen} onPlanetPress={onPlanetPress} cloudX1={cloudX1} cloudX2={cloudX2} starOpacity={starOpacity} />;
+            return <ScreenThree onFinish={onSkip} onStart={onNext} cloudX1={cloudX1} cloudX2={cloudX2} starOpacity={starOpacity} currentScreen={currentScreen} goToScreen={goToScreen} />;
         case 1:
-            return <ScreenFour onFinish={onSkip} onStart={onNext} currentScreen={currentScreen} onPlanetPress={onPlanetPress} cloudX1={cloudX1} cloudX2={cloudX2} starOpacity={starOpacity} />;
+            return <ScreenFour onFinish={onSkip} onStart={onNext} cloudX1={cloudX1} cloudX2={cloudX2} starOpacity={starOpacity} currentScreen={currentScreen} goToScreen={goToScreen} />;
         case 2:
-            return <ScreenFive onFinish={onSkip} onStart={onNext} currentScreen={currentScreen} onPlanetPress={onPlanetPress} cloudX1={cloudX1} cloudX2={cloudX2} starOpacity={starOpacity} />;
+            return <ScreenFive onFinish={onSkip} onStart={onNext} cloudX1={cloudX1} cloudX2={cloudX2} starOpacity={starOpacity} currentScreen={currentScreen} goToScreen={goToScreen} />;
         case 3:
-            return <ScreenSix onFinish={onSkip} onStart={onNext} currentScreen={currentScreen} onPlanetPress={onPlanetPress} cloudX1={cloudX1} cloudX2={cloudX2} starOpacity={starOpacity} />;
+            return <ScreenSix onFinish={onSkip} onStart={onNext} cloudX1={cloudX1} cloudX2={cloudX2} starOpacity={starOpacity} currentScreen={currentScreen} goToScreen={goToScreen} />;
         case 4:
-            return <ScreenSeven onFinish={onSkip} onStart={onSkip} currentScreen={currentScreen} onPlanetPress={onPlanetPress} cloudX1={cloudX1} cloudX2={cloudX2} starOpacity={starOpacity} />;
+            return <ScreenSeven onFinish={onSkip} onStart={onNext} cloudX1={cloudX1} cloudX2={cloudX2} starOpacity={starOpacity} currentScreen={currentScreen} goToScreen={goToScreen} />;
+        case 5:
+            return <ScreenEight onFinish={onSkip} onStart={onNext} cloudX1={cloudX1} cloudX2={cloudX2} starOpacity={starOpacity} currentScreen={currentScreen} goToScreen={goToScreen} />;
+        case 6:
+            return <ScreenNine onFinish={onSkip} onStart={onSkip} cloudX1={cloudX1} cloudX2={cloudX2} starOpacity={starOpacity} currentScreen={currentScreen} goToScreen={goToScreen} />;
         default:
-            return <ScreenThree onFinish={onSkip} onStart={onNext} currentScreen={currentScreen} onPlanetPress={onPlanetPress} cloudX1={cloudX1} cloudX2={cloudX2} starOpacity={starOpacity} />;
+            return <ScreenThree onFinish={onSkip} onStart={onNext} cloudX1={cloudX1} cloudX2={cloudX2} starOpacity={starOpacity} currentScreen={currentScreen} goToScreen={goToScreen} />;
     }
 }
-
-const styles = StyleSheet.create({
-    background: {
-        flex: 1,
-        backgroundColor: "#FFFFFF",
-        alignItems: "center",
-        justifyContent: "center", 
-        paddingHorizontal: 24,
-    },
-    headerText: {
-        fontFamily: "Montserrat",
-        fontSize: 40,
-        textAlign: "center",
-        fontWeight: "600",
-        color: "#313332",
-        letterSpacing: 0.1,
-        marginBottom: 12,
-    },
-    subtitleText: {
-        textAlign: "center",
-        fontSize: 18,
-        fontFamily: "Montserrat",
-        letterSpacing: 1.2,
-        marginBottom: 30,
-        lineHeight: 24,
-    },
-    rocket: {
-        width: 270,
-        height: 270,
-    },
-    startButton: {
-        marginTop: 25,
-        width: 120,
-        height: 50.68,
-        borderRadius: 37.08,
-        backgroundColor: "#7A807D",
-    },
-    startButtonText: {
-        marginTop: 6,
-        fontFamily: "Montserrat",
-        textAlign: "center",
-        fontSize: 25,
-        color: "#FFFFFF",
-        fontWeight: "100"
-    },
-    skipButton: {
-        marginTop: 10,
-    },
-    skipButtonText: {
-        marginTop: 6,
-        fontFamily: "Montserrat",
-        fontSize: 18
-    }
-});

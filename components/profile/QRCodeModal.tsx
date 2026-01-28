@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Modal, ActivityIndicator, useWindowDimensions } from 'react-native';
+import { View, TouchableOpacity, Modal, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import QRCode from 'react-native-qrcode-svg';
+import RefreshButtonSvg from '../../assets/profile/qr-screen/refresh-button.svg';
 
 interface QRCodeModalProps {
   visible: boolean;
@@ -9,7 +10,7 @@ interface QRCodeModalProps {
   qrLoading: boolean;
   onClose: () => void;
   onRefresh: () => void;
-  displayName: string;
+  displayName?: string; // Kept for backwards compatibility but no longer displayed
 }
 
 export const QRCodeModal: React.FC<QRCodeModalProps> = ({
@@ -18,7 +19,6 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
   qrLoading,
   onClose,
   onRefresh,
-  displayName,
 }) => {
   const { width, height } = useWindowDimensions();
 
@@ -60,22 +60,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
           shadowRadius: scaleWidth(3.84),
           elevation: 5,
         }}>
-          <TouchableOpacity
-            style={{
-              position: 'absolute',
-              top: scaleHeight(18),
-              right: scaleWidth(9),
-              zIndex: 1,
-              width: scaleWidth(31.19),
-              height: scaleWidth(31.19),
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}
-            onPress={onClose}
-          >
-            <Ionicons name="close" size={scaleFontSize(28)} color="#333" />
-          </TouchableOpacity>
-
+          {/* Close Button - moved to left where reload was */}
           <TouchableOpacity
             style={{
               position: 'absolute',
@@ -87,10 +72,9 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
               justifyContent: 'center',
               alignItems: 'center',
             }}
-            onPress={onRefresh}
-            disabled={qrLoading}
+            onPress={onClose}
           >
-            <Ionicons name="refresh" size={scaleFontSize(20)} color={qrLoading ? "#CCC" : "#666"} />
+            <Ionicons name="close" size={scaleFontSize(28)} color="#333" />
           </TouchableOpacity>
 
           <View style={{
@@ -98,7 +82,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
             height: scaleHeight(162),
             justifyContent: 'center',
             alignItems: 'center',
-            marginTop: scaleHeight(63),
+            marginTop: scaleHeight(35),
           }}>
             {qrCode ? (
               <QRCode
@@ -119,18 +103,20 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
             )}
           </View>
 
-          <Text style={{
-            fontFamily: 'Tsukimi Rounded',
-            fontWeight: '600',
-            fontSize: scaleFontSize(20),
-            lineHeight: scaleHeight(20),
-            letterSpacing: 0,
-            textAlign: 'center',
-            color: '#000',
-            marginTop: scaleHeight(26),
-            width: scaleWidth(94),
-            height: scaleHeight(61),
-          }}>{displayName}</Text>
+          {/* Refresh Button */}
+          <TouchableOpacity
+            style={{
+              marginTop: scaleHeight(15),
+            }}
+            onPress={onRefresh}
+            disabled={qrLoading}
+          >
+            <RefreshButtonSvg
+              width={scaleWidth(170)}
+              height={scaleWidth(55)}
+              opacity={qrLoading ? 0.5 : 1}
+            />
+          </TouchableOpacity>
         </View>
       </View>
     </Modal>
