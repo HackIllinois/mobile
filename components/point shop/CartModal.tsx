@@ -157,7 +157,7 @@ export default function CartModal({
                   <Text style={styles.totalLabel}>total</Text>
                   <View style={styles.totalValueContainer}>
                     <Image
-                      source={require("../../assets/point shop/point-shop-diamonds.png")}
+                      source={require("../../assets/point-shop/point-shop-diamonds.png")}
                       style={styles.diamondIcon}
                       resizeMode="contain"
                     />

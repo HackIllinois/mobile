@@ -8,7 +8,7 @@ export default function Points({ points = 1000 }: PointsProps) {
   return (
     <View style={styles.container}>
       <Image
-        source={require("../../assets/point shop/point-shop-diamonds.png")}
+        source={require("../../assets/point-shop/point-shop-diamonds.png")}
         style={styles.icon}
         resizeMode="contain"
       />

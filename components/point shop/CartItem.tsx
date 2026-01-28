@@ -76,7 +76,7 @@ export default function CartItem({
             activeOpacity={0.6}
           >
             <Image
-              source={require("../../assets/point shop/point-shop-minus.png")}
+              source={require("../../assets/point-shop/point-shop-minus.png")}
               style={styles.buttonIcon}
               resizeMode="contain"
             />
@@ -88,7 +88,7 @@ export default function CartItem({
             activeOpacity={0.6}
           >
             <Image
-              source={require("../../assets/point shop/point-shop-plus.png")}
+              source={require("../../assets/point-shop/point-shop-plus.png")}
               style={styles.buttonIcon}
               resizeMode="contain"
             />

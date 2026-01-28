@@ -67,7 +67,7 @@ const ShopItemCard = memo(({ item, onPress, scale = 1 }: ShopItemCardProps) => {
       >
         <View style={styles.backgroundContainer}>
           <Image 
-            source={require("../../assets/point shop/point shop case.png")} 
+            source={require("../../assets/point-shop/point-shop-case.png")} 
             style={styles.backgroundImage}
             resizeMode="stretch"
           />

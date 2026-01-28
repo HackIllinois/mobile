@@ -208,10 +208,10 @@ export default function PointShop() {
     ));
 
   return (
-    <ImageBackground source={require("../../assets/point shop/point-shop-background.png")} style={styles.container} resizeMode="cover">
+    <ImageBackground source={require("../../assets/point-shop/point-shop-background.png")} style={styles.container} resizeMode="cover">
       <SafeAreaView style={[styles.safeArea, { paddingBottom: spacing.bottomPadding }]} edges={["top"]}>
         <Image
-          source={require("../../assets/point shop/point-shop-title.png")}
+          source={require("../../assets/point-shop/point-shop-title.png")}
           style={styles.titleImage}
           resizeMode="contain"
         />
@@ -298,7 +298,7 @@ export default function PointShop() {
             ]}
           >
             <Animated.Image
-              source={require("../../assets/point shop/point-shop-shopkeeper-2.png")}
+              source={require("../../assets/point-shop/point-shop-shopkeeper-2.png")}
               style={[
                 styles.shopkeeperImage,
                 {
