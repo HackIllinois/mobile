@@ -809,12 +809,12 @@ export default function Duels() {
           onStartShouldSetResponder={() => true}
           onMoveShouldSetResponder={() => true}
           onResponderGrant={(e: GestureResponderEvent) => {
-            const touches = e.nativeEvent.touches;
+            // Convert TouchList to array to prevent segfault on iPhone SE
+            const touches = Array.from(e.nativeEvent.touches || []);
             let shootPressed = false;
             let rotatePressed = false;
             
-            for (let i = 0; i < touches.length; i++) {
-              const touch = touches[i];
+            for (const touch of touches) {
               if (touch.pageX < screenWidth / 2) {
                 shootPressed = true;
               } else {
@@ -826,11 +826,11 @@ export default function Duels() {
             if (rotatePressed) setIsRotating(true);
           }}
           onResponderMove={(e: GestureResponderEvent) => {
-            const touches = e.nativeEvent.touches;
+            // Convert TouchList to array to prevent segfault on iPhone SE
+            const touches = Array.from(e.nativeEvent.touches || []);
             let rotatePressed = false;
             
-            for (let i = 0; i < touches.length; i++) {
-              const touch = touches[i];
+            for (const touch of touches) {
               if (touch.pageX >= screenWidth / 2) {
                 rotatePressed = true;
               }
@@ -839,12 +839,11 @@ export default function Duels() {
             setIsRotating(rotatePressed);
           }}
           onResponderRelease={(e: GestureResponderEvent) => {
-            // Check remaining touches
-            const touches = e.nativeEvent.touches;
+            // Convert TouchList to array to prevent segfault on iPhone SE
+            const touches = Array.from(e.nativeEvent.touches || []);
             let rotatePressed = false;
             
-            for (let i = 0; i < touches.length; i++) {
-              const touch = touches[i];
+            for (const touch of touches) {
               if (touch.pageX >= screenWidth / 2) {
                 rotatePressed = true;
               }

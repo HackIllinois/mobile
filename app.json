@@ -18,6 +18,7 @@
       "bundleIdentifier": "org.hackillinois.ios",
       "infoPlist": {
         "NSCameraUsageDescription": "Allow camera access to scan QR codes.",
+        "NSBluetoothAlwaysUsageDescription": "Bluetooth is used to connect with nearby players for duels.",
         "ITSAppUsesNonExemptEncryption": false
       }
     },
