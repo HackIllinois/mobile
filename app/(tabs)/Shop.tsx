@@ -36,7 +36,7 @@ const tutorialTexts = [
 const IMAGE_WIDTH = 1728;
 const IMAGE_HEIGHT = 3273;
 
-const TITLE_IMAGE_Y = 150;     // Where title image should appear
+const TITLE_IMAGE_Y = 350;     // Where title image should appear
 const POINTS_IMAGE_Y = 1080;   // Where points display should appear
 const MERCH_ROW_IMAGE_Y = 1250;  // Where merch cards should appear (below "merch" label)
 const RAFFLE_ROW_IMAGE_Y = 2150; // Where raffle cards should appear (below "raffle" label)
@@ -51,6 +51,13 @@ const imageYToScreenY = (
   const coverScale = Math.max(scaleX, scaleY);
   const offsetY = (IMAGE_HEIGHT * coverScale - containerHeight) / 2;
   return (imageY * coverScale) - offsetY;
+};
+
+// Get the cover scale factor for sizing elements proportionally
+const getCoverScale = (containerWidth: number, containerHeight: number): number => {
+  const scaleX = containerWidth / IMAGE_WIDTH;
+  const scaleY = containerHeight / IMAGE_HEIGHT;
+  return Math.max(scaleX, scaleY);
 };
 
 
@@ -70,6 +77,13 @@ export default function PointShop() {
   const containerHeight = screenHeight;
   
   const safeAreaAdjustment = insets.top - 57; // baseline of ~57 (average)
+  const coverScale = getCoverScale(containerWidth, containerHeight);
+  
+  // Title size in the original image (approximate) - scales with background
+  const TITLE_BASE_WIDTH = 800;  // Base width in image pixels
+  const TITLE_BASE_HEIGHT = 400; // Base height in image pixels
+  const titleWidth = TITLE_BASE_WIDTH * coverScale;
+  const titleHeight = TITLE_BASE_HEIGHT * coverScale;
   
   const TITLE_Y = imageYToScreenY(TITLE_IMAGE_Y, containerWidth, containerHeight) + safeAreaAdjustment;
   const POINTS_Y = imageYToScreenY(POINTS_IMAGE_Y, containerWidth, containerHeight) + safeAreaAdjustment;
@@ -219,7 +233,7 @@ export default function PointShop() {
       <View style={{ position: "absolute", top: TITLE_Y, left: 20, zIndex: 10 }}>
         <Image
           source={require("../../assets/point-shop/point-shop-title.png")}
-          style={styles.titleImage}
+          style={{ width: titleWidth, height: titleHeight }}
           resizeMode="contain"
         />
       </View>
@@ -362,10 +376,6 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
-  },
-  titleImage: {
-    width: 140,
-    marginLeft: 10,
   },
   contentContainer: {
     flex: 1,
