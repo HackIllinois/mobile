@@ -95,7 +95,7 @@ export function EventCard({ event, index, onPress, handleSave, onShowMenu, saved
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 40 
+    marginBottom: 20 
   },
   cardContainer: {
     marginHorizontal: 16,
