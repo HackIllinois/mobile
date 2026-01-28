@@ -96,7 +96,7 @@ export default function ScreenThree({ onFinish, onStart, cloudX1, cloudX2, starO
 
             {/* Screenshot inside iPhone */}
             <Image
-                source={require("../../assets/onboarding/Overview.PNG")}
+                source={require("../../assets/onboarding/Overview.png")}
                 style={{
                     position: 'absolute',
                     top: IPHONE_TOP + scaleHeight(8),
