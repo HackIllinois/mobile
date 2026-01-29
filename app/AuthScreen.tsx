@@ -87,7 +87,9 @@ export default function AuthScreen({ navigation }: any) {
       )}`;
       console.log("Auth URL:", authUrl);
 
-      const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
+      const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri, {
+      preferEphemeralSession: true, 
+    });
     //   console.log("Auth Result:", result);
 
       await handleAuthResult(result);
@@ -108,7 +110,9 @@ export default function AuthScreen({ navigation }: any) {
         redirectUri
       )}`;
       console.log("GitHub Auth URL:", authUrl);
-      const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
+      const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri, {
+      preferEphemeralSession: true, 
+    });
       await handleAuthResult(result);
     } catch (err) {
       console.error(err);
