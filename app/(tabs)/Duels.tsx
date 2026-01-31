@@ -8,6 +8,7 @@ const enemyShipImage = require('../../assets/duels/duels-ship-enemy.png');
 const buttonImage = require('../../assets/duels/duels-button.png');
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import api from '../../api';
 
 // Lazy import to prevent blocking route discovery
 let LocalConnectionModule: any;
@@ -38,7 +39,7 @@ try {
 type Screen = 'home' | 'hosting' | 'browsing' | 'connected';
 type Lobby = { endpointId: string; endpointName: string };
 type Role = 'host' | 'guest';
-type GamePhase = 'waiting' | 'playing' | 'win' | 'lose' | 'game_over';
+type GamePhase = 'waiting' | 'playing' | 'win' | 'lose' | 'tie' | 'game_over';
 
 type Ship = {
   x: number;        // 0-1 normalized
@@ -49,16 +50,20 @@ type Ship = {
 
 type Bullet = {
   id: string;
-  x: number;
-  y: number;
-  angle: number;
+  x: number;        // current position
+  y: number;        // current position
+  angle: number;    // direction of travel
+  spawnTime: number; // timestamp when bullet was created (for local simulation)
+  startX: number;   // initial spawn X
+  startY: number;   // initial spawn Y
   ownerId: 'player' | 'opponent';
 };
 
 type GameMessage = 
   | { type: 'ready'; screenRatio: number }
   | { type: 'start_game'; worldRatio: number }
-  | { type: 'state'; x: number; y: number; angle: number; bullets: { id: string; x: number; y: number; angle: number }[] }
+  | { type: 'state'; x: number; y: number; angle: number }
+  | { type: 'bullet'; id: string; x: number; y: number; angle: number; spawnTime: number }
   | { type: 'hit'; victimId: string }
   | { type: 'restart' };
 
@@ -75,7 +80,7 @@ const SHIP_DISPLAY_SIZE = 40;   // pixels
 const BULLET_DISPLAY_SIZE = 10; // pixels
 const INTERPOLATION_SPEED = 12; // Higher = faster catch-up to target position
 const MAX_AMMO = 3;             // Maximum bullets player can have
-const RELOAD_TIME = 700;        // ms to reload one bullet
+const RELOAD_TIME = 1500;        // ms to reload one bullet
 
 export default function Duels() {
   // ======================
@@ -114,6 +119,7 @@ export default function Duels() {
   const myBulletsRef = useRef(myBullets);
   const opponentShipRef = useRef(opponentShip);
   const opponentTargetRef = useRef(opponentTarget);
+  const opponentBulletsRef = useRef(opponentBullets);
   const isRotatingRef = useRef(isRotating);
   const gamePhaseRef = useRef(gamePhase);
   
@@ -122,6 +128,7 @@ export default function Duels() {
   useEffect(() => { myBulletsRef.current = myBullets; }, [myBullets]);
   useEffect(() => { opponentShipRef.current = opponentShip; }, [opponentShip]);
   useEffect(() => { opponentTargetRef.current = opponentTarget; }, [opponentTarget]);
+  useEffect(() => { opponentBulletsRef.current = opponentBullets; }, [opponentBullets]);
   useEffect(() => { isRotatingRef.current = isRotating; }, [isRotating]);
   useEffect(() => { gamePhaseRef.current = gamePhase; }, [gamePhase]);
   
@@ -137,10 +144,25 @@ export default function Duels() {
   const gameHeight = screenHeight - insets.top - tabBarHeight;
   const screenRatio = screenWidth / gameHeight;
 
-  // Generate random guest username
-  const guestName = useMemo(() => {
-    const randomNum = Math.floor(10000 + Math.random() * 90000);
-    return `guest-${randomNum}`;
+  // Profile state - fetch displayName from API
+  const [displayName, setDisplayName] = useState<string | null>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
+
+  // Fetch profile on mount
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response: any = await api.get('/profile/');
+        if (response?.data?.displayName) {
+          setDisplayName(response.data.displayName);
+        }
+      } catch (error) {
+        console.error('Failed to fetch profile:', error);
+      } finally {
+        setProfileLoading(false);
+      }
+    };
+    fetchProfile();
   }, []);
 
   // ======================
@@ -218,16 +240,31 @@ export default function Duels() {
     if (ammo <= 0) return; // No ammo available
     
     const ship = myShipRef.current;
+    const now = Date.now();
     const bullet: Bullet = {
-      id: `${Date.now()}-${Math.random()}`,
+      id: `${now}-${Math.random()}`,
       x: ship.x,
       y: ship.y,
       angle: ship.angle,
+      spawnTime: now,
+      startX: ship.x,
+      startY: ship.y,
       ownerId: 'player'
     };
     setMyBullets(prev => [...prev, bullet]);
     setAmmo(prev => prev - 1);
     setReloading(prev => prev + 1);
+    
+    // Send bullet spawn to opponent (only initial data, they simulate locally)
+    const bulletMsg: GameMessage = {
+      type: 'bullet',
+      id: bullet.id,
+      x: bullet.startX,
+      y: bullet.startY,
+      angle: bullet.angle,
+      spawnTime: bullet.spawnTime
+    };
+    LocalConnectionModule.sendData(JSON.stringify(bulletMsg));
     
     // Start reload timer for this bullet
     setTimeout(() => {
@@ -303,7 +340,23 @@ export default function Duels() {
             case 'state':
               // Update opponent target position (will be interpolated in game loop)
               setOpponentTarget(prev => ({ ...prev, x: msg.x, y: msg.y, angle: msg.angle }));
-              setOpponentBullets(msg.bullets.map(b => ({ ...b, ownerId: 'opponent' as const })));
+              break;
+            case 'bullet':
+              // Opponent fired a bullet - add it with initial data for local simulation
+              setOpponentBullets(prev => {
+                // Avoid duplicate bullets
+                if (prev.some(b => b.id === msg.id)) return prev;
+                return [...prev, {
+                  id: msg.id,
+                  x: msg.x,
+                  y: msg.y,
+                  angle: msg.angle,
+                  spawnTime: msg.spawnTime,
+                  startX: msg.x,
+                  startY: msg.y,
+                  ownerId: 'opponent' as const
+                }];
+              });
               break;
             case 'hit':
               roundLost();
@@ -444,7 +497,18 @@ export default function Duels() {
           .filter(b => b.x >= 0 && b.x <= 1 && b.y >= 0 && b.y <= 1);
       });
       
-      // 4. Interpolate opponent ship towards target position (smoothing)
+      // 4. Update opponent bullets (simulate locally based on initial angle)
+      setOpponentBullets(prev => {
+        return prev
+          .map(b => ({
+            ...b,
+            x: b.x + Math.cos(b.angle) * BULLET_SPEED * dt,
+            y: b.y + Math.sin(b.angle) * BULLET_SPEED * dt,
+          }))
+          .filter(b => b.x >= 0 && b.x <= 1 && b.y >= 0 && b.y <= 1);
+      });
+      
+      // 5. Interpolate opponent ship towards target position (smoothing)
       const target = opponentTargetRef.current;
       setOpponentShip(prev => {
         const lerpFactor = 1 - Math.exp(-INTERPOLATION_SPEED * dt);
@@ -463,17 +527,46 @@ export default function Duels() {
         return { ...prev, x: newX, y: newY, angle: newAngle };
       });
       
-      // 5. Check collisions (my bullets vs opponent ship)
+      // 6. Check collisions - detect both hit directions to handle ties
       const opponent = opponentShipRef.current;
+      const myShipCurrent = myShipRef.current;
+      
+      let iHitOpponent = false;
+      let opponentHitMe = false;
+      
+      // Check if my bullets hit opponent
       for (const bullet of myBulletsRef.current) {
         if (checkBulletHit(bullet, opponent)) {
-          // I win!
-          const hitMsg: GameMessage = { type: 'hit', victimId: 'opponent' };
-          LocalConnectionModule.sendData(JSON.stringify(hitMsg));
-          roundWon();
-          setGamePhase('win');
-          return;
+          iHitOpponent = true;
+          break;
         }
+      }
+      
+      // Check if opponent bullets hit me
+      for (const bullet of opponentBulletsRef.current) {
+        if (checkBulletHit(bullet, myShipCurrent)) {
+          opponentHitMe = true;
+          break;
+        }
+      }
+      
+      // Handle outcomes - check for tie first
+      if (iHitOpponent && opponentHitMe) {
+        // Both hit each other in the same frame - it's a tie!
+        setGamePhase('tie');
+        return;
+      } else if (iHitOpponent) {
+        // I hit opponent, I win this round
+        const hitMsg: GameMessage = { type: 'hit', victimId: 'opponent' };
+        LocalConnectionModule.sendData(JSON.stringify(hitMsg));
+        roundWon();
+        setGamePhase('win');
+        return;
+      } else if (opponentHitMe) {
+        // Opponent hit me, I lose this round
+        roundLost();
+        setGamePhase('lose');
+        return;
       }
       
       animationId = requestAnimationFrame(loop);
@@ -491,13 +584,12 @@ export default function Duels() {
     
     const interval = setInterval(() => {
       const ship = myShipRef.current;
-      const bullets = myBulletsRef.current;
+      // Only sync ship position/angle, bullets are sent when fired
       const msg: GameMessage = {
         type: 'state',
         x: ship.x,
         y: ship.y,
-        angle: ship.angle,
-        bullets: bullets.map(b => ({ id: b.id, x: b.x, y: b.y, angle: b.angle }))
+        angle: ship.angle
       };
       LocalConnectionModule.sendData(JSON.stringify(msg));
     }, SYNC_INTERVAL);
@@ -518,7 +610,7 @@ export default function Duels() {
   [opponentScore, myScore]);
 
   useEffect(() => {
-    if (gamePhase !== 'win' && gamePhase !== 'lose') return;
+    if (gamePhase !== 'win' && gamePhase !== 'lose' && gamePhase !== 'tie') return;
     
     const timeout = setTimeout(() => {
       if (role === 'host') {
@@ -554,32 +646,40 @@ export default function Duels() {
   
   // Home screen
   if (screen === 'home') {
+    const buttonsDisabled = profileLoading || !displayName;
+    
     return (
       <ImageBackground source={backgroundImage} style={styles.container} resizeMode="cover">
         <Text style={styles.title}>DUELS</Text>
-        <Text style={styles.subtitle}>Playing as: {guestName}</Text>
+        <Text style={styles.subtitle}>
+          {profileLoading ? 'Loading profile...' : displayName ? `Playing as: ${displayName}` : 'Failed to load profile'}
+        </Text>
         <Pressable
-          style={styles.menuButton}
+          style={[styles.menuButton, buttonsDisabled && styles.menuButtonDisabled]}
           onPress={() => {
-            LocalConnectionModule.InitPeerName(guestName);
+            if (!displayName) return;
+            LocalConnectionModule.InitPeerName(displayName);
             LocalConnectionModule.startAdvertising();
             setRole('host');
             setScreen('hosting');
           }}
+          disabled={buttonsDisabled}
         >
-          <Text style={styles.menuButtonText}>HOST LOBBY</Text>
+          <Text style={[styles.menuButtonText, buttonsDisabled && styles.menuButtonTextDisabled]}>HOST LOBBY</Text>
         </Pressable>
         <View style={{ height: 15 }} />
         <Pressable
-          style={styles.menuButton}
+          style={[styles.menuButton, buttonsDisabled && styles.menuButtonDisabled]}
           onPress={() => {
-            LocalConnectionModule.InitPeerName(guestName);
+            if (!displayName) return;
+            LocalConnectionModule.InitPeerName(displayName);
             LocalConnectionModule.startScanning();
             setRole('guest');
             setScreen('browsing');
           }}
+          disabled={buttonsDisabled}
         >
-          <Text style={styles.menuButtonText}>JOIN LOBBY</Text>
+          <Text style={[styles.menuButtonText, buttonsDisabled && styles.menuButtonTextDisabled]}>JOIN LOBBY</Text>
         </Pressable>
       </ImageBackground>
     );
@@ -590,7 +690,7 @@ export default function Duels() {
     return (
       <ImageBackground source={backgroundImage} style={styles.container} resizeMode="cover">
         <Text style={styles.title}>HOSTING</Text>
-        <Text style={styles.subtitle}>Lobby: {guestName}</Text>
+        <Text style={styles.subtitle}>Lobby: {displayName}</Text>
         <Text style={styles.waitingText}>Waiting for players...</Text>
         <View style={{ height: 20 }} />
         <Pressable
@@ -730,11 +830,14 @@ export default function Duels() {
     // Playing phase (or win/lose)
     return (
       <ImageBackground source={backgroundImage} style={[styles.gameContainer, { paddingTop: insets.top }]} resizeMode="cover">
-        {/* Win/Lose overlay */}
-        {(gamePhase === 'win' || gamePhase === 'lose') && (
+        {/* Win/Lose/Tie overlay */}
+        {(gamePhase === 'win' || gamePhase === 'lose' || gamePhase === 'tie') && (
           <View style={styles.overlay}>
-            <Text style={[styles.overlayText, gamePhase === 'win' ? styles.winText : styles.loseText]}>
-              {gamePhase === 'win' ? 'YOU WIN!' : 'YOU LOSE!'}
+            <Text style={[
+              styles.overlayText, 
+              gamePhase === 'win' ? styles.winText : gamePhase === 'lose' ? styles.loseText : styles.tieText
+            ]}>
+              {gamePhase === 'win' ? 'YOU WIN!' : gamePhase === 'lose' ? 'YOU LOSE!' : 'TIE!'}
             </Text>
             <Text style={styles.scoreText}>
               {myScore} - {opponentScore}
@@ -925,6 +1028,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '800',
     letterSpacing: 2,
+  },
+  menuButtonDisabled: {
+    opacity: 0.5,
+  },
+  menuButtonTextDisabled: {
+    color: '#888888',
   },
   cancelButton: {
     paddingVertical: 12,
@@ -1133,6 +1242,9 @@ const styles = StyleSheet.create({
   },
   loseText: {
     color: '#ff3366',
+  },
+  tieText: {
+    color: '#ffaa00',
   },
   scoreText: {
     fontSize: 32,
