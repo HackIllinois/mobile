@@ -1,5 +1,6 @@
 import { Tabs, Link, usePathname } from "expo-router";
-import { Image, TouchableOpacity, View, StyleSheet } from "react-native";
+import { TouchableOpacity, View, StyleSheet } from "react-native";
+import ProfileSvg from "../../assets/profile.svg";
 import { CurvedTabBar } from "../../components/CurvedTabBar";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import HomeSvg from "../../assets/navbar/Home.svg";
@@ -7,6 +8,7 @@ import CalendarSvg from "../../assets/navbar/Calendar.svg";
 import QrCodeSvg from "../../assets/navbar/Camera.svg";
 import ShopSvg from "../../assets/navbar/Shop.svg";
 import DuelsSvg from "../../assets/navbar/Duels.svg";
+
 
 // Create a single QueryClient instance
 const queryClient = new QueryClient();
@@ -77,10 +79,7 @@ export default function Layout() {
           <View style={[styles.floatingButton, { top: 60 }]}>
             <Link href="/Profile" asChild>
               <TouchableOpacity>
-                <Image
-                  source={require("../../assets/profile.png")}
-                  style={{ width: 30, height: 30, tintColor: '#e1d8f4ff' }}
-                />
+                <ProfileSvg width={30} height={30} />
               </TouchableOpacity>
             </Link>
           </View>
