@@ -22,18 +22,20 @@ const ICON_MAP: Record<string, any> = {
 };
 
 const TAB_POSITIONS: Record<string, number> = {
-  Home: 0.10,    
-  Event: 0.28,   
-  Shop: 0.72,    
+  Home: 0.10,
+  Event: 0.28,
+  Shop: 0.72,
   Duels: 0.90,
 };
 
-export const CurvedTabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
-  // Debug: Log available routes to verify Duels is discovered
-  console.log('Available routes:', state.routes.map(r => r.name));
-  
+export const CurvedTabBar = ({
+  state,
+  descriptors,
+  navigation,
+}: BottomTabBarProps) => {
   return (
     <View style={styles.tabBarContainer}>
+      {/* Background */}
       <View style={StyleSheet.absoluteFill}>
         <NavbarBackground
           width={width}
@@ -48,20 +50,8 @@ export const CurvedTabBar = ({ state, descriptors, navigation }: BottomTabBarPro
           const isFocused = state.index === index;
           const Icon = ICON_MAP[route.name];
 
-          // Debug: Log each route being processed
-          if (route.name === 'Duels') {
-            console.log('Duels route found:', {
-              routeName: route.name,
-              hasIcon: !!Icon,
-              href: options.href,
-              positionPercent: TAB_POSITIONS[route.name],
-            });
-          }
-
-          // Skip routes that are excluded from tab bar (e.g., Profile with href: null)
-          if (options.href === null) {
-            return null;
-          }
+          // Skip hidden routes (Profile)
+          if (options.href === null) return null;
 
           const onPress = () => {
             const event = navigation.emit({
@@ -75,7 +65,7 @@ export const CurvedTabBar = ({ state, descriptors, navigation }: BottomTabBarPro
             }
           };
 
-          // 1. CENTER BUTTON (Scan)
+          /** CENTER BUTTON (Scan) */
           if (route.name === 'Scan') {
             return (
               <Pressable
@@ -83,9 +73,7 @@ export const CurvedTabBar = ({ state, descriptors, navigation }: BottomTabBarPro
                 onPress={onPress}
                 style={[
                   styles.centerButton,
-                  {
-                    left: (width / 2) - (CENTER_BUTTON_SIZE / 2),
-                  },
+                  { left: width / 2 - CENTER_BUTTON_SIZE / 2 },
                 ]}
               >
                 <View
@@ -104,11 +92,8 @@ export const CurvedTabBar = ({ state, descriptors, navigation }: BottomTabBarPro
             );
           }
 
-          // 2. REGULAR BUTTONS (Home, Event, Shop, Duels)
-          // We get the specific % position from our config map
+          /** REGULAR BUTTONS */
           const positionPercent = TAB_POSITIONS[route.name];
-          
-          // If a route exists in navigation but isn't in our map, skip or default
           if (positionPercent === undefined) return null;
 
           return (
@@ -118,21 +103,24 @@ export const CurvedTabBar = ({ state, descriptors, navigation }: BottomTabBarPro
               style={[
                 styles.tabButton,
                 { left: width * positionPercent },
-                route.name === 'Duels' && { zIndex: 5, backgroundColor: 'transparent' }, // Ensure Duels is visible
               ]}
             >
-              {Icon ? (
-                <Icon
-                  width={ICON_SIZE}
-                  height={ICON_SIZE}
-                  color={isFocused ? '#DF4F44' : 'rgba(255, 255, 255, 0.6)'}
-                />
-              ) : (
-                // Fallback for debugging - should not appear if icon loads
-                route.name === 'Duels' && (
-                  <View style={{ width: ICON_SIZE, height: ICON_SIZE, backgroundColor: 'red', borderRadius: 4 }} />
-                )
-              )}
+              <View style={styles.iconContainer}>
+                {Icon && (
+                  <Icon
+                    width={ICON_SIZE}
+                    height={ICON_SIZE}
+                    color={
+                      isFocused
+                        ? '#DF4F44'
+                        : 'rgba(255, 255, 255, 0.6)'
+                    }
+                  />
+                )}
+
+                {/* ACTIVE INDICATOR DOT */}
+                {isFocused && <View style={styles.activeDot} />}
+              </View>
             </Pressable>
           );
         })}
@@ -144,25 +132,41 @@ export const CurvedTabBar = ({ state, descriptors, navigation }: BottomTabBarPro
 const styles = StyleSheet.create({
   tabBarContainer: {
     height: BAR_HEIGHT,
-    width: width, 
+    width,
     justifyContent: 'flex-end',
   },
+
   tabsRow: {
-    position: 'absolute', 
+    position: 'absolute',
     top: 0,
     bottom: 0,
     left: 0,
     right: 0,
   },
+
   tabButton: {
     position: 'absolute',
-    top: 0, 
-    height: '100%', 
+    top: 0,
+    height: '100%',
     width: 60,
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: -30, 
+    marginLeft: -30,
   },
+
+  iconContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  activeDot: {
+    marginTop: 6,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#DF4F44',
+  },
+
   centerButton: {
     position: 'absolute',
     top: -35,
@@ -170,6 +174,7 @@ const styles = StyleSheet.create({
     height: CENTER_BUTTON_SIZE,
     zIndex: 10,
   },
+
   centerButtonInner: {
     width: '100%',
     height: '100%',
@@ -185,7 +190,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     elevation: 8,
   },
+
   centerButtonActive: {
-    backgroundColor: '#5A3585', 
+    backgroundColor: '#5A3585',
   },
 });
