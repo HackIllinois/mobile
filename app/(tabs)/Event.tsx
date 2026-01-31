@@ -23,6 +23,8 @@ import StarryBackground from '../../components/eventScreen/StarryBackground';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Event } from '../../types';
 import Title from "../../assets/event/page title.svg";
+import Moon from "../../assets/event/Moon.svg"
+import Sun from "../../assets/event/Sun.svg"
 
 type ScheduleMode = 'events' | 'mentorship';
 
