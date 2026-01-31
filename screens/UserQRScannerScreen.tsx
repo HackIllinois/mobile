@@ -1,17 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Text, View, StyleSheet, TouchableOpacity, Dimensions, ImageBackground } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
+import { Text, View, StyleSheet, TouchableOpacity, Dimensions, ActivityIndicator } from 'react-native';
+import { useCameraPermissions, CameraView, BarcodeScanningResult, scanFromURLAsync } from 'expo-camera';
+import * as ImagePicker from 'expo-image-picker';
 import axios from 'axios';
 import api from '../api';
-import { Svg, SvgUri } from 'react-native-svg';
-import ButtonSvg from '../assets/qr-scanner/button.svg';
-import PageTitle from '../assets/qr-scanner/page title.svg';
-
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-
-import CameraScannerView from '../components/qr scanner/CameraScanner';
+import ChooseImageButton from '../assets/qr-scanner/choose-image-button.svg';
 import { ScanResultModal, ScanResult } from '../components/qr scanner/ScanModals';
+
+const { width } = Dimensions.get('window');
 
 interface ScanSuccessData {
   points: number;
@@ -19,37 +15,13 @@ interface ScanSuccessData {
   success?: boolean;
 }
 
-interface EventDetails {
-  event_id: string;
-  name: string;
-  description: string; 
-  event_type: string;
-  startTime: number;
-  endTime: number;
-  locations: {
-    description: string;
-    latitude: number;
-    longitude: number;
-  };
-  sponsor?: string;
-  eventType: string;
-  points: number;
-  isStaff: boolean;
-  isPrivate: boolean;
-  isAsync: boolean;
-  isPro: boolean;
-  isMandatory: boolean;
-  displayOnStaffCheckIn: boolean;
-  mapImageUrl?: string;
-  exp: number;
-}
-
 export default function UserQRScannerScreen() {
   const [permission, requestPermission] = useCameraPermissions();
+  const [imageLibraryPermission, requestImageLibraryPermission] = ImagePicker.useMediaLibraryPermissions();
   const [scanned, setScanned] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
-  const [isScanning, setIsScanning] = useState(false);
 
   useEffect(() => {
     if (!permission?.granted) {
@@ -62,20 +34,19 @@ export default function UserQRScannerScreen() {
     setIsLoading(true);
     try {
       const response = await api.put<ScanSuccessData>(
-        'user/scan-event/',     
-        { eventId: scannedData } 
+        'user/scan-event/',
+        { eventId: scannedData }
       );
-  
+
       const points = (response as any).data.points || 0;
       const eventName = (response as any).data.eventName || 'Event';
-      
+
       setScanResult({
         status: 'success',
         message: 'Check-in Successful!',
-        eventName: eventName, 
+        eventName: eventName,
         pointsEarned: points,
       });
-  
     } catch (error) {
       console.log('Error caught:', error);
       if (axios.isAxiosError(error)) {
@@ -85,7 +56,7 @@ export default function UserQRScannerScreen() {
           const data = error.response.data as any;
           const errorType = data?.error;
           const message = data?.message;
-  
+
           if (status === 400 && errorType === "AlreadyCheckedIn") {
             setScanResult({ status: 'error', message: message || "You're already checked in." });
           } else if (status === 404 && errorType === "NotFound") {
@@ -115,148 +86,230 @@ export default function UserQRScannerScreen() {
 
   const closeModalAndReset = () => {
     setScanResult(null);
-    
-    // Cooldown before allowing another scan
     setTimeout(() => {
-      setScanned(false); 
+      setScanned(false);
     }, 2000);
   };
-  
-  const handleScanPress = () => {
-    if (permission?.granted) {
-      setIsScanning(true);
-    } else if (permission?.canAskAgain) {
-      requestPermission();
-    } else {
-      alert("Camera permission is required. Please enable it in your device settings.");
+
+  const handleChooseImage = async () => {
+    try {
+      if (!imageLibraryPermission?.granted) {
+        if (imageLibraryPermission?.canAskAgain) {
+          const { granted } = await requestImageLibraryPermission();
+          if (!granted) {
+            return;
+          }
+        } else {
+          return;
+        }
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: false,
+        quality: 1,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        setIsProcessingImage(true);
+        const imageUri = result.assets[0].uri;
+        const scanResults = await scanFromURLAsync(imageUri, ['qr']);
+        setIsProcessingImage(false);
+
+        if (scanResults && scanResults.length > 0) {
+          const qrData = scanResults[0].data;
+          handleQRCodeScanned({ data: qrData, type: 'qr' } as BarcodeScanningResult);
+        }
+      }
+    } catch (error) {
+      setIsProcessingImage(false);
+      console.error("Error choosing image:", error);
     }
   };
 
-  // Rendering Logic
   if (!permission) {
-    return <View />;
+    return <View style={styles.container} />;
   }
 
   return (
-    <>
-      {/* Main Menu View */}
-      <ImageBackground
-        source={require('../assets/qr-scanner/background.png')}
-        style={styles.menuContainer}
-        resizeMode="cover"
-      >
-        <SafeAreaView style={styles.safeArea}>
-          <PageTitle style={styles.menuTitle} />
-
-          <TouchableOpacity style={styles.menuButton} onPress={handleScanPress}>
-            <View style={styles.buttonContainer}>
-              <ButtonSvg width={300} height={70} style={styles.buttonSvg} />
-              <View style={styles.buttonTextContainer}>
-                <Text style={styles.menuButtonText}>Event Check-in</Text>
-                <Text style={styles.menuButtonArrow}>{">"}</Text>
-              </View>
-            </View>
-          </TouchableOpacity>
-        </SafeAreaView>
-      </ImageBackground>
-
-      {/* Camera Scanner Modal */}
-      <CameraScannerView
-        visible={isScanning}
-        onScanned={handleQRCodeScanned}
-        onClose={() => setIsScanning(false)}
-        isLoading={isLoading}
-        isScanned={scanned}
-        scanModeLabel="Event Check-in"
+    <View style={styles.container}>
+      <CameraView
+        onBarcodeScanned={scanned ? undefined : handleQRCodeScanned}
+        barcodeScannerSettings={{
+          barcodeTypes: ["qr"],
+        }}
+        style={StyleSheet.absoluteFillObject}
       />
 
-      {/* Scan Result Modal */}
+      <View style={styles.overlay}>
+        <View style={styles.topSection}>
+          <View style={styles.titleContainer}>
+            <Text style={styles.scanTitleText}>Scan QR Code</Text>
+            <Text style={styles.scanReasonText}>for Event Check-in</Text>
+            <Text style={styles.instructionText}>Place QR inside the frame to scan</Text>
+          </View>
+        </View>
+
+        <View style={styles.middleSection}>
+          <View style={styles.maskSide} />
+          <View style={styles.qrBox}>
+            <View style={[styles.corner, styles.cornerTopLeft]} />
+            <View style={[styles.corner, styles.cornerTopRight]} />
+            <View style={[styles.corner, styles.cornerBottomLeft]} />
+            <View style={[styles.corner, styles.cornerBottomRight]} />
+          </View>
+          <View style={styles.maskSide} />
+        </View>
+
+        <View style={styles.bottomSection}>
+          <Text style={styles.orText}>OR</Text>
+          <TouchableOpacity
+            style={styles.chooseImageButton}
+            onPress={handleChooseImage}
+            disabled={isLoading || isProcessingImage}
+          >
+            <ChooseImageButton width={width * 0.501} height={48} />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {(isLoading || isProcessingImage) && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#ffffff" />
+          <Text style={styles.loadingText}>
+            {isProcessingImage ? 'Processing Image...' : 'Verifying...'}
+          </Text>
+        </View>
+      )}
+
       <ScanResultModal
         visible={!!scanResult}
         onClose={closeModalAndReset}
         result={scanResult}
       />
-    </>
+    </View>
   );
 }
 
-// View 2 Styles
 const styles = StyleSheet.create({
-  menuContainer: {
+  container: {
+    flex: 1,
+    backgroundColor: 'black',
+  },
+  overlay: {
     flex: 1,
   },
-  safeArea: {
-    flex: 1,
-    paddingVertical: 20,
-    paddingHorizontal: 30,
-    paddingBottom: 100,
-  },
-  menuTitle: {
-    position: 'absolute',
-    top: SCREEN_HEIGHT * 0.05,
-    left: SCREEN_WIDTH * 0.05,
-  },
-  menuButton: {
-    marginTop: 120,
-    marginBottom: 20,
-    alignSelf: 'center',
-    width: 300,
-    height: 70,
-  },
-  buttonContainer: {
-    width: 300,
-    height: 70,
-    position: 'relative',
-  },
-  buttonSvg: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-  },
-  buttonTextContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: '100%',
-    height: '100%',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  topSection: {
+    height: 280,
+    backgroundColor: 'rgba(64, 26, 121, 0.7)',
+    justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 20,
   },
-  menuButtonSecondary: {
-    backgroundColor: '#D9D9D9',
-    padding: 10,
-    marginBottom: 50,
-    borderRadius: 15,
-    alignItems: 'center', 
-    marginTop: 60,
-    width: 150,
-    height: 70,
-    justifyContent: 'center',
-    alignSelf: 'center',
+  titleContainer: {
+    alignItems: 'center',
+    marginTop: 50,
   },
-  menuButtonBottom: {
-    backgroundColor: '#ADADAD',
-    alignItems: 'center', 
-    height: 60,
-    width: 200,
-    justifyContent: 'center',
-    marginTop: 'auto', 
-    marginBottom: 20,
-    alignSelf: 'center', 
-  },
-  menuButtonText: {
-    fontSize: 18,
-    fontWeight: '500',
-    color: 'white',
-    textAlign: 'center',
-    fontFamily: 'Tsukimi-Rounded-Bold',
-  },
-  menuButtonArrow: {
-    fontSize: 24,
+  scanTitleText: {
+    fontSize: 40,
     fontWeight: 'bold',
-    color: 'white',
-    fontFamily: 'Tsukimi-Rounded-Bold',
+    color: '#FFF',
+    fontFamily: 'Montserrat',
+    textAlign: 'center',
+  },
+  scanReasonText: {
+    fontSize: 40,
+    fontWeight: '600',
+    color: '#FFF',
+    fontFamily: 'Montserrat',
+    textAlign: 'center',
+    marginTop: 4,
+  },
+  instructionText: {
+    fontSize: 18,
+    fontWeight: '400',
+    color: '#E9E9E9',
+    fontFamily: 'Montserrat',
+    textAlign: 'center',
+    marginTop: 10,
+  },
+  middleSection: {
+    height: width * 0.7,
+    flexDirection: 'row',
+  },
+  maskSide: {
+    flex: 1,
+    backgroundColor: 'rgba(64, 26, 121, 0.7)',
+  },
+  qrBox: {
+    width: width * 0.7,
+    height: width * 0.7,
+    backgroundColor: 'transparent',
+    position: 'relative',
+    overflow: 'visible',
+  },
+  corner: {
+    position: 'absolute',
+    width: 50,
+    height: 50,
+    borderColor: '#FFF',
+    borderWidth: 3,
+    zIndex: 10,
+  },
+  cornerTopLeft: {
+    top: -15,
+    left: -15,
+    borderRightWidth: 0,
+    borderBottomWidth: 0,
+  },
+  cornerTopRight: {
+    top: -15,
+    right: -15,
+    borderLeftWidth: 0,
+    borderBottomWidth: 0,
+  },
+  cornerBottomLeft: {
+    bottom: -15,
+    left: -15,
+    borderRightWidth: 0,
+    borderTopWidth: 0,
+  },
+  cornerBottomRight: {
+    bottom: -15,
+    right: -15,
+    borderLeftWidth: 0,
+    borderTopWidth: 0,
+  },
+  bottomSection: {
+    flex: 1,
+    backgroundColor: 'rgba(64, 26, 121, 0.7)',
+    alignItems: 'center',
+    paddingTop: 60,
+  },
+  orText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#FFF',
+    fontFamily: 'Montserrat',
+    marginBottom: 25,
+  },
+  chooseImageButton: {
+    width: width * 0.501,
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 20,
+  },
+  loadingText: {
+    color: '#ffffff',
+    marginTop: 10,
+    fontSize: 16,
   },
 });
