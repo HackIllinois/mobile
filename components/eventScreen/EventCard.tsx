@@ -1,7 +1,9 @@
 import { View, Text, StyleSheet, Pressable, TouchableOpacity } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Defs, Mask, Rect, Circle, LinearGradient as SvgGradient, Stop } from 'react-native-svg';
 import { PillButton } from './PillButton';
 import { Event } from '../../types';
+import SpiralTop from "../../assets/event/SpiralTop.svg";
+import SpiralBottom from "../../assets/event/SpiralBottom.svg";
 
 interface EventCardProps {
   event: Event;
@@ -44,50 +46,72 @@ export function EventCard({ event, index, onPress, handleSave, onShowMenu, saved
             pressed && styles.pressed, 
           ]}
         >
-          <LinearGradient
-            colors={['#874186ff',   '#56269F']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.gradientBackground} 
-          >
-          <View style={styles.header}>
-            <Text numberOfLines={3} ellipsizeMode="tail" style={styles.title}>{event.name}</Text>
+          {/* SVG Masked Gradient replacing the standard LinearGradient */}
+          <View style={[StyleSheet.absoluteFill]}>
+            <Svg height="100%" width="100%">
+              <Defs>
+                <SvgGradient id="grad" x1="0" y1="0" x2="1" y2="1">
+                  <Stop offset="0" stopColor="#874186" stopOpacity="1" />
+                  <Stop offset="1" stopColor="#56269F" stopOpacity="1" />
+                </SvgGradient>
+                <Mask id="holeMask">
+                  <Rect width="100%" height="100%" fill="white" rx="16" />
+                  {/* Black circle cuts the hole. Adjusted cx to align with buttonContainer */}
+                  <Circle cx="96%" cy="16" r="7" fill="black" />
+                </Mask>
+              </Defs>
+              <Rect width="100%" height="100%" fill="url(#grad)" mask="url(#holeMask)" />
+            </Svg>
+          </View>
+
+          {/* Original Padding and Layout */}
+          <View style={styles.gradientBackground}>
+            <View style={styles.header}>
+              <Text numberOfLines={3} ellipsizeMode="tail" style={styles.title}>{event.name}</Text>
+              
+              <View style={styles.buttonContainer}>
+                {/* Transparent placeholder for the hole */}
+                <View style={{ height:2 }} />
+                <PillButton
+                  toggleSave={handleSavePress}
+                  points={event.points || 0} 
+                  isSaved={saved}
+                />
+              </View>
+            </View>
+
+            <Text style={styles.time}>
+              {formatTime(event.startTime)} - {formatTime(event.endTime)}
+            </Text>
+
+            {event.sponsor && <Text style={styles.secondaryText}>{event.sponsor}</Text>}
             
+            {event.locations?.[0]?.description && (
+                <Text numberOfLines={1} ellipsizeMode="tail" style={styles.location}>
+                    {event.locations?.[0]?.description || 'TBA'}
+                </Text>
+            )}
             <View style={styles.buttonContainer}>
-              <PillButton
-                toggleSave={handleSavePress}
-                points={event.points || 0} 
-                isSaved={saved}
-              />
+              <Text numberOfLines={1} ellipsizeMode="tail" style={styles.description}>
+                  {event.description}
+              </Text>
+              {event.eventType === "MEAL" && (
+                  <TouchableOpacity 
+                    style={styles.menuButton} 
+                    onPress={handleShowMenuPress}
+                  >
+                    <Text style={styles.menuButtonText}>Show Menu</Text>
+                  </TouchableOpacity>
+                )}
             </View>
           </View>
-
-          <Text style={styles.time}>
-            {formatTime(event.startTime)} - {formatTime(event.endTime)}
-          </Text>
-
-          {event.sponsor && <Text style={styles.secondaryText}>{event.sponsor}</Text>}
-          
-          {event.locations?.[0]?.description && (
-              <Text numberOfLines={1} ellipsizeMode="tail" style={styles.location}>
-                  {event.locations?.[0]?.description || 'TBA'}
-              </Text>
-          )}
-          <View style={styles.buttonContainer}>
-            <Text numberOfLines={1} ellipsizeMode="tail" style={styles.description}>
-                {event.description}
-            </Text>
-            {event.eventType === "MEAL" && (
-                <TouchableOpacity 
-                  style={styles.menuButton} 
-                  onPress={handleShowMenuPress}
-                >
-                  <Text style={styles.menuButtonText}>Show Menu</Text>
-                </TouchableOpacity>
-              )}
-          </View>
-          </LinearGradient>
-        </Pressable>      
+        </Pressable>
+        <View style={styles.spiralTopContainer}>
+           <SpiralTop width={90} height={40} />
+        </View>
+        <View style={styles.spiralBottomContainer}>
+           <SpiralBottom width={400} height={55} />
+        </View>      
       </View>
     </View>
   );
@@ -98,7 +122,7 @@ const styles = StyleSheet.create({
     marginBottom: 20 
   },
   cardContainer: {
-    marginHorizontal: 16,
+    marginHorizontal: 14,
     marginVertical: 8,
     position: 'relative',
   },
@@ -106,22 +130,23 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5C6FF', 
     borderRadius: 16,    
     position: 'absolute',
-    left: 4, 
-    right: -4,
+    left: 12, 
+    right: -10,
     top: 4, 
     bottom: -4,
-    transform: [{ rotate: '3deg' }], 
+    transform: [{ rotate: '2deg' }], 
   },  
   pressableContainer: {
     flex: 1,
     borderRadius: 16,
-    transform: [{ rotate: '-3deg' }],
+    transform: [{ rotate: '-7deg' }],
     shadowColor: '#000',
     shadowOpacity: 0.25,
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 6,
     elevation: 8,
-  },
+    backgroundColor: 'transparent',
+  }, 
   gradientBackground: {
     flex: 1, 
     borderRadius: 16, 
@@ -131,9 +156,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#D9D9D9',
     borderRadius: 12,
     padding: 16,
-    zIndex: 1, 
-    marginHorizontal: 0,
-    marginVertical: 0,     
+    zIndex: 1,      
     transform: [{ rotate: '-5deg' }],
   },  
   pressed: {
@@ -215,5 +238,22 @@ const styles = StyleSheet.create({
     color: '#ffffffff',
     textAlign: 'center',
     marginBottom: 25,
+  },
+  spiralTopContainer: {
+    position: 'absolute',
+    zIndex: 10,
+    right: -34,  
+    top: -50,    
+    pointerEvents: 'none', 
+    transform: [{rotate: '-20deg'}],
+  },
+
+  spiralBottomContainer: {
+    position: 'absolute',
+    zIndex: -1,
+    right: -175,   
+    top: -60,    
+    pointerEvents: 'none',
+    transform: [{rotate: '-20deg'}],
   },
 });
