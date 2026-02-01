@@ -23,6 +23,8 @@ import StarryBackground from '../../components/eventScreen/StarryBackground';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Event } from '../../types';
 import Title from "../../assets/event/page title.svg";
+import Moon from "../../assets/event/Moon.svg"
+import Sun from "../../assets/event/Sun.svg"
 
 type ScheduleMode = 'events' | 'mentorship';
 
@@ -207,8 +209,7 @@ export default function EventScreen() {
     const isMentors = scheduleMode === 'mentorship';
 
     if (!selectedDay) {
-      if (isMentors) return 'All mentors';
-      return selectedSave ? 'Saved events' : 'All events';
+      return isMentors ? 'All Mentors' : 'All Events';
     }
 
     const dayDate = new Date(selectedDay);
@@ -217,7 +218,7 @@ export default function EventScreen() {
     const dayPrefix = isCurrentDay ? "Today's" : dayDate.toLocaleDateString('en-US', { weekday: 'long' }) + "'s";
 
     if (isMentors) return `${dayPrefix} mentors`;
-    return `${dayPrefix} ${selectedSave ? 'saved events' : 'events'}`;
+    return `${dayPrefix} ${selectedSave ? 'Saved Events' : 'Events'}`;
   }, [selectedDay, selectedSave, scheduleMode]);
 
   const filteredItems = (() => {
@@ -390,22 +391,45 @@ export default function EventScreen() {
     <StarryBackground scrollY={scrollY}>
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <View style={{marginLeft: insets.left, marginBottom: -80, marginTop: -30}}> 
-          <Title/>
+          <Title style={{marginLeft: 10}}/>
         </View>
 
         {eventDays.length > 0 && (
-          <View style={[styles.tabs, { padding: 0, paddingHorizontal: 30, marginBottom: 10 }]}>
-            {eventDays.map((day) => (
-              <TouchableOpacity
-                key={day.id}
-                style={[styles.dayButton, selectedDay === day.id && { backgroundColor: '#7551D1' }]}
-                onPress={() => handleDayPress(day.id)}
-              >
-                <Text style={[styles.dayButtonText, selectedDay === day.id && { color: '#ffffff' }]}>
-                  {isToday(day.date) ? 'Today' : day.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
+          <View style={styles.daysContainer}>
+            <View style={[styles.tabs, { paddingHorizontal: 30, marginBottom: 10, flexDirection: 'row', justifyContent: 'space-between' }]}>
+              {eventDays.map((day) => {
+                const isSelected = selectedDay === day.id;
+                const isTodayDate = isToday(day.date);
+
+                return (
+                  <View key={day.id} style={styles.dayWrapper}>
+                    {/* Background Layer: The Large SVG */}
+                    <View style={styles.svgBackground}>
+                      {isSelected ? (
+                        <Sun width={90} height={90} style={{marginBottom: 0}}/> 
+                      ) : (
+                        <Moon width={80} height={80} />
+                      )}
+                    </View>
+
+                    <TouchableOpacity
+                      style={styles.dayButtonOverlay}
+                      onPress={() => handleDayPress(day.id)}
+                    >
+                      <Text style={[
+                        styles.dayButtonText, 
+                        isSelected ? styles.selectedText : styles.unselectedText
+                      ]}>
+                        {isTodayDate ? 'Today' : day.label}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                );
+              })}
+            </View>
+            <Text style={styles.sectionTitle}>
+              {sectionTitleText}
+            </Text>
           </View>
         )}
 
@@ -419,9 +443,8 @@ export default function EventScreen() {
             marginTop: 10,
           }}
         >
-          <Text style={[styles.sectionTitle, { marginLeft: -10 }]}>{sectionTitleText}</Text>
 
-          <View style={{ flexDirection: 'row', gap: 10 }}>
+          <View style={{ flexDirection: 'row', gap: 80 }}>
             <TouchableOpacity
               onPress={() => {
                 setScheduleMode((prev) => (prev === 'events' ? 'mentorship' : 'events'));
@@ -499,6 +522,10 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
 
+  daysContainer: {
+    justifyContent: 'center',
+  },
+
   text: {
     fontSize: 14,
     fontWeight: '800',
@@ -525,17 +552,23 @@ const styles = StyleSheet.create({
   },
 
   dayButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-    textAlign: 'center',
     fontSize: 14,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
 
   sectionTitle: {
     color: 'white',
-    fontSize: 18,
+    fontSize: 28,
     fontWeight: 'bold',
-    fontFamily: 'Montserrat',
+    fontFamily: 'TsukimiRounded_700Bold',
+    marginBottom: 10, 
+    marginTop: -12,     
+    letterSpacing: 0.2,
+    alignSelf: 'center'
   },
 
   reminderButton: {
@@ -726,4 +759,28 @@ const styles = StyleSheet.create({
     borderColor: '#ddd',
   },
   modalTopicChipText: { fontSize: 12, fontWeight: '800', color: '#333' },
+  dayWrapper: {
+    width: 80,
+    height: 80,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative', // Key for absolute children
+  },
+  svgBackground: {
+    position: 'absolute',
+    zIndex: 1, // Sits behind the text
+  },
+  dayButtonOverlay: {
+    zIndex: 2, // Sits on top to capture touches
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+    height: '100%',
+  },
+  selectedText: {
+    color: '#ffffff',
+  },
+  unselectedText: {
+    color: '#444444', 
+  },
 });
