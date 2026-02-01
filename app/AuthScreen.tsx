@@ -5,20 +5,27 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   StyleSheet,
-  Image,
   Alert,
+  Dimensions,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import * as WebBrowser from "expo-web-browser";
 import * as SecureStore from "expo-secure-store";
-import { makeRedirectUri, } from "expo-auth-session";
-import * as AuthSession from "expo-auth-session";
 import { useRouter } from "expo-router";
 import { AxiosResponse } from "axios";
+import LoginBackground from "../assets/login-background.svg";
 
 import api from "../api";
 
 WebBrowser.maybeCompleteAuthSession();
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
+
+// SVG viewBox dimensions
+const SVG_WIDTH = 440;
+const SVG_HEIGHT = 956;
+
+// Attendee button position in SVG coordinates
+const ATTENDEE_BTN = { x: 103, y: 605, width: 236, height: 47 };
 
 interface AuthRolesResponse {
   id: string;
@@ -29,7 +36,6 @@ export default function AuthScreen({ navigation }: any) {
   const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [loadingGitHub, setLoadingGitHub] = useState(false);
   const router = useRouter();
-
 
   const redirectUri = "hackillinois://auth";
 
@@ -44,53 +50,46 @@ export default function AuthScreen({ navigation }: any) {
 
       await SecureStore.setItemAsync("jwt", token);
 
-      // Caching User Roles 
+      // Caching User Roles
       const roleResponse = await api.get<AxiosResponse<AuthRolesResponse>>(
         "/auth/roles/",
         {
           headers: {
-            // Ensure backend receives a Bearer token even before interceptors run
             Authorization: token.startsWith("Bearer ")
               ? token
               : `Bearer ${token}`,
           },
         }
       );
-        
+
       if (!roleResponse.data || !roleResponse.data.roles) {
         throw new Error("Role data not found in response");
       }
 
-      const roles = roleResponse.data.roles; 
+      const roles = roleResponse.data.roles;
       await SecureStore.setItemAsync("userRoles", JSON.stringify(roles));
-      // console.log("Roles cached:", roles);
-
 
       Alert.alert("Login successful!");
       router.replace("/(tabs)/Home");
       } catch (err) {
-        throw err; 
+        throw err;
       }
     } else {
       Alert.alert("Login canceled or failed");
     }
   };
-  
+
   const handleGoogleLogin = async () => {
     try {
       setLoadingGoogle(true);
 
-      console.log("Redirect URI:", redirectUri);
-
       const authUrl = `${api.axiosInstance.defaults.baseURL}/auth/login/google?redirect=${encodeURIComponent(
         redirectUri
       )}`;
-      console.log("Auth URL:", authUrl);
 
       const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri, {
-      preferEphemeralSession: true, 
-    });
-    //   console.log("Auth Result:", result);
+        preferEphemeralSession: true,
+      });
 
       await handleAuthResult(result);
     } catch (err) {
@@ -109,10 +108,9 @@ export default function AuthScreen({ navigation }: any) {
       const authUrl = `${api.axiosInstance.defaults.baseURL}/auth/login/github?redirect=${encodeURIComponent(
         redirectUri
       )}`;
-      console.log("GitHub Auth URL:", authUrl);
       const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri, {
-      preferEphemeralSession: true, 
-    });
+        preferEphemeralSession: true,
+      });
       await handleAuthResult(result);
     } catch (err) {
       console.error(err);
@@ -124,69 +122,100 @@ export default function AuthScreen({ navigation }: any) {
     }
   };
 
+  // Convert SVG coordinates to screen coordinates, accounting for
+  // preserveAspectRatio="xMidYMid slice" which scales uniformly to cover
+  // the entire screen and then centers/crops the overflow axis.
+  const screenRatio = SCREEN_WIDTH / SCREEN_HEIGHT;
+  const svgRatio = SVG_WIDTH / SVG_HEIGHT;
+
+  // "slice" picks the larger scale so the SVG fully covers the screen
+  const scale =
+    screenRatio > svgRatio
+      ? SCREEN_WIDTH / SVG_WIDTH   // screen is wider → scale to width
+      : SCREEN_HEIGHT / SVG_HEIGHT; // screen is taller → scale to height
+
+  // Offset caused by centering the oversized axis
+  const offsetX = (SCREEN_WIDTH - SVG_WIDTH * scale) / 2;
+  const offsetY = (SCREEN_HEIGHT - SVG_HEIGHT * scale) / 2;
+
+  const attendeeBtnStyle = {
+    position: "absolute" as const,
+    left: ATTENDEE_BTN.x * scale + offsetX,
+    top: ATTENDEE_BTN.y * scale + offsetY,
+    width: ATTENDEE_BTN.width * scale,
+    height: ATTENDEE_BTN.height * scale,
+    borderRadius: 23.5 * scale,
+  };
+
   return (
-    <LinearGradient
-      colors={["#0a0a0a", "#1b1b1b", "#0a0a0a"]}
-      style={styles.container}
-    >
-      <View style={styles.logoContainer}>
-        <Image
-          source={require("../assets/Hack-Logo-png.png")}
-          style={styles.logo}
-          resizeMode="contain"
+    <View style={styles.container}>
+      <View style={styles.svgContainer}>
+        <LoginBackground
+          width={SCREEN_WIDTH}
+          height={SCREEN_HEIGHT}
+          preserveAspectRatio="xMidYMid slice"
         />
-        <Text style={styles.title}>HACK{"\n"}ILLINOIS</Text>
       </View>
 
+      {/* Attendee button overlay (GitHub login) */}
       <TouchableOpacity
-        style={styles.button}
+        style={[styles.overlayButton, attendeeBtnStyle]}
+        onPress={handleGitHubLogin}
+        disabled={loadingGoogle || loadingGitHub}
+        activeOpacity={0.7}
+      >
+        {loadingGitHub && <ActivityIndicator color="#fff" />}
+      </TouchableOpacity>
+
+      {/* Staff button below attendee */}
+      <TouchableOpacity
+        style={[
+          styles.staffButton,
+          {
+            position: "absolute",
+            top: (ATTENDEE_BTN.y + ATTENDEE_BTN.height) * scale + offsetY + 20,
+            alignSelf: "center",
+          },
+        ]}
         onPress={handleGoogleLogin}
         disabled={loadingGoogle || loadingGitHub}
+        activeOpacity={0.7}
       >
         {loadingGoogle ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={styles.buttonText}>Staff Signin</Text>
+          <Text style={styles.staffText}>Staff</Text>
         )}
       </TouchableOpacity>
-
-        <View style={{ height: 20 }} />
-        <TouchableOpacity
-            style={[styles.button, { backgroundColor: "#24292e" }]}
-            onPress={handleGitHubLogin}
-            disabled={loadingGoogle || loadingGitHub}
-        >
-            {loadingGitHub ? (
-            <ActivityIndicator color="#fff" />
-            ) : (
-            <Text style={styles.buttonText}>Attendee Signin</Text>
-            )}
-        </TouchableOpacity>
-
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: "center", alignItems: "center" },
-  logoContainer: { alignItems: "center", marginBottom: 120 },
-  logo: { width: 140, height: 140, marginBottom: 24, tintColor: "#f5f5f5" },
-  title: {
-    textAlign: "center",
-    fontSize: 28,
-    fontWeight: "900",
-    color: "#f5f5f5",
-    letterSpacing: 1.2,
+  container: {
+    flex: 1,
+    backgroundColor: "#000",
   },
-  button: {
-    backgroundColor: "#4285F4",
-    paddingVertical: 14,
-    paddingHorizontal: 40,
-    borderRadius: 30,
-    shadowColor: "#000",
-    shadowOpacity: 0.25,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 6,
+  svgContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT,
   },
-  buttonText: { color: "white", fontSize: 16, fontWeight: "600" },
+  overlayButton: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  staffButton: {
+    left: 0,
+    right: 0,
+    alignItems: "center",
+    paddingVertical: 12,
+  },
+  staffText: {
+    fontFamily: "Tsukimi-Rounded-Bold",
+    fontSize: 18,
+    color: "#FFFFFF",
+  },
 });

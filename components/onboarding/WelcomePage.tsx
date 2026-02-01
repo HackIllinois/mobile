@@ -90,7 +90,10 @@ export default function WelcomePage({ onFinish, onStart, cloudX1, cloudX2, starO
                 left: scaleWidth(33),
                 width: scaleWidth(327),
             }}>
-                <Text style={[
+                <Text
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    style={[
                     styles.headerText,
                     {
                         fontSize: scaleFontSize(28),

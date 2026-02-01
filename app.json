@@ -5,7 +5,7 @@
     "slug": "mobile",
     "version": "2026.0.1",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/logo.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
