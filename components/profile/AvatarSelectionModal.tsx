@@ -7,14 +7,21 @@ import {
   Animated,
   useWindowDimensions,
   ActivityIndicator,
+  Pressable,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import api from '../../api';
 
 import ChooseTitleSvg from '../../assets/profile/avatar-screen/choose-title.svg';
 import UfoTractorBeamSvg from '../../assets/profile/avatar-screen/ufo-tractor-beam.svg';
 import SelectAvatarButtonsSvg from '../../assets/profile/avatar-screen/select-avatar-buttons.svg';
 import BackgroundSvg from '../../assets/profile/background.svg';
-import NavBarSvg from '../../assets/profile/nav-bar.svg';
+import NavbarBackground from '../../assets/navbar/Background.svg';
+import HomeIcon from '../../assets/navbar/Home.svg';
+import EventsIcon from '../../assets/navbar/Calendar.svg';
+import QrCodeIcon from '../../assets/navbar/Camera.svg';
+import PointsIcon from '../../assets/navbar/Shop.svg';
+import DuelsIcon from '../../assets/navbar/Duels.svg';
 
 import Character1AvatarSvg from '../../assets/profile/avatar-screen/avatars/character1.svg';
 import Character2AvatarSvg from '../../assets/profile/avatar-screen/avatars/character2.svg';
@@ -54,6 +61,7 @@ export const AvatarSelectionModal: React.FC<AvatarSelectionModalProps> = ({
   onAvatarSelected,
 }) => {
   const { width, height } = useWindowDimensions();
+  const router = useRouter();
 
   const figmaWidth = 393;
   const figmaHeight = 852;
@@ -406,20 +414,107 @@ export const AvatarSelectionModal: React.FC<AvatarSelectionModalProps> = ({
             </View>
           )}
 
-          {/* Navbar */}
-          {/* TODO: Doesn't work, make it fixed */}
+          {/* Navbar - matches CurvedTabBar */}
           <View style={{
             position: 'absolute',
             bottom: 0,
             left: 0,
             width: width,
-            height: scaleWidth(108),
+            height: 85,
             zIndex: 5,
           }}>
-            <NavBarSvg
-              width={width}
-              height={scaleWidth(108)}
-            />
+            <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
+              <NavbarBackground
+                width={width}
+                height={85}
+                preserveAspectRatio="none"
+              />
+            </View>
+            {/* Home */}
+            <Pressable
+              style={{
+                position: 'absolute',
+                left: width * 0.10 - 30,
+                top: 0,
+                width: 60,
+                height: '100%',
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
+              onPress={() => { onClose(); router.navigate('/Home'); }}
+            >
+              <HomeIcon width={40} height={40} color="rgba(255, 255, 255, 0.6)" />
+            </Pressable>
+            {/* Event */}
+            <Pressable
+              style={{
+                position: 'absolute',
+                left: width * 0.28 - 30,
+                top: 0,
+                width: 60,
+                height: '100%',
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
+              onPress={() => { onClose(); router.navigate('/Event'); }}
+            >
+              <EventsIcon width={40} height={40} color="rgba(255, 255, 255, 0.6)" />
+            </Pressable>
+            {/* Scan (center) */}
+            <Pressable
+              style={{
+                position: 'absolute',
+                left: (width / 2) - 42.5,
+                top: -35,
+                width: 85,
+                height: 85,
+                borderRadius: 42.5,
+                backgroundColor: '#3b1d61',
+                borderWidth: 5,
+                borderColor: '#000',
+                justifyContent: 'center',
+                alignItems: 'center',
+                zIndex: 10,
+                shadowColor: '#000',
+                shadowOpacity: 0.4,
+                shadowRadius: 8,
+                shadowOffset: { width: 0, height: 4 },
+                elevation: 8,
+              }}
+              onPress={() => { onClose(); router.navigate('/Scan'); }}
+            >
+              <QrCodeIcon width={85} height={85} color="#DF4F44" />
+            </Pressable>
+            {/* Shop */}
+            <Pressable
+              style={{
+                position: 'absolute',
+                left: width * 0.72 - 30,
+                top: 0,
+                width: 60,
+                height: '100%',
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
+              onPress={() => { onClose(); router.navigate('/Shop'); }}
+            >
+              <PointsIcon width={40} height={40} color="rgba(255, 255, 255, 0.6)" />
+            </Pressable>
+            {/* Duels */}
+            <Pressable
+              style={{
+                position: 'absolute',
+                left: width * 0.90 - 30,
+                top: 0,
+                width: 60,
+                height: '100%',
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
+              onPress={() => { onClose(); router.navigate('/Duels'); }}
+            >
+              <DuelsIcon width={40} height={40} color="rgba(255, 255, 255, 0.6)" />
+            </Pressable>
           </View>
       </View>
     </Modal>
