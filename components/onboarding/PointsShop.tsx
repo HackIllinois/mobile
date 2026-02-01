@@ -32,9 +32,9 @@ export default function ScreenThree({ onFinish, onStart, cloudX1, cloudX2, starO
     const IPHONE_HEIGHT = scaleHeight(419.03875732421875);
     const IPHONE_TOP = scaleHeight(175);
     const IPHONE_LEFT = scaleWidth(94);
-    const HEADER_WIDTH = scaleWidth(335);
+    const HEADER_WIDTH = width - scaleWidth(40);
     const HEADER_TOP = scaleHeight(632);
-    const HEADER_LEFT = scaleWidth(29);
+    const HEADER_LEFT = scaleWidth(20);
     const NEXT_BUTTON_WIDTH = scaleWidth(135);
     const NEXT_BUTTON_HEIGHT = scaleHeight(44);
     const NAVBAR_HEIGHT = scaleHeight(35);
@@ -133,12 +133,16 @@ export default function ScreenThree({ onFinish, onStart, cloudX1, cloudX2, starO
                     lineHeight: scaleHeight(32),
                     letterSpacing: scaleWidth(0.14),
                 }]}>POINT SHOP</Text>
-                <Text style={[styles.subtitleText, {
+                <Text
+                    adjustsFontSizeToFit
+                    numberOfLines={2}
+                    style={[styles.subtitleText, {
                     fontSize: scaleFontSize(16),
                     lineHeight: scaleHeight(22),
                     letterSpacing: scaleWidth(1.0),
                     marginTop: scaleHeight(10),
                     alignSelf: 'center',
+                    width: '90%',
                 }]}>
                     View the available prizes you can redeem using your earned points!
                 </Text>
@@ -213,7 +217,6 @@ const styles = StyleSheet.create({
         textAlign: "center",
     },
     subtitleText: {
-        width: "75%",
         fontFamily: "Montserrat",
         fontWeight: "500",
         textAlign: "center",
