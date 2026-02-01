@@ -6,6 +6,9 @@ const backgroundImage = require('../../assets/duels/duels-background.png');
 const userShipImage = require('../../assets/duels/duels-ship-user.png');
 const enemyShipImage = require('../../assets/duels/duels-ship-enemy.png');
 const buttonImage = require('../../assets/duels/duels-button.png');
+const tutorialImage1 = require('../../assets/duels/duels-controls-1.png');
+const tutorialImage2 = require('../../assets/duels/duels-controls-2.png');
+const tutorialImage3 = require('../../assets/duels/duels-controls-3.png');
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../../api';
@@ -39,7 +42,7 @@ try {
 type Screen = 'home' | 'hosting' | 'browsing' | 'connected';
 type Lobby = { endpointId: string; endpointName: string };
 type Role = 'host' | 'guest';
-type GamePhase = 'waiting' | 'playing' | 'win' | 'lose' | 'tie' | 'game_over';
+type GamePhase = 'waiting' | 'tutorial' | 'playing' | 'win' | 'lose' | 'tie' | 'waiting_result' | 'game_over';
 
 type Ship = {
   x: number;        // 0-1 normalized
@@ -62,10 +65,15 @@ type Bullet = {
 type GameMessage = 
   | { type: 'ready'; screenRatio: number }
   | { type: 'start_game'; worldRatio: number }
-  | { type: 'state'; x: number; y: number; angle: number }
+  | { type: 'state'; x: number; y: number; angle: number; hostScore?: number; guestScore?: number }
   | { type: 'bullet'; id: string; x: number; y: number; angle: number; spawnTime: number }
   | { type: 'hit'; victimId: string }
-  | { type: 'restart' };
+  | { type: 'round_result'; winner: 'host' | 'guest' | 'tie' }
+  | { type: 'round_ack' }
+  | { type: 'game_over'; winner: 'host' | 'guest' }
+  | { type: 'restart' }
+  | { type: 'start_tutorial' }
+  | { type: 'tutorial_complete' };
 
 // ======================
 // CONSTANTS
@@ -80,7 +88,9 @@ const SHIP_DISPLAY_SIZE = 40;   // pixels
 const BULLET_DISPLAY_SIZE = 10; // pixels
 const INTERPOLATION_SPEED = 12; // Higher = faster catch-up to target position
 const MAX_AMMO = 3;             // Maximum bullets player can have
-const RELOAD_TIME = 1500;        // ms to reload one bullet
+const RELOAD_TIME = 1500;       // ms to reload one bullet
+const TIE_WINDOW = 50;         // ms window to consider simultaneous hits as a tie
+const BORDER_MARGIN_PX = 5;    // Keep ships away from screen edges (in pixels)
 
 export default function Duels() {
   // ======================
@@ -114,6 +124,14 @@ export default function Duels() {
   const [ammo, setAmmo] = useState(MAX_AMMO);
   const [reloading, setReloading] = useState(0); // Number of bullets currently reloading
   
+  // Tutorial State
+  const [tutorialStep, setTutorialStep] = useState(0); // 0, 1, 2 = showing images, 3 = finished
+  const [opponentFinishedTutorial, setOpponentFinishedTutorial] = useState(false);
+  
+  // Handshake state for reliable restarts
+  const [minTimeElapsed, setMinTimeElapsed] = useState(false);
+  const [guestReadyToRestart, setGuestReadyToRestart] = useState(false);
+
   // Refs for game loop
   const myShipRef = useRef(myShip);
   const myBulletsRef = useRef(myBullets);
@@ -123,14 +141,28 @@ export default function Duels() {
   const isRotatingRef = useRef(isRotating);
   const gamePhaseRef = useRef(gamePhase);
   
+  // Refs for tie detection timing
+  // We track a pending result to allow for tie detection window
+  type PendingResult = {
+    winner: 'host' | 'guest';
+    timestamp: number;
+    processed: boolean; // to avoid re-triggering logic
+  };
+  const pendingResultRef = useRef<PendingResult | null>(null);
+
+  // Refs for ammo reload cleanup
+  const reloadTimeoutsRef = useRef<NodeJS.Timeout[]>([]);
+  
   // Keep refs in sync
-  useEffect(() => { myShipRef.current = myShip; }, [myShip]);
-  useEffect(() => { myBulletsRef.current = myBullets; }, [myBullets]);
-  useEffect(() => { opponentShipRef.current = opponentShip; }, [opponentShip]);
-  useEffect(() => { opponentTargetRef.current = opponentTarget; }, [opponentTarget]);
-  useEffect(() => { opponentBulletsRef.current = opponentBullets; }, [opponentBullets]);
-  useEffect(() => { isRotatingRef.current = isRotating; }, [isRotating]);
-  useEffect(() => { gamePhaseRef.current = gamePhase; }, [gamePhase]);
+  useEffect(() => {
+    myShipRef.current = myShip;
+    myBulletsRef.current = myBullets;
+    opponentShipRef.current = opponentShip;
+    opponentTargetRef.current = opponentTarget;
+    opponentBulletsRef.current = opponentBullets;
+    isRotatingRef.current = isRotating;
+    gamePhaseRef.current = gamePhase;
+  });
   
   // Screen dimensions
   const insets = useSafeAreaInsets();
@@ -143,6 +175,10 @@ export default function Duels() {
   const gameWidth = screenWidth;
   const gameHeight = screenHeight - insets.top - tabBarHeight;
   const screenRatio = screenWidth / gameHeight;
+  
+  // Calculate border margins as normalized values (pixels / dimension)
+  const borderMarginX = BORDER_MARGIN_PX / gameWidth;
+  const borderMarginY = BORDER_MARGIN_PX / gameHeight;
 
   // Profile state - fetch displayName from API
   const [displayName, setDisplayName] = useState<string | null>(null);
@@ -173,38 +209,24 @@ export default function Duels() {
     setRole(null);
     setGamePhase('waiting');
     setGuestRatio(null);
+    setTutorialStep(0);
+    setOpponentFinishedTutorial(false);
+    setMyScore(0);
+    setOpponentScore(0);
+    setFinalWinner(null);
     setScreen('home');
   }
 
-  // Dummy function that logs round results
-  const onRoundEnd = (winner: 'player' | 'opponent', playerScore: number, opponentScoreVal: number) => {
-    console.log('=== ROUND END ===');
-    console.log(`Winner: ${winner}`);
-    console.log(`Current Score - Player: ${playerScore}, Opponent: ${opponentScoreVal}`);
-    console.log('=================');
-  };
-
-  const roundLost = () => {
-    setOpponentScore(prev => {
-      const newScore = prev + 1;
-      onRoundEnd('opponent', myScore, newScore);
-      return newScore;
-    });
-  }
-
-  const roundWon = () => {
-    setMyScore(prev => {
-      const newScore = prev + 1;
-      onRoundEnd('player', newScore, opponentScore);
-      return newScore;
-    });
-  }
+  const roundLost = () => setOpponentScore(prev => prev + 1);
+  const roundWon = () => setMyScore(prev => prev + 1);
 
   const goBackToLobby = () => {
     setMyScore(0);
     setOpponentScore(0);
     setFinalWinner(null);
     setGamePhase('waiting');
+    setTutorialStep(0);
+    setOpponentFinishedTutorial(false);
     // Re-send ready message if guest
     if (role === 'guest') {
       const msg: GameMessage = { type: 'ready', screenRatio };
@@ -218,6 +240,17 @@ export default function Duels() {
   }
 
   const resetGameState = useCallback(() => {
+    // Clear any pending reload timeouts
+    reloadTimeoutsRef.current.forEach(clearTimeout);
+    reloadTimeoutsRef.current = [];
+    
+    // Clear pending results
+    pendingResultRef.current = null;
+    
+    // Reset handshake state
+    setMinTimeElapsed(false);
+    setGuestReadyToRestart(false);
+
     // Host starts top-left, Guest starts bottom-right
     const startPos = role === 'host' 
       ? { x: 0.2, y: 0.2, angle: Math.PI / 4 }
@@ -267,10 +300,15 @@ export default function Duels() {
     LocalConnectionModule.sendData(JSON.stringify(bulletMsg));
     
     // Start reload timer for this bullet
-    setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       setReloading(prev => prev - 1);
       setAmmo(prev => Math.min(prev + 1, MAX_AMMO));
+      
+      // Remove this timeout from the ref list
+      reloadTimeoutsRef.current = reloadTimeoutsRef.current.filter(id => id !== timeoutId);
     }, RELOAD_TIME);
+    
+    reloadTimeoutsRef.current.push(timeoutId);
   }, [ammo]);
 
   const checkBulletHit = (bullet: Bullet, ship: Ship): boolean => {
@@ -334,14 +372,36 @@ export default function Duels() {
             case 'start_game':
               // Guest receives world ratio and starts
               setWorldRatio(msg.worldRatio);
+              setMyScore(0);
+              setOpponentScore(0);
               resetGameState();
               setGamePhase('playing');
               break;
             case 'state':
+              // Implicit Restart: If we are stuck in a post-game screen but receiving live game state,
+              // it means we missed the 'restart' message. Sync up immediately.
+              // Also check 'waiting_result' to fix frozen duel screen deadlock.
+              if (role === 'guest' && (gamePhaseRef.current === 'win' || gamePhaseRef.current === 'lose' || gamePhaseRef.current === 'tie' || gamePhaseRef.current === 'waiting_result')) {
+                 resetGameState();
+                 setGamePhase('playing');
+              }
+
               // Update opponent target position (will be interpolated in game loop)
               setOpponentTarget(prev => ({ ...prev, x: msg.x, y: msg.y, angle: msg.angle }));
+              
+              if (role === 'guest') {
+                if (msg.hostScore !== undefined) setOpponentScore(msg.hostScore);
+                if (msg.guestScore !== undefined) setMyScore(msg.guestScore);
+              }
               break;
             case 'bullet':
+              // Implicit Restart check for bullet messages too
+              // Also check 'waiting_result' to fix frozen duel screen deadlock.
+              if (role === 'guest' && (gamePhaseRef.current === 'win' || gamePhaseRef.current === 'lose' || gamePhaseRef.current === 'tie' || gamePhaseRef.current === 'waiting_result')) {
+                 resetGameState();
+                 setGamePhase('playing');
+              }
+
               // Opponent fired a bullet - add it with initial data for local simulation
               setOpponentBullets(prev => {
                 // Avoid duplicate bullets
@@ -359,12 +419,59 @@ export default function Duels() {
               });
               break;
             case 'hit':
-              roundLost();
-              setGamePhase('lose');
+              // Legacy hit message - kept for compatibility but round_result is authoritative
+              break;
+            case 'round_result':
+              // Guest receives authoritative result from host
+              if (role === 'guest') {
+                // Prevent duplicate score increments if we already processed this result
+                const currentPhase = gamePhaseRef.current;
+                if (currentPhase === 'win' || currentPhase === 'lose' || currentPhase === 'tie') {
+                   // Just acknowledge again, don't change state or score
+                } else {
+                    if (msg.winner === 'tie') {
+                        setGamePhase('tie');
+                    } else if (msg.winner === 'guest') {
+                        // Guest won
+                        roundWon();
+                        setGamePhase('win');
+                    } else {
+                        // Host won, so guest lost
+                        roundLost();
+                        setGamePhase('lose');
+                    }
+                }
+                
+                // Acknowledge receipt so host knows we are ready for next round
+                const ackMsg: GameMessage = { type: 'round_ack' };
+                setTimeout(() => {
+                    LocalConnectionModule.sendData(JSON.stringify(ackMsg));
+                }, 50); // Small delay to ensure state update processes
+              }
+              break;
+            case 'round_ack':
+              // Host receives acknowledgement from guest
+              if (role === 'host') {
+                setGuestReadyToRestart(true);
+              }
+              break;
+            case 'game_over':
+              // Guest receives game over message
+              if (role === 'guest') {
+                finishGame(msg.winner === 'host' ? 'opponent' : 'player');
+              }
               break;
             case 'restart':
               resetGameState();
               setGamePhase('playing');
+              break;
+            case 'start_tutorial':
+              resetGameState();
+              setTutorialStep(0);
+              setGamePhase('tutorial');
+              break;
+            case 'tutorial_complete':
+              setOpponentFinishedTutorial(true);
               break;
           }
           return;
@@ -420,7 +527,7 @@ export default function Duels() {
     });
 
     return () => subscription.remove();
-  }, [resetGameState]);
+  }, [resetGameState, role]); // Added role to dependencies
 
   // Handle pending invite alerts (hosting screen)
   useEffect(() => {
@@ -479,34 +586,32 @@ export default function Duels() {
         let newX = prev.x + Math.cos(prev.angle) * SHIP_SPEED * dt;
         let newY = prev.y + Math.sin(prev.angle) * SHIP_SPEED * dt;
         
-        // Border collision (stop at walls, don't bounce)
-        newX = Math.max(0, Math.min(1, newX));
-        newY = Math.max(0, Math.min(1, newY));
+        // Border collision (stop at walls, don't bounce) - use margin to keep ships visible
+        newX = Math.max(borderMarginX, Math.min(1 - borderMarginX, newX));
+        newY = Math.max(borderMarginY, Math.min(1 - borderMarginY, newY));
+        
+        // Check for edge case where ships could go out of bounds if they were already out
+        if(isNaN(newX)) newX = 0.5;
+        if(isNaN(newY)) newY = 0.5;
         
         return { ...prev, x: newX, y: newY };
       });
       
-      // 3. Update my bullets
-      setMyBullets(prev => {
-        return prev
+      // Helper to update and filter bullets
+      const updateBullets = (bullets: Bullet[]) =>
+        bullets
           .map(b => ({
             ...b,
             x: b.x + Math.cos(b.angle) * BULLET_SPEED * dt,
             y: b.y + Math.sin(b.angle) * BULLET_SPEED * dt,
           }))
-          .filter(b => b.x >= 0 && b.x <= 1 && b.y >= 0 && b.y <= 1);
-      });
+          .filter(b => b.x >= borderMarginX && b.x <= 1 - borderMarginX && b.y >= borderMarginY && b.y <= 1 - borderMarginY);
+      
+      // 3. Update my bullets
+      setMyBullets(updateBullets);
       
       // 4. Update opponent bullets (simulate locally based on initial angle)
-      setOpponentBullets(prev => {
-        return prev
-          .map(b => ({
-            ...b,
-            x: b.x + Math.cos(b.angle) * BULLET_SPEED * dt,
-            y: b.y + Math.sin(b.angle) * BULLET_SPEED * dt,
-          }))
-          .filter(b => b.x >= 0 && b.x <= 1 && b.y >= 0 && b.y <= 1);
-      });
+      setOpponentBullets(updateBullets);
       
       // 5. Interpolate opponent ship towards target position (smoothing)
       const target = opponentTargetRef.current;
@@ -527,9 +632,10 @@ export default function Duels() {
         return { ...prev, x: newX, y: newY, angle: newAngle };
       });
       
-      // 6. Check collisions - detect both hit directions to handle ties
+      // 6. Check collisions - detect both hit directions
       const opponent = opponentShipRef.current;
       const myShipCurrent = myShipRef.current;
+      // Note: 'now' is already defined at the top of the loop
       
       let iHitOpponent = false;
       let opponentHitMe = false;
@@ -550,23 +656,75 @@ export default function Duels() {
         }
       }
       
-      // Handle outcomes - check for tie first
-      if (iHitOpponent && opponentHitMe) {
-        // Both hit each other in the same frame - it's a tie!
-        setGamePhase('tie');
-        return;
-      } else if (iHitOpponent) {
-        // I hit opponent, I win this round
-        const hitMsg: GameMessage = { type: 'hit', victimId: 'opponent' };
-        LocalConnectionModule.sendData(JSON.stringify(hitMsg));
-        roundWon();
-        setGamePhase('win');
-        return;
-      } else if (opponentHitMe) {
-        // Opponent hit me, I lose this round
-        roundLost();
-        setGamePhase('lose');
-        return;
+      // Only host determines collision outcomes (authoritative)
+      if (role === 'host') {
+        const pending = pendingResultRef.current;
+
+        // Check for immediate tie (simultaneous hits in same frame)
+        if (iHitOpponent && opponentHitMe) {
+          if (!pending || !pending.processed) {
+            const resultMsg: GameMessage = { type: 'round_result', winner: 'tie' };
+            LocalConnectionModule.sendData(JSON.stringify(resultMsg));
+            setGamePhase('tie');
+            pendingResultRef.current = { winner: 'tie' as any, timestamp: now, processed: true }; // Mark as processed
+          }
+           // Loop ends naturally or gamePhase change stops it
+          return;
+        }
+
+        // Check if we need to resolve a pending result
+        if (pending && !pending.processed) {
+           // If we have a pending win but now the other player also hit, it's a tie
+           if (pending.winner === 'host' && opponentHitMe) {
+             // Tie!
+             const resultMsg: GameMessage = { type: 'round_result', winner: 'tie' };
+             LocalConnectionModule.sendData(JSON.stringify(resultMsg));
+             setGamePhase('tie');
+             pending.processed = true;
+             return;
+           }
+           if (pending.winner === 'guest' && iHitOpponent) {
+              // Tie!
+             const resultMsg: GameMessage = { type: 'round_result', winner: 'tie' };
+             LocalConnectionModule.sendData(JSON.stringify(resultMsg));
+             setGamePhase('tie');
+             pending.processed = true;
+             return;
+           }
+
+           // Check if time window expired
+           if (now - pending.timestamp > TIE_WINDOW) {
+             // Commit the pending result
+             if (pending.winner === 'host') {
+               const resultMsg: GameMessage = { type: 'round_result', winner: 'host' };
+               LocalConnectionModule.sendData(JSON.stringify(resultMsg));
+               roundWon();
+               setGamePhase('win');
+             } else {
+               const resultMsg: GameMessage = { type: 'round_result', winner: 'guest' };
+               LocalConnectionModule.sendData(JSON.stringify(resultMsg));
+               roundLost();
+               setGamePhase('lose');
+             }
+             pending.processed = true;
+             return;
+           }
+        } else if (!pending) {
+            // New hit detected, start pending result window
+            if (iHitOpponent) {
+               // Host hit guest
+               pendingResultRef.current = { winner: 'host', timestamp: now, processed: false };
+            } else if (opponentHitMe) {
+               // Guest hit host
+               pendingResultRef.current = { winner: 'guest', timestamp: now, processed: false };
+            }
+        }
+      } else {
+        // Guest: if any collision detected, pause and wait for host's authoritative result
+        if (iHitOpponent || opponentHitMe) {
+          setGamePhase('waiting_result');
+          return;
+        }
       }
       
       animationId = requestAnimationFrame(loop);
@@ -589,7 +747,9 @@ export default function Duels() {
         type: 'state',
         x: ship.x,
         y: ship.y,
-        angle: ship.angle
+        angle: ship.angle,
+        hostScore: role === 'host' ? myScore : undefined,
+        guestScore: role === 'host' ? opponentScore : undefined
       };
       LocalConnectionModule.sendData(JSON.stringify(msg));
     }, SYNC_INTERVAL);
@@ -600,6 +760,8 @@ export default function Duels() {
   // ======================
   // WIN/LOSE & AUTO-RESTART
   // ======================
+  // Removed automatic score checker - we check explicitly in handshake logic
+  /*
   useEffect(() => {
     if(myScore >= 3) {
       finishGame('player');
@@ -608,25 +770,90 @@ export default function Duels() {
     }
   }, 
   [opponentScore, myScore]);
+  */
 
   useEffect(() => {
     if (gamePhase !== 'win' && gamePhase !== 'lose' && gamePhase !== 'tie') return;
     
-    const timeout = setTimeout(() => {
-      if (role === 'host') {
-        const msg: GameMessage = { type: 'restart' };
-        LocalConnectionModule.sendData(JSON.stringify(msg));
+    // Only host triggers the restart - guest waits for restart message
+    if (role === 'host') {
+      // 1. Start Minimum Duration Timer
+      const timeout = setTimeout(() => {
+        setMinTimeElapsed(true);
+      }, 1500);
+      
+      // 2. Restart when BOTH conditions met:
+      //    - Minimum time elapsed
+      //    - Guest sent acknowledgement
+      if (minTimeElapsed && guestReadyToRestart) {
+         if (myScore >= 3 || opponentScore >= 3) {
+             const winner = myScore >= 3 ? 'host' : 'guest';
+             const msg: GameMessage = { type: 'game_over', winner };
+             LocalConnectionModule.sendData(JSON.stringify(msg));
+             finishGame(myScore >= 3 ? 'player' : 'opponent');
+         } else {
+             const msg: GameMessage = { type: 'restart' };
+             LocalConnectionModule.sendData(JSON.stringify(msg));
+             resetGameState();
+             setGamePhase('playing');
+         }
       }
-      resetGameState();
-      setGamePhase('playing');
-    }, 1500);
-    
-    return () => clearTimeout(timeout);
-  }, [gamePhase, role, resetGameState]);
+
+      // 3. RETRY LOGIC: Resend result every 1s until guest acknowledges
+      // This handles dropped packets so the guest eventually gets the result
+      let retryInterval: NodeJS.Timeout | null = null;
+      if (!guestReadyToRestart) {
+        retryInterval = setInterval(() => {
+           let winner: 'host' | 'guest' | 'tie' | null = null;
+           if (gamePhase === 'win') winner = 'host';
+           else if (gamePhase === 'lose') winner = 'guest';
+           else if (gamePhase === 'tie') winner = 'tie';
+
+           if (winner) {
+              const msg: GameMessage = { type: 'round_result', winner };
+              LocalConnectionModule.sendData(JSON.stringify(msg));
+           }
+        }, 1000);
+      }
+
+      return () => {
+        clearTimeout(timeout);
+        if (retryInterval) clearInterval(retryInterval);
+      };
+    }
+  }, [gamePhase, role, resetGameState, minTimeElapsed, guestReadyToRestart, myScore, opponentScore]);
+
+  // Add a broadcast for game_over state too, to ensure reliability
+  useEffect(() => {
+    if (gamePhase === 'game_over' && role === 'host') {
+         const winner = finalWinner === 'player' ? 'host' : 'guest';
+         const interval = setInterval(() => {
+             const msg: GameMessage = { type: 'game_over', winner };
+             // Broadcast this every 1s for a few seconds to ensure delivery
+             // (Component might unmount on disconnect, but user stays on Game Over screen)
+             LocalConnectionModule.sendData(JSON.stringify(msg));
+         }, 1000); 
+         return () => clearInterval(interval);
+    }
+  }, [gamePhase, role, finalWinner]);
 
   // ======================
   // START GAME (HOST)
   // ======================
+  
+  const initiateTutorial = useCallback(() => {
+    if (role !== 'host') return;
+    
+    // Send tutorial start to guest
+    const msg: GameMessage = { type: 'start_tutorial' };
+    LocalConnectionModule.sendData(JSON.stringify(msg));
+    
+    resetGameState();
+    setTutorialStep(0);
+    setOpponentFinishedTutorial(false);
+    setGamePhase('tutorial');
+  }, [role, resetGameState]);
+
   const startGame = useCallback(() => {
     if (role !== 'host' || !guestRatio) return;
     
@@ -639,6 +866,13 @@ export default function Duels() {
     resetGameState();
     setGamePhase('playing');
   }, [role, guestRatio, screenRatio, resetGameState]);
+
+  // Host auto-start when both finished tutorial
+  useEffect(() => {
+    if (role === 'host' && gamePhase === 'tutorial' && tutorialStep === 3 && opponentFinishedTutorial) {
+      startGame();
+    }
+  }, [role, gamePhase, tutorialStep, opponentFinishedTutorial, startGame]);
 
   // ======================
   // RENDER SCREENS
@@ -784,7 +1018,7 @@ export default function Duels() {
           <View style={{ height: 30 }} />
           {role === 'host' ? (
             guestRatio ? (
-              <Pressable style={styles.startButton} onPress={startGame}>
+              <Pressable style={styles.startButton} onPress={initiateTutorial}>
                 <Text style={styles.startButtonText}>START GAME</Text>
               </Pressable>
             ) : (
@@ -827,6 +1061,7 @@ export default function Duels() {
       );
     }
 
+
     // Playing phase (or win/lose)
     return (
       <ImageBackground source={backgroundImage} style={[styles.gameContainer, { paddingTop: insets.top }]} resizeMode="cover">
@@ -843,6 +1078,35 @@ export default function Duels() {
               {myScore} - {opponentScore}
             </Text>
           </View>
+        )}
+
+        {/* Tutorial Overlay */}
+        {gamePhase === 'tutorial' && (
+          <Pressable 
+            style={styles.tutorialOverlay} 
+            onPress={() => {
+              if (tutorialStep < 3) {
+                const nextStep = tutorialStep + 1;
+                setTutorialStep(nextStep);
+                if (nextStep === 3) {
+                  const msg: GameMessage = { type: 'tutorial_complete' };
+                  LocalConnectionModule.sendData(JSON.stringify(msg));
+                }
+              }
+            }}
+          >
+            <View style={styles.tutorialContent}>
+              {tutorialStep < 3 ? (
+                <Image 
+                  source={tutorialStep === 0 ? tutorialImage1 : tutorialStep === 1 ? tutorialImage2 : tutorialImage3} 
+                  style={styles.tutorialImage} 
+                  resizeMode="contain" 
+                />
+              ) : (
+                <Text style={styles.waitingText}>Waiting for other player...</Text>
+              )}
+            </View>
+          </Pressable>
         )}
         
         {/* Game area */}
@@ -912,51 +1176,22 @@ export default function Duels() {
           onStartShouldSetResponder={() => true}
           onMoveShouldSetResponder={() => true}
           onResponderGrant={(e: GestureResponderEvent) => {
-            // Convert TouchList to array to prevent segfault on iPhone SE
             const touches = Array.from(e.nativeEvent.touches || []);
-            let shootPressed = false;
-            let rotatePressed = false;
-            
-            for (const touch of touches) {
-              if (touch.pageX < screenWidth / 2) {
-                shootPressed = true;
-              } else {
-                rotatePressed = true;
-              }
-            }
-            
-            if (shootPressed) shoot();
-            if (rotatePressed) setIsRotating(true);
+            const hasLeft = touches.some(t => t.pageX < screenWidth / 2);
+            const hasRight = touches.some(t => t.pageX >= screenWidth / 2);
+            if (hasLeft) shoot();
+            if (hasRight) setIsRotating(true);
           }}
           onResponderMove={(e: GestureResponderEvent) => {
-            // Convert TouchList to array to prevent segfault on iPhone SE
             const touches = Array.from(e.nativeEvent.touches || []);
-            let rotatePressed = false;
-            
-            for (const touch of touches) {
-              if (touch.pageX >= screenWidth / 2) {
-                rotatePressed = true;
-              }
-            }
-            
-            setIsRotating(rotatePressed);
+            setIsRotating(touches.some(t => t.pageX >= screenWidth / 2));
           }}
           onResponderRelease={(e: GestureResponderEvent) => {
-            // Convert TouchList to array to prevent segfault on iPhone SE
             const touches = Array.from(e.nativeEvent.touches || []);
-            let rotatePressed = false;
-            
-            for (const touch of touches) {
-              if (touch.pageX >= screenWidth / 2) {
-                rotatePressed = true;
-              }
-            }
-            
-            setIsRotating(rotatePressed);
+            setIsRotating(touches.some(t => t.pageX >= screenWidth / 2));
           }}
-          onResponderTerminate={() => {
-            setIsRotating(false);
-          }}
+          onResponderTerminate={() => setIsRotating(false)}
+          hitSlop={{ top: 60, bottom: 20 }}
         >
           {/* Shoot Button (Left) */}
           <View style={styles.shootButtonContainer}>
@@ -1101,12 +1336,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     fontFamily: "Tsukimi-Rounded-Bold"
   },
-  gameOverSubtitle: {
-    fontSize: 18,
-    color: '#ffffff',
-    marginBottom: 10,
-    textAlign: 'center',
-  },
   finalScoreText: {
     fontSize: 28,
     fontWeight: '700',
@@ -1151,20 +1380,20 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: 120,
+    height: 140,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
   shootButtonContainer: {
     width: 140,
-    height: 120,
+    height: 140,
     opacity: 0.7,
     overflow: 'hidden',
   },
   rotateButtonContainer: {
     width: 140,
-    height: 120,
+    height: 140,
     opacity: 0.7,
     overflow: 'hidden',
   },
@@ -1180,35 +1409,6 @@ const styles = StyleSheet.create({
   },
   buttonImageFlipped: {
     transform: [{ scaleX: -1 }],
-  },
-  shootButton: {
-    left: 0,
-  },
-  rotateButton: {
-    right: 0,
-  },
-  controlButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '800',
-    letterSpacing: 2,
-    textShadowColor: 'rgba(0, 0, 0, 0.8)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
-  },
-  controlButtonTextActive: {
-    color: '#00f5ff',
-  },
-  controlButtonTextDisabled: {
-    color: '#888',
-  },
-  ammoContainer: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    height: 70,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   ammoText: {
     color: '#ffffffff',
@@ -1255,5 +1455,23 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0,0,0,0.5)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
+  },
+  tutorialOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.65)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 200,
+  },
+  tutorialContent: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  tutorialImage: {
+    width: '90%',
+    height: '80%',
   },
 });
