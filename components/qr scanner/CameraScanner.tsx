@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   scanReasonText: {
-    fontSize: 40,
+    fontSize: 24,
     fontWeight: '600',
     color: '#FFF',
     fontFamily: 'Montserrat',
