@@ -5,7 +5,7 @@ import * as Haptics from "expo-haptics";
 
 interface ShopItemCardProps {
   item: ShopItem;
-  onPress: () => Promise<boolean>;
+  onPress: () => Promise<{ success: boolean; errorMessage?: string }>;
   scale?: number;
 }
 
@@ -16,11 +16,11 @@ const ShopItemCard = memo(({ item, onPress, scale = 1 }: ShopItemCardProps) => {
   const handlePress = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     
-    // Wait for API call to complete
-    const success = await onPress();
+    // Call the onPress handler first
+    const result = await onPress();
 
     // Only animate if the API call succeeded
-    if (success) {
+    if (result.success) {
       // Reset animations
       floatAnim.setValue(0);
       opacityAnim.setValue(1);
