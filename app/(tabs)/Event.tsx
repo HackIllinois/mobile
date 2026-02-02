@@ -366,13 +366,22 @@ export default function EventScreen() {
     }
 
     return (
-      <Animated.FlatList
-        data={[...filteredItems].sort((a, b) => a.startTime - b.startTime)}
-        renderItem={renderEvent}
-        keyExtractor={(item: any) => item.eventId || item.id || item.name + item.startTime}
-        contentContainerStyle={styles.listContent}
+      <View style={styles.listContent}>
+        {[...filteredItems].sort((a, b) => a.startTime - b.startTime).map((item, index) => (
+          <View key={item.eventId || item.id || item.name + item.startTime}>
+            {renderEvent({ item, index })}
+          </View>
+        ))}
+      </View>
+    );
+  };
+
+  return (
+    <StarryBackground scrollY={scrollY}>
+      <ScrollView
+        style={[styles.container, { paddingTop: insets.top }]}
         showsVerticalScrollIndicator={false}
-        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
+        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: false })}
         scrollEventThrottle={16}
         refreshControl={
           <RefreshControl
@@ -383,13 +392,7 @@ export default function EventScreen() {
             progressBackgroundColor="#1a1a1a"
           />
         }
-      />
-    );
-  };
-
-  return (
-    <StarryBackground scrollY={scrollY}>
-      <View style={[styles.container, { paddingTop: insets.top }]}>
+      >
         <View style={{marginLeft: insets.left, marginBottom: -80, marginTop: -30}}> 
           <Title style={{marginLeft: 10}}/>
         </View>
@@ -427,9 +430,6 @@ export default function EventScreen() {
                 );
               })}
             </View>
-            <Text style={styles.sectionTitle}>
-              {sectionTitleText}
-            </Text>
           </View>
         )}
 
@@ -466,30 +466,30 @@ export default function EventScreen() {
         </View>
 
         {renderContent()}
+      </ScrollView>
 
-        {scheduleMode === 'events' && selectedEvent && (
-          <EventDetailModal
-            visible={modalVisible}
-            event={selectedEvent}
-            onClose={() => setModalVisible(false)}
-            handleSave={handleSave}
-            saved={savedEventIds.has(selectedEvent.eventId)}
-          />
-        )}
+      {scheduleMode === 'events' && selectedEvent && (
+        <EventDetailModal
+          visible={modalVisible}
+          event={selectedEvent}
+          onClose={() => setModalVisible(false)}
+          handleSave={handleSave}
+          saved={savedEventIds.has(selectedEvent.eventId)}
+        />
+      )}
 
-        {scheduleMode === 'events' && (
-          <MenuModal visible={menuModalVisible} event={selectedEventForMenu} onClose={() => setMenuModalVisible(false)} />
-        )}
+      {scheduleMode === 'events' && (
+        <MenuModal visible={menuModalVisible} event={selectedEventForMenu} onClose={() => setMenuModalVisible(false)} />
+      )}
 
-        {/* mentorship modal */}
-        {scheduleMode === 'mentorship' && (
-          <MentorDetailModal
-            visible={mentorModalVisible}
-            session={selectedMentorSession}
-            onClose={() => setMentorModalVisible(false)}
-          />
-        )}
-      </View>
+      {/* mentorship modal */}
+      {scheduleMode === 'mentorship' && (
+        <MentorDetailModal
+          visible={mentorModalVisible}
+          session={selectedMentorSession}
+          onClose={() => setMentorModalVisible(false)}
+        />
+      )}
     </StarryBackground>
   );
 }
