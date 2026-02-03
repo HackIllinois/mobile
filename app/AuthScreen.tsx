@@ -7,9 +7,12 @@ import {
   StyleSheet,
   Alert,
   Dimensions,
+  Platform,
 } from "react-native";
 import * as WebBrowser from "expo-web-browser";
 import * as SecureStore from "expo-secure-store";
+import * as Notifications from "expo-notifications";
+import * as Device from "expo-device";
 import { useRouter } from "expo-router";
 import { AxiosResponse } from "axios";
 import LoginBackground from "../assets/login-background.svg";
@@ -19,6 +22,55 @@ import api from "../api";
 WebBrowser.maybeCompleteAuthSession();
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
+
+// Configure notification handler
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
+
+async function registerForPushNotificationsAsync(): Promise<string | null> {
+  if (!Device.isDevice) {
+    console.log("Push notifications require a physical device");
+    return null;
+  }
+
+  // Check existing permissions
+  const { status: existingStatus } = await Notifications.getPermissionsAsync();
+  let finalStatus = existingStatus;
+
+  // Request permissions if not already granted
+  if (existingStatus !== "granted") {
+    const { status } = await Notifications.requestPermissionsAsync();
+    finalStatus = status;
+  }
+
+  if (finalStatus !== "granted") {
+    console.log("Failed to get push token: permission not granted");
+    return null;
+  }
+
+  // Get the push token
+  const tokenData = await Notifications.getExpoPushTokenAsync();
+  const token = tokenData.data;
+
+  // Configure Android channel
+  if (Platform.OS === "android") {
+    await Notifications.setNotificationChannelAsync("default", {
+      name: "default",
+      importance: Notifications.AndroidImportance.MAX,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: "#FF231F7C",
+    });
+  }
+
+  return token;
+}
 
 // SVG viewBox dimensions
 const SVG_WIDTH = 440;
@@ -68,6 +120,18 @@ export default function AuthScreen({ navigation }: any) {
 
       const roles = roleResponse.data.roles;
       await SecureStore.setItemAsync("userRoles", JSON.stringify(roles));
+
+      // Request notification permissions and register push token
+      try {
+        const pushToken = await registerForPushNotificationsAsync();
+        if (pushToken) {
+          await api.post("/notification", { token: pushToken });
+          console.log("Push token registered:", pushToken);
+        }
+      } catch (notifError) {
+        // Don't block login if notification registration fails
+        console.error("Failed to register push notifications:", notifError);
+      }
 
       Alert.alert("Login successful!");
       router.replace("/(tabs)/Home");
