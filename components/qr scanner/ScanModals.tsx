@@ -62,6 +62,43 @@ export function ScanResultModal({ visible, onClose, result }: ScanResultModalPro
   );
 }
 
+// Non-Modal overlay version for use inside another Modal
+export function ScanResultOverlay({ result, onClose }: { result: ScanResult | null; onClose: () => void }) {
+  if (!result) return null;
+
+  const { status, message, eventName, pointsEarned } = result;
+  const isSuccess = status === 'success';
+
+  return (
+    <View style={modalStyles.overlayContainer}>
+      <View style={modalStyles.modalContent}>
+        {isSuccess ? (
+          <View style={modalStyles.successContent}>
+            <CheckMark width={120} height={120} style={modalStyles.checkMark} />
+            {eventName ? (
+              <>
+                <Text style={modalStyles.modalEventName}>{eventName}</Text>
+                <Text style={modalStyles.modalTitle}>{message}</Text>
+                <Text style={modalStyles.pointsEarned}>{pointsEarned || 0} pts earned</Text>
+              </>
+            ) : (
+              <Text style={modalStyles.modalTitle}>{message}</Text>
+            )}
+          </View>
+        ) : (
+          <View style={modalStyles.successContent}>
+            <Text style={modalStyles.modalTitle}>Error</Text>
+            <Text style={modalStyles.modalMessage}>{message}</Text>
+          </View>
+        )}
+        <TouchableOpacity onPress={onClose}>
+          <OkButton width={185} height={41} />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
 
 
 
@@ -139,6 +176,13 @@ const modalStyles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
+  },
+  overlayContainer: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    zIndex: 30,
   },
   modalContent: {
     width: '80%',

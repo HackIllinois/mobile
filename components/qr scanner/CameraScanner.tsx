@@ -4,6 +4,7 @@ import { CameraView, BarcodeScanningResult, scanFromURLAsync } from 'expo-camera
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import ChooseImageButton from '../../assets/qr-scanner/choose-image-button.svg';
+import { ScanResult, ScanResultOverlay } from './ScanModals';
 
 const { width, height } = Dimensions.get('window');
 
@@ -14,6 +15,8 @@ interface CameraScannerViewProps {
   isLoading: boolean;
   isScanned: boolean;
   scanModeLabel?: string;
+  scanResult?: ScanResult | null;
+  onResultClose?: () => void;
 }
 
 export default function CameraScannerView({
@@ -22,7 +25,9 @@ export default function CameraScannerView({
   onClose,
   isLoading,
   isScanned,
-  scanModeLabel
+  scanModeLabel,
+  scanResult,
+  onResultClose
 }: CameraScannerViewProps) {
   const [imageLibraryPermission, requestImageLibraryPermission] = ImagePicker.useMediaLibraryPermissions();
   const [isProcessingImage, setIsProcessingImage] = useState(false);
@@ -164,6 +169,10 @@ export default function CameraScannerView({
                 {isProcessingImage ? 'Processing Image...' : 'Verifying Permissions...'}
               </Text>
             </View>
+          )}
+
+          {scanResult && onResultClose && (
+            <ScanResultOverlay result={scanResult} onClose={onResultClose} />
           )}
         </View>
       </View>
