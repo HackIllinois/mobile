@@ -15,6 +15,7 @@ import { useFonts, TsukimiRounded_700Bold } from '@expo-google-fonts/tsukimi-rou
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCallback, useState, useMemo, useEffect, useRef } from 'react';
 import { useEvents } from '../../lib/fetchEvents';
+import { useSavedEvents } from '../../lib/fetchSavedEvents';
 import { EventCard } from '../../components/eventScreen/EventCard';
 import EventDetailModal from '../../components/eventScreen/EventDetailModal';
 import MentorDetailModal from '../../components/eventScreen/MentorDetailModal';
@@ -50,12 +51,13 @@ export default function EventScreen() {
   const scrollY = useRef(new Animated.Value(0)).current;
 
   const { events = [], loading, error, refetch } = useEvents();
+  const { savedEventIds: savedEventIdsList, refetch: refetchSavedEvents } = useSavedEvents();
+  const [savedEventIds, setSavedEventIds] = useState<Set<string>>(new Set());
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [selectedSave, setSaveValue] = useState<boolean>(false);
-  const [savedEventIds, setSavedEventIds] = useState<Set<string>>(new Set());
   const [menuModalVisible, setMenuModalVisible] = useState(false);
   const [selectedEventForMenu, setSelectedEventForMenu] = useState<Event | null>(null);
   const [fontsLoaded] = useFonts({ TsukimiRounded_700Bold });
@@ -64,20 +66,10 @@ export default function EventScreen() {
   const [selectedMentorSession, setSelectedMentorSession] = useState<MentorshipSession | null>(null);
   const [mentorModalVisible, setMentorModalVisible] = useState(false);
 
+  // Sync saved events from TanStack Query cache into local Set state
   useEffect(() => {
-    const loadSavedEvents = async () => {
-      try {
-        const stored = await AsyncStorage.getItem('savedEvents');
-        if (stored) {
-          setSavedEventIds(new Set(JSON.parse(stored)));
-        }
-      } catch (e) {
-        console.error('Failed to load saved events', e);
-      }
-    };
-
-    loadSavedEvents();
-  }, []);
+    setSavedEventIds(new Set(savedEventIdsList));
+  }, [savedEventIdsList]);
 
   const handleEventPress = (event: Event) => {
     setSelectedEvent(event);

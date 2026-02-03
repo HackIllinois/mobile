@@ -3,12 +3,14 @@ import { Animated, Easing } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Stack } from "expo-router";
 import { useFonts } from "expo-font";
+import { QueryClientProvider } from "@tanstack/react-query";
 import StartupAnimation from "../components/hackrocket/StartupAnimation";
 import OnboardingScreens from "../components/onboarding/OnboardingScreen";
 import LoadingScreen from "../src/components/loading/LoadingScreen";
 import WelcomePage from "../components/onboarding/WelcomePage";
 import * as SecureStore from "expo-secure-store";
 import { AnimationProvider, useAnimations } from "../contexts/OnboardingAnimationContext";
+import { queryClient } from "../lib/queryClient";
 
 // Onboarding testing:
 // true = show onboarding every reload
@@ -21,6 +23,7 @@ function RootLayoutContent() {
   const [showAnimation, setShowAnimation] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const welcomeFadeAnim = useRef(new Animated.Value(0)).current;
   const onboardingContentFadeAnim = useRef(new Animated.Value(0)).current;
@@ -33,20 +36,106 @@ function RootLayoutContent() {
   });
 
   useEffect(() => {
-    const checkOnboardingStatus = async () => {
+    const loadAppData = async () => {
+      const startTime = Date.now();
+      let completedTasks = 0;
+      const totalTasks = 6; // onboarding, jwt, roles, profile, events, shop+savedEvents
+
+      const markProgress = () => {
+        completedTasks++;
+        setLoadingProgress(completedTasks / totalTasks);
+      };
+
       try {
+        // Task 1: Check onboarding status
         const hasCompleted = TESTING_MODE
           ? false
           : await AsyncStorage.getItem("hasCompletedOnboarding");
+        setShowOnboarding(!hasCompleted);
+        markProgress();
+
+        // Task 2: Check JWT
         const jwt = await SecureStore.getItemAsync("jwt");
         setIsLoggedIn(!!jwt);
-        setShowOnboarding(!hasCompleted);
+        markProgress();
+
+        // Task 3: Check roles
+        await SecureStore.getItemAsync("userRoles");
+        markProgress();
+
+        // Tasks 4-6: Prefetch data in parallel (only if logged in)
+        if (jwt) {
+          const prefetchPromises = [
+            // Task 4: Profile
+            queryClient.prefetchQuery({
+              queryKey: ["profile"],
+              queryFn: async () => {
+                const api = (await import("../api")).default;
+                const response: any = await api.get("profile");
+                return response.data;
+              },
+            }).then(markProgress).catch(markProgress),
+
+            // Task 5: Events
+            queryClient.prefetchQuery({
+              queryKey: ["events"],
+              queryFn: async () => {
+                const res = await fetch("https://adonix.hackillinois.org/event/");
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                if (data && Array.isArray(data.events)) return data.events;
+                if (Array.isArray(data)) return data;
+                if (data && data.data && Array.isArray(data.data.events)) return data.data.events;
+                return [];
+              },
+            }).then(markProgress).catch(markProgress),
+
+            // Task 6: Shop items + saved events (grouped)
+            Promise.all([
+              queryClient.prefetchQuery({
+                queryKey: ["shopItems"],
+                queryFn: async () => {
+                  const res = await fetch("https://adonix.hackillinois.org/shop/");
+                  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                  const data = await res.json();
+                  if (Array.isArray(data)) return data;
+                  if (data && Array.isArray(data.data)) return data.data;
+                  return [];
+                },
+              }),
+              queryClient.prefetchQuery({
+                queryKey: ["savedEvents"],
+                queryFn: async () => {
+                  const stored = await AsyncStorage.getItem("savedEvents");
+                  return stored ? JSON.parse(stored) : [];
+                },
+              }),
+            ]).then(markProgress).catch(markProgress),
+          ];
+
+          await Promise.all(prefetchPromises);
+        } else {
+          // Not logged in, skip prefetching but still mark progress
+          markProgress();
+          markProgress();
+          markProgress();
+        }
       } catch (e) {
-        console.error("Error checking onboarding status:", e);
+        console.error("Error during app initialization:", e);
         setShowOnboarding(true);
+        setLoadingProgress(1);
       }
+
+      // Ensure minimum 0.75s loading time for smooth animation
+      const elapsed = Date.now() - startTime;
+      const remaining = Math.max(0, 750 - elapsed);
+      if (remaining > 0) {
+        await new Promise((resolve) => setTimeout(resolve, remaining));
+      }
+      setLoadingProgress(1);
     };
-    checkOnboardingStatus();
+
+    loadAppData();
   }, []);
 
   const handleLoadingFinish = () => {
@@ -117,7 +206,7 @@ function RootLayoutContent() {
   }
 
   if (showLoading) {
-    return <LoadingScreen onFinish={handleLoadingFinish} cloudX1={cloudX1} cloudX2={cloudX2} starOpacity={starOpacity} />;
+    return <LoadingScreen onFinish={handleLoadingFinish} progress={loadingProgress} cloudX1={cloudX1} cloudX2={cloudX2} starOpacity={starOpacity} />;
   }
 
   if (showWelcome || showAnimation) {
@@ -262,9 +351,11 @@ function AnimationInitializer() {
 
 export default function RootLayout() {
   return (
-    <AnimationProvider>
-      <AnimationInitializer />
-      <RootLayoutContent />
-    </AnimationProvider>
+    <QueryClientProvider client={queryClient}>
+      <AnimationProvider>
+        <AnimationInitializer />
+        <RootLayoutContent />
+      </AnimationProvider>
+    </QueryClientProvider>
   );
 }

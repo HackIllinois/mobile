@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef, useCallback } from "react";
-import { AxiosResponse } from "axios";
 import api from "../../api";
 import { ShopItem } from "../../types";
+import { useShopItems } from "../../lib/fetchShopItems";
+import { useProfile } from "../../lib/fetchProfile";
 import {
   StyleSheet,
   View,
@@ -91,29 +92,17 @@ export default function PointShop() {
   const BOTTOM_ROW_Y = imageYToScreenY(RAFFLE_ROW_IMAGE_Y, containerWidth, containerHeight) + safeAreaAdjustment;
 
 
-  const [shopItemData, setShopItemData] = useState<ShopItem[]>([]);
+  const { shopItems: shopItemData } = useShopItems();
+  const { profile } = useProfile();
+  const userPoints = profile?.points ?? 0;
+
   const [cartIds, setCartIds] = useState<string[]>([]);
   const [showCartModal, setShowCartModal] = useState(false);
   const [tutorialStep, setTutorialStep] = useState<number | null>(null);
   const [isTutorialActive, setIsTutorialActive] = useState(false);
   const [typewriterKey, setTypewriterKey] = useState(0);
-  const [userPoints, setUserPoints] = useState<number>(0);
 
   const tutorialAnim = useRef(new Animated.Value(0)).current;
-
-  // Fetch user profile to get points
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const response: any = await api.get('profile');
-        setUserPoints(response.data.points ?? 0);
-      } catch (error) {
-        console.error("Failed to fetch profile:", error);
-        setUserPoints(0);
-      }
-    };
-    fetchProfile();
-  }, []);
 
   useEffect(() => {
     if (isTutorialActive && tutorialStep !== null) {
@@ -140,11 +129,6 @@ export default function PointShop() {
       }
     };
     checkTutorial();
-  }, []);
-
-  useEffect(() => {
-    api.get<AxiosResponse<ShopItem[]>>("https://adonix.hackillinois.org/shop/")
-      .then((response) => setShopItemData(response.data));
   }, []);
 
   const nonRaffleItems = shopItemData.filter((item) => !item.isRaffle);

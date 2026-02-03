@@ -8,12 +8,13 @@ import HackIllinoisText from "../../../assets/onboarding/loading/hackillinois-te
 
 type LoadingScreenProps = {
   onFinish: () => void;
+  progress: number; // 0 to 1
   cloudX1: Animated.Value;
   cloudX2: Animated.Value;
   starOpacity: Animated.Value;
 };
 
-export default function LoadingScreen({ onFinish, cloudX1, cloudX2, starOpacity }: LoadingScreenProps) {
+export default function LoadingScreen({ onFinish, progress, cloudX1, cloudX2, starOpacity }: LoadingScreenProps) {
   const { width, height } = useWindowDimensions();
 
   const figmaWidth = 393;
@@ -59,7 +60,7 @@ export default function LoadingScreen({ onFinish, cloudX1, cloudX2, starOpacity 
       useNativeDriver: true,
     }).start();
 
-    // Astronaut Floating 
+    // Astronaut Floating
     Animated.loop(
       Animated.sequence([
         Animated.timing(astronautY, {
@@ -106,17 +107,21 @@ export default function LoadingScreen({ onFinish, cloudX1, cloudX2, starOpacity 
         }),
       ])
     ).start();
+  }, []);
 
-    // Loading bar animation
+  // Animate loading bar based on progress prop
+  useEffect(() => {
     Animated.timing(loadingBarWidth, {
-      toValue: 1,
-      duration: 2500,
+      toValue: progress,
+      duration: 200,
       easing: Easing.ease,
       useNativeDriver: false,
     }).start(() => {
-      onFinish();
+      if (progress >= 1) {
+        onFinish();
+      }
     });
-  }, [onFinish]);
+  }, [progress, onFinish]);
 
   const astronautRotateInterpolate = astronautRotate.interpolate({
     inputRange: [-1, 1],
