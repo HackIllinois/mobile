@@ -13,7 +13,7 @@ import {
   Image,
   Modal,
   Animated,
-  LayoutChangeEvent,
+  Text,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import TypeWriter from "react-native-typewriter";
@@ -22,6 +22,7 @@ import CartButton from "../../components/point shop/CartButton";
 import Points from "../../components/point shop/Points";
 import CartModal from "../../components/point shop/CartModal";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { useFocusEffect } from "@react-navigation/native";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CHUNK_SIZE = 2;
@@ -98,23 +99,58 @@ export default function PointShop() {
   const [isTutorialActive, setIsTutorialActive] = useState(false);
   const [typewriterKey, setTypewriterKey] = useState(0);
   const [userPoints, setUserPoints] = useState<number>(0);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const tutorialAnim = useRef(new Animated.Value(0)).current;
+  const errorOpacity = useRef(new Animated.Value(0)).current;
 
-  // Fetch user profile to get points
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const response: any = await api.get('profile');
-        setUserPoints(response.data.points ?? 0);
-      } catch (error) {
-        console.error("Failed to fetch profile:", error);
-        setUserPoints(0);
-      }
-    };
-    fetchProfile();
-  }, []);
+  const showError = (message: string) => {
+    // Stop any running animation and reset
+    errorOpacity.stopAnimation();
+    errorOpacity.setValue(1);
+    setErrorMessage(message);
+    
+    Animated.timing(errorOpacity, {
+      toValue: 0,
+      duration: 750,
+      delay: 500,
+      useNativeDriver: true,
+    }).start(() => {
+      setErrorMessage(null);
+    });
+  };
 
+  // Fetch profile data
+  const fetchProfile = async () => {
+    try {
+      const response: any = await api.get('profile');
+      setUserPoints(response.data.points ?? 0);
+    } catch (error) {
+      console.error("Failed to fetch profile:", error);
+      setUserPoints(0);
+    }
+  };
+
+  // Fetch shop items
+  const fetchShopItems = async () => {
+    try {
+      const response = await api.get<AxiosResponse<ShopItem[]>>("https://adonix.hackillinois.org/shop/");
+      setShopItemData(response.data);
+    } catch (error) {
+      console.error("Failed to fetch shop items:", error);
+    }
+  };
+
+  // Refresh all data when screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      fetchProfile();
+      fetchShopItems();
+      fetchCartItems();
+    }, [])
+  );
+
+  // Tutorial animation effect
   useEffect(() => {
     if (isTutorialActive && tutorialStep !== null) {
       tutorialAnim.setValue(0);
@@ -127,6 +163,7 @@ export default function PointShop() {
     }
   }, [tutorialStep]);
 
+  // Check if tutorial has been completed
   useEffect(() => {
     const checkTutorial = async () => {
       try {
@@ -140,11 +177,6 @@ export default function PointShop() {
       }
     };
     checkTutorial();
-  }, []);
-
-  useEffect(() => {
-    api.get<AxiosResponse<ShopItem[]>>("https://adonix.hackillinois.org/shop/")
-      .then((response) => setShopItemData(response.data));
   }, []);
 
   const nonRaffleItems = shopItemData.filter((item) => !item.isRaffle);
@@ -169,36 +201,61 @@ export default function PointShop() {
     }
   };
 
-  const addToCart = async (itemId: string): Promise<boolean> => {
+  const addToCart = async (itemId: string): Promise<{ success: boolean; errorMessage?: string }> => {
     if (!isTutorialActive) {
       try {
         await api.post(`/shop/cart/${itemId}`);
         setCartIds((ids) => [...ids, itemId]);
-        return true;
-      } catch (error) {
+        return { success: true };
+      } catch (error: any) {
         console.error("Failed to add item to cart:", error);
-        return false;
+        const data = error.response?.data;
+        const errorMessage = data?.message || data?.error || "Failed to add item to cart";
+        return { success: false, errorMessage };
       }
     }
-    return false;
+    return { success: false, errorMessage: "Tutorial is active" };
   };
 
-  const removeFromCart = async (itemId: string): Promise<boolean> => {
+  const removeFromCart = async (itemId: string): Promise<{ success: boolean; errorMessage?: string }> => {
     try {
       await api.delete(`/shop/cart/${itemId}`);
       setCartIds((ids) => {
         const index = ids.indexOf(itemId);
         return index === -1 ? ids : [...ids.slice(0, index), ...ids.slice(index + 1)];
       });
-      return true;
-    } catch (error) {
+      return { success: true };
+    } catch (error: any) {
       console.error("Failed to remove item from cart:", error);
-      return false;
+      const data = error.response?.data;
+      const errorMessage = data?.message || data?.error || "Failed to remove item from cart";
+      return { success: false, errorMessage };
     }
   };
 
-  const handlePurchase = () => {
-    setCartIds([]);
+  const fetchCartItems = async () => {
+    try {
+      const response = await api.get<any>("/shop/cart");
+      if (response.data && response.data.items) {
+        // Convert items object { itemId: quantity } to array of itemIds
+        const itemsObj = response.data.items as Record<string, number>;
+        const ids: string[] = [];
+        Object.entries(itemsObj).forEach(([itemId, quantity]) => {
+          for (let i = 0; i < quantity; i++) {
+            ids.push(itemId);
+          }
+        });
+        setCartIds(ids);
+      }
+    } catch (error) {
+      console.error("Failed to fetch cart items:", error);
+    }
+  };
+
+  const openCartModal = async () => {
+    if (!isTutorialActive) {
+      setShowCartModal(true);
+    }
   };
 
   const [topPageIndex, setTopPageIndex] = useState(0);
@@ -220,7 +277,17 @@ export default function PointShop() {
         <View style={styles.row}>
           {page.map((item) => (
             <View key={item.itemId} style={styles.gridItem}>
-              <ShopItemCard item={item} onPress={() => addToCart(item.itemId)} scale={scale} />
+              <ShopItemCard
+                item={item}
+                onPress={async () => {
+                  const result = await addToCart(item.itemId);
+                  if (!result.success && result.errorMessage) {
+                    showError(result.errorMessage);
+                  }
+                  return result;
+                }}
+                scale={scale}
+              />
             </View>
           ))}
         </View>
@@ -354,18 +421,34 @@ export default function PointShop() {
 
       <CartButton
         itemCount={cartIds.length}
-        onPress={() => !isTutorialActive && setShowCartModal(true)}
+        onPress={openCartModal}
       />
 
       <CartModal
         visible={showCartModal}
-        onClose={() => setShowCartModal(false)}
+        onClose={() => {
+          setShowCartModal(false);
+          fetchProfile();
+        }}
         cartIds={cartIds}
         shopItemData={shopItemData}
         onAddItem={addToCart}
         onRemoveItem={removeFromCart}
-        onPurchase={handlePurchase}
+        onError={showError}
       />
+
+      {/* Fading error message */}
+      {errorMessage && (
+        <Animated.View
+          style={[
+            styles.errorContainer,
+            { opacity: errorOpacity },
+          ]}
+          pointerEvents="none"
+        >
+          <Text style={styles.errorText}>{errorMessage}</Text>
+        </Animated.View>
+      )}
     </ImageBackground>
   );
 }
@@ -464,5 +547,26 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     textAlign: "left",
     fontWeight: "500",
+  },
+  errorContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: "center",
+    alignItems: "center",
+    pointerEvents: "none",
+    zIndex: 1000,
+  },
+  errorText: {
+    color: "#ff4444",
+    fontSize: 16,
+    fontWeight: "700",
+    textAlign: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
   },
 });

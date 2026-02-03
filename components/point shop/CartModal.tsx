@@ -20,9 +20,9 @@ interface CartModalProps {
   onClose: () => void;
   cartIds: string[];
   shopItemData: ShopItem[];
-  onAddItem: (itemId: string) => Promise<boolean>;
-  onRemoveItem: (itemId: string) => Promise<boolean>;
-  onPurchase: () => void;
+  onAddItem: (itemId: string) => Promise<{ success: boolean; errorMessage?: string }>;
+  onRemoveItem: (itemId: string) => Promise<{ success: boolean; errorMessage?: string }>;
+  onError: (message: string) => void;
 }
 
 export default function CartModal({
@@ -32,15 +32,20 @@ export default function CartModal({
   shopItemData,
   onAddItem,
   onRemoveItem,
-  onPurchase,
+  onError,
 }: CartModalProps) {
   const [qrCodeData, setQrCodeData] = useState<string | null>();
 
+  // Reset QR code state when modal is closed
   useEffect(() => {
-    if (visible) {
-      // setQrCodeData(null);
+    if (!visible) {
+      setQrCodeData(null);
     }
   }, [visible]);
+
+  const handleBackToCart = () => {
+    setQrCodeData(null);
+  };
 
   const calculateTotal = (): number => {
     return cartIds.reduce((total, itemId) => {
@@ -78,7 +83,6 @@ export default function CartModal({
       const response = await api.get<any>("/shop/cart/qr");
       if (response.data && response.data.QRCode) {
         setQrCodeData(response.data.QRCode);
-        onPurchase();
       }
     } catch (error: any) {
       const data = error.response?.data;
@@ -125,6 +129,12 @@ export default function CartModal({
               <Text style={styles.qrInstruction}>
                 Show this to a shopkeeper to collect your items.
               </Text>
+              <TouchableOpacity
+                style={styles.backToCartButton}
+                onPress={handleBackToCart}
+              >
+                <Text style={styles.backToCartButtonText}>← BACK TO CART</Text>
+              </TouchableOpacity>
             </View>
           ) : (
             <>
@@ -145,8 +155,20 @@ export default function CartModal({
                       key={item.itemId}
                       item={item}
                       quantity={quantity}
-                      onIncrement={() => onAddItem(item.itemId)}
-                      onDecrement={() => onRemoveItem(item.itemId)}
+                      onIncrement={async () => {
+                        const result = await onAddItem(item.itemId);
+                        if (!result.success && result.errorMessage) {
+                          onError(result.errorMessage);
+                        }
+                        return result.success;
+                      }}
+                      onDecrement={async () => {
+                        const result = await onRemoveItem(item.itemId);
+                        if (!result.success && result.errorMessage) {
+                          onError(result.errorMessage);
+                        }
+                        return result.success;
+                      }}
                     />
                   ))
                 )}
@@ -307,5 +329,20 @@ const styles = StyleSheet.create({
     textAlign: "center",
     maxWidth: "80%",
     lineHeight: 24,
+  },
+  backToCartButton: {
+    marginTop: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    backgroundColor: "transparent",
+    borderWidth: 1,
+    borderColor: "#c4b4d4",
+    borderRadius: 12,
+  },
+  backToCartButtonText: {
+    color: "#e8dff0",
+    fontSize: 14,
+    fontWeight: "600",
+    letterSpacing: 1,
   },
 });
