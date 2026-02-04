@@ -390,7 +390,7 @@ export default function EventScreen() {
   return (
     <StarryBackground scrollY={scrollY}>
       <View style={[styles.container, { paddingTop: insets.top }]}>
-        <View style={{marginLeft: insets.left, marginBottom: -80, marginTop: -30}}> 
+        <View style={{marginLeft: insets.left, marginBottom: -80, marginTop: -30, top: 7}}> 
           <Title style={{marginLeft: 10}}/>
         </View>
 
