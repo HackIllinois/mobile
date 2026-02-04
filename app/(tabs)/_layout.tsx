@@ -79,7 +79,7 @@ export default function Layout() {
           <View style={[styles.floatingButton, { top: 60 }]}>
             <Link href="/Profile" asChild>
               <TouchableOpacity>
-                <ProfileSvg width={30} height={30} />
+                <ProfileSvg width={45} height={45} />
               </TouchableOpacity>
             </Link>
           </View>

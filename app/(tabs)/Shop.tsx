@@ -42,6 +42,8 @@ const POINTS_IMAGE_Y = 1080;   // Where points display should appear
 const MERCH_ROW_IMAGE_Y = 1250;  // Where merch cards should appear (below "merch" label)
 const RAFFLE_ROW_IMAGE_Y = 2150; // Where raffle cards should appear (below "raffle" label)
 
+
+
 const imageYToScreenY = (
   imageY: number,
   containerWidth: number,
@@ -72,6 +74,10 @@ const chunkItems = (items: ShopItem[]): ShopItem[][] => {
 
 export default function PointShop() {
   const insets = useSafeAreaInsets();
+
+  const HEADER_Y = insets.top + 8;   // SAME value used by profile button
+  const HEADER_HEIGHT = 90;
+
   const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
   
   const containerWidth = screenWidth;
@@ -297,7 +303,17 @@ export default function PointShop() {
   return (
     <ImageBackground source={require("../../assets/point-shop/point-shop-background.png")} style={styles.container} resizeMode="cover">
       {/* Title */}
-      <View style={{ position: "absolute", top: TITLE_Y, left: 20, zIndex: 10 }}>
+      {/* <View style={{ position: "absolute", top: TITLE_Y, left: 20, zIndex: 10 }}> */}
+      <View
+        style={{
+          position: "absolute",
+          top: HEADER_Y,
+          left: 20,
+          height: HEADER_HEIGHT,
+          justifyContent: "center",
+          zIndex: 10,
+        }}
+      >
         <Image
           source={require("../../assets/point-shop/point-shop-title.png")}
           style={{ width: titleWidth, height: titleHeight }}
