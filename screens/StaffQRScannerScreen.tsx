@@ -16,48 +16,44 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 import CameraScannerView from '../components/qr scanner/CameraScanner';
 import {
-  ScanResultModal,
   EventSelectModal,
   ScanResult
 } from '../components/qr scanner/ScanModals';
 
 // Helper Function to extract token from scanned QR code data
+const extractTokenFromUrl = (urlString: string): string => {
+  const queryString = urlString.split('?')[1];
+  if (!queryString) {
+    throw new Error("No query string found in URL.");
+  }
+
+  const params = new URLSearchParams(queryString);
+  const token = params.get('qr') || params.get('userToken');
+
+  if (token) {
+    return token;
+  } else {
+    throw new Error("No 'qr' or 'userToken' parameter found.");
+  }
+};
+
 const extractTokenFromScan = (scannedData: string): string => {
   try {
-    const qrObject = JSON.parse(scannedData); 
-
-    let urlString: string | undefined;
-    let tokenParam: string = '';
-
-    if (qrObject.QRCode) {
-      urlString = qrObject.QRCode;
-      tokenParam = 'qr'; 
-    } else if (qrObject.qrInfo) {
-      urlString = qrObject.qrInfo;
-      tokenParam = 'userToken'; 
-    } else {
-      throw new Error("JSON does not contain 'QRCode' or 'qrInfo'");
-    }
+    // Try parsing as JSON first (e.g. {"qrInfo": "hackillinois://..."} or {"QRCode": "hackillinois://..."})
+    const qrObject = JSON.parse(scannedData);
+    const urlString = qrObject.QRCode || qrObject.qrInfo;
 
     if (!urlString) {
       throw new Error("JSON does not contain 'QRCode' or 'qrInfo'");
     }
-    
-    const queryString = urlString.split('?')[1];
-    if (!queryString) {
-      throw new Error("No query string found in URL.");
-    }
 
-    const params = new URLSearchParams(queryString);
-    const token = params.get(tokenParam); 
-
-    if (token) {
-      return token; 
-    } else {
-      throw new Error(`No '${tokenParam}' parameter found.`);
-    }
+    return extractTokenFromUrl(urlString);
   } catch (e) {
-    console.error("Failed to parse QR code data:", e);
+    // Not JSON — try parsing as a raw URL (e.g. "hackillinois://user?qr=...")
+    if (scannedData.includes('?')) {
+      return extractTokenFromUrl(scannedData);
+    }
+
     throw new Error((e as Error).message || "Invalid QR Code Format.");
   }
 };
@@ -169,7 +165,6 @@ export default function StaffQRScannerScreen() {
           }
   
         } catch (error) {
-          console.error('Failed to fetch meal events:', error);
           setFetchError('Failed to load meal events. Please try again.');
         } finally {
           setIsFetchingEvents(false);
@@ -198,9 +193,7 @@ export default function StaffQRScannerScreen() {
         }
     
       } catch (error) {
-        console.log('Error caught:', error);
         if (axios.isAxiosError(error)) {
-          console.log('Axios error response:', error.response);
           if (error.response) {
             const status = error.response.status;
             const data = error.response.data as any;
@@ -231,8 +224,7 @@ export default function StaffQRScannerScreen() {
       setIsLoading(true);
 
       if (!selectedEventId) {
-        console.error("No event selected for attendee scan.");
-        setScanResult({ 
+        setScanResult({
           status: 'error', 
           message: 'No event selected. Please go back to the menu and select a meal event.' 
         });
@@ -240,9 +232,8 @@ export default function StaffQRScannerScreen() {
         return;
       }
 
-      const userToken = extractTokenFromScan(scannedData);
-      
       try {
+        const userToken = extractTokenFromScan(scannedData);
         const response = await api.put<AxiosResponse<StaffAttendeeSuccessData>>(
             'staff/scan-attendee/',     
             { 
@@ -261,7 +252,6 @@ export default function StaffQRScannerScreen() {
         }
     
       } catch (error) {
-        console.log('Attendee Scan Error:', error);
         if (axios.isAxiosError(error) && error.response) {
             const { status, data } = error.response;
             const errorType = data?.error;
@@ -279,7 +269,8 @@ export default function StaffQRScannerScreen() {
               setScanResult({ status: 'error', message: message || 'An unknown error occurred.' });
             }
         } else {
-          setScanResult({ status: 'error', message: 'An unexpected error occurred.' });
+          const msg = error instanceof Error ? error.message : 'An unexpected error occurred.';
+          setScanResult({ status: 'error', message: msg });
         }
       } finally {
         setIsLoading(false);
@@ -289,12 +280,11 @@ export default function StaffQRScannerScreen() {
     const submitShopRedeemScan = async (scannedData: string) => {
       setIsLoading(true);
 
-      const userToken = extractTokenFromScan(scannedData);
-
       try {
+        const userToken = extractTokenFromScan(scannedData);
         const response = await api.post<AxiosResponse<ShopRedeemSuccessData>>(
             'shop/cart/redeem/',     
-            { qrCode: userToken } 
+            { QRCode: userToken }
         );
     
         const { items } = response.data;
@@ -313,7 +303,6 @@ export default function StaffQRScannerScreen() {
         }
     
       } catch (error) {
-        console.log('Shop Redeem Error:', error);
         if (axios.isAxiosError(error) && error.response) {
             const { status, data } = error.response;
             const errorType = data?.error;
@@ -337,13 +326,14 @@ export default function StaffQRScannerScreen() {
               setScanResult({ status: 'error', message: message || 'An unknown error occurred.' });
             }
         } else {
-          setScanResult({ status: 'error', message: 'An unexpected error occurred.' });
+          const msg = error instanceof Error ? error.message : 'An unexpected error occurred.';
+          setScanResult({ status: 'error', message: msg });
         }
       } finally {
         setIsLoading(false);
       }
     };
-  
+
     // Handler Logic
     const handleQRCodeScanned = ({ data }: BarcodeScanningResult) => {
       if (scanned || isLoading) return;
@@ -356,7 +346,6 @@ export default function StaffQRScannerScreen() {
       } else if (scanMode === 'shopRedeem') {
         submitShopRedeemScan(data);
       } else {
-        console.error("Unknown scan mode");
         setScanResult({ status: 'error', message: 'Unknown scan mode. Please try again.' });
       }
     };
@@ -483,13 +472,8 @@ export default function StaffQRScannerScreen() {
           scanMode === 'attendeeCheckin' ? (selectedEventName ? `${selectedEventName}` : 'Attendee Check-in') :
           scanMode === 'shopRedeem' ? 'Points Shop' : undefined
         }
-      />
-
-      {/* Scan Result Modal */}
-      <ScanResultModal
-        visible={!!scanResult}
-        onClose={closeModalAndReset}
-        result={scanResult}
+        scanResult={scanResult}
+        onResultClose={closeModalAndReset}
       />
     </>
   );
