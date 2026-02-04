@@ -7,8 +7,6 @@ import TinyStars from '../../assets/onboarding/loading/tiny stars.svg';
 import Hackastra from '../../assets/onboarding/welcome/hackastra.svg';
 import StartButton from '../../assets/onboarding/welcome/start-button.svg';
 
-const AnimatedHackRocket = Animated.createAnimatedComponent(HackRocket);
-
 type StartupAnimationProps = {
   cloudX1: Animated.Value;
   cloudX2: Animated.Value;
@@ -27,9 +25,8 @@ export default function StartupAnimation({ cloudX1, cloudX2, starOpacity }: Star
   const scaleHeight = (size: number) => (height / figmaHeight) * size;
   const scaleFontSize = (size: number) => Math.min(scaleWidth(size), scaleHeight(size));
 
-  // Match rocket size with WelcomePage's HalfRocket for seamless transition
-  const ROCKET_WIDTH = scaleWidth(figmaWidth);
-  const ROCKET_HEIGHT = scaleHeight(800);
+  // Scale rocket so it's wider than the screen (wings get clipped)
+  const ROCKET_SCALE = (width * 1.8) / 352.3;
 
   const CLOUDS_WIDTH = scaleWidth(669.17);
   const CLOUDS_HEIGHT = scaleHeight(720.11);
@@ -41,10 +38,9 @@ export default function StartupAnimation({ cloudX1, cloudX2, starOpacity }: Star
   const STARS_TOP = height * 0.04;
   const STARS_LEFT = -width * 0.12;
 
-  // Position rocket to align with HalfRocket from WelcomePage (top: 300)
-  // Center the rocket horizontally
-  const ROCKET_TOP = scaleHeight(300);
-  const ROCKET_LEFT = (width - ROCKET_WIDTH) / 2;
+  // Position rocket to align with HalfRocket from WelcomePage
+  const ROCKET_TOP = scaleHeight(450);
+  const ROCKET_LEFT = (width - 260) / 2;
 
   // Component positions matching WelcomePage.tsx
   const HACKASTRA_WIDTH = scaleWidth(289);
@@ -79,14 +75,14 @@ export default function StartupAnimation({ cloudX1, cloudX2, starOpacity }: Star
     // Rocket flies up from bottom and content fades out simultaneously
     Animated.parallel([
       Animated.timing(translateY, {
-        toValue: -(height + ROCKET_HEIGHT),
-        duration: 1500,
-        easing: Easing.inOut(Easing.ease),
+        toValue: -(height + 864.7 * ROCKET_SCALE),
+        duration: 1100,
+        easing: Easing.in(Easing.quad),
         useNativeDriver: true,
       }),
       Animated.timing(contentOpacity, {
         toValue: 0,
-        duration: 1150,
+        duration: 850,
         easing: Easing.inOut(Easing.ease),
         useNativeDriver: true,
       }),
@@ -187,16 +183,16 @@ export default function StartupAnimation({ cloudX1, cloudX2, starOpacity }: Star
       </Animated.View>
 
       {/* Rocket */}
-      <AnimatedHackRocket
-        width={ROCKET_WIDTH}
-        height={ROCKET_HEIGHT}
+      <Animated.View
         style={{
           position: 'absolute',
           top: ROCKET_TOP,
           left: ROCKET_LEFT,
-          transform: [{ translateY }],
+          transform: [{ translateY }, { scale: ROCKET_SCALE }],
         }}
-      />
+      >
+        <HackRocket width={260} height={864.7} />
+      </Animated.View>
     </LinearGradient>
   );
 }
