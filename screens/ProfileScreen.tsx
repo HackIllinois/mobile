@@ -11,7 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import api from '../api';
-import axios, { AxiosResponse } from 'axios';
+import { AxiosResponse } from 'axios';
 import { ProfileAvatar } from '../components/profile/ProfileAvatar';
 import { UserStatsCard } from '../components/profile/UserStatsCard';
 import { QRCodeModal } from '../components/profile/QRCodeModal';
@@ -23,19 +23,8 @@ import QRCodeButtonSvg from '../assets/profile/profile-screen/qr-code-button.svg
 import EditButtonSvg from '../assets/profile/profile-screen/edit-button.svg';
 import BackgroundSvg from '../assets/profile/background.svg';
 import LogoutButtonSvg from '../assets/profile/profile-screen/logout-button.svg';
-
-interface UserProfile {
-  userId: string;
-  displayName: string;
-  discordTag: string;
-  avatarUrl: string | null;
-  avatarId?: string | null;  // Character ID (e.g., 'character2')
-  points: number;
-  pointsAccumulated: number;
-  foodWave: number;
-  teamStatus?: string;
-  ranking?: number;
-}
+import { useProfile, UserProfile } from '../lib/fetchProfile';
+import { queryClient } from '../lib/queryClient';
 
 interface QrCodeResponse {
   userId: string;
@@ -51,8 +40,7 @@ export default function ProfileScreen() {
   const scaleHeight = (size: number) => (height / figmaHeight) * size;
   const scaleFontSize = (size: number) => Math.min(scaleWidth(size), scaleHeight(size));
 
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { profile, loading: isLoading, refetch: refetchProfile } = useProfile();
   const router = useRouter();
 
   const [qrCode, setQrInfo] = useState<string | null>(null);
@@ -62,34 +50,9 @@ export default function ProfileScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      fetchProfile();
-    }, [])
+      refetchProfile();
+    }, [refetchProfile])
   );
-
-  const fetchProfile = async () => {
-    const token = await SecureStore.getItemAsync("jwt");
-    if (!token) {
-      console.log("No token found, redirecting to login");
-      router.replace("/AuthScreen");
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const response: any = await api.get<UserProfile>('profile');
-      const data = response.data;
-      setProfile(data);
-    } catch (error) {
-      if (axios.isAxiosError(error) && error.response?.status === 404) {
-        console.log("Profile not found - user does not have a profile yet");
-      } else {
-        console.error("Failed to fetch profile:", error);
-      }
-      // (Staff/Unauthorized Attendee) Just logging the error and letting the UI handle it for now
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const fetchQrCode = useCallback(async (showLoadingSpinner = false) => {
     if (showLoadingSpinner) setQrLoading(true);
@@ -143,7 +106,7 @@ export default function ProfileScreen() {
           style: "destructive",
           onPress: async () => {
             await SecureStore.deleteItemAsync("jwt");
-            setProfile(null);
+            queryClient.clear();
             setQrInfo(null);
             router.replace("/AuthScreen");
           }
@@ -152,7 +115,7 @@ export default function ProfileScreen() {
     );
   };
 
-  if (isLoading && !profile) {
+  if (isLoading) {
     return (
       <SafeAreaView style={{
         flex: 1,
@@ -201,7 +164,7 @@ export default function ProfileScreen() {
           alignItems: 'center',
           width: '30%',
           marginBottom: scaleHeight(70),
-        }} onPress={fetchProfile}>
+        }} onPress={() => refetchProfile()}>
           <Text style={{
             color: '#FFFFFF',
             fontSize: scaleFontSize(16),
@@ -486,7 +449,9 @@ export default function ProfileScreen() {
         discordTag={profile.discordTag}
         onClose={() => setShowAvatarModal(false)}
         onAvatarSelected={(avatarUrl) => {
-          setProfile((prev) => prev ? { ...prev, avatarUrl } : null);
+          queryClient.setQueryData<UserProfile>(["profile"], (prev) =>
+            prev ? { ...prev, avatarUrl } : prev
+          );
         }}
       />
 

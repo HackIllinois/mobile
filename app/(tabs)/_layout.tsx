@@ -2,22 +2,16 @@ import { Tabs, Link, usePathname } from "expo-router";
 import { TouchableOpacity, View, StyleSheet } from "react-native";
 import ProfileSvg from "../../assets/profile.svg";
 import { CurvedTabBar } from "../../components/CurvedTabBar";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import HomeSvg from "../../assets/navbar/Home.svg";
 import CalendarSvg from "../../assets/navbar/Calendar.svg";
 import QrCodeSvg from "../../assets/navbar/Camera.svg";
 import ShopSvg from "../../assets/navbar/Shop.svg";
 import DuelsSvg from "../../assets/navbar/Duels.svg";
 
-
-// Create a single QueryClient instance
-const queryClient = new QueryClient();
-
 export default function Layout() {
   const pathname = usePathname();
   const isProfileScreen = pathname === "/Profile";
   return (
-    <QueryClientProvider client={queryClient}>
       <View style={styles.container}>
         <Tabs
           screenOptions={{
@@ -86,8 +80,6 @@ export default function Layout() {
         )}
 
       </View>
-
-    </QueryClientProvider>
   );
 }
 

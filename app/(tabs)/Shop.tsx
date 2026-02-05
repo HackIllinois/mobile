@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef, useCallback } from "react";
-import { AxiosResponse } from "axios";
 import api from "../../api";
 import { ShopItem } from "../../types";
+import { useShopItems } from "../../lib/fetchShopItems";
+import { useProfile } from "../../lib/fetchProfile";
 import {
   StyleSheet,
   View,
@@ -14,6 +15,7 @@ import {
   Modal,
   Animated,
   Text,
+  ActivityIndicator,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import TypeWriter from "react-native-typewriter";
@@ -98,65 +100,22 @@ export default function PointShop() {
   const BOTTOM_ROW_Y = imageYToScreenY(RAFFLE_ROW_IMAGE_Y, containerWidth, containerHeight) + safeAreaAdjustment;
 
 
-  const [shopItemData, setShopItemData] = useState<ShopItem[]>([]);
+  const { shopItems: shopItemData, loading: shopLoading } = useShopItems();
+  const { profile, loading: profileLoading, refetch: refetchProfile } = useProfile();
+  const userPoints = profile?.points ?? 0;
+
+  const isLoading = shopLoading || profileLoading;
+
   const [cartIds, setCartIds] = useState<string[]>([]);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showCartModal, setShowCartModal] = useState(false);
   const [tutorialStep, setTutorialStep] = useState<number | null>(null);
   const [isTutorialActive, setIsTutorialActive] = useState(false);
   const [typewriterKey, setTypewriterKey] = useState(0);
-  const [userPoints, setUserPoints] = useState<number>(0);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const tutorialAnim = useRef(new Animated.Value(0)).current;
   const errorOpacity = useRef(new Animated.Value(0)).current;
 
-  const showError = (message: string) => {
-    // Stop any running animation and reset
-    errorOpacity.stopAnimation();
-    errorOpacity.setValue(1);
-    setErrorMessage(message);
-    
-    Animated.timing(errorOpacity, {
-      toValue: 0,
-      duration: 750,
-      delay: 500,
-      useNativeDriver: true,
-    }).start(() => {
-      setErrorMessage(null);
-    });
-  };
-
-  // Fetch profile data
-  const fetchProfile = async () => {
-    try {
-      const response: any = await api.get('profile');
-      setUserPoints(response.data.points ?? 0);
-    } catch (error) {
-      console.error("Failed to fetch profile:", error);
-      setUserPoints(0);
-    }
-  };
-
-  // Fetch shop items
-  const fetchShopItems = async () => {
-    try {
-      const response = await api.get<AxiosResponse<ShopItem[]>>("https://adonix.hackillinois.org/shop/");
-      setShopItemData(response.data);
-    } catch (error) {
-      console.error("Failed to fetch shop items:", error);
-    }
-  };
-
-  // Refresh all data when screen is focused
-  useFocusEffect(
-    useCallback(() => {
-      fetchProfile();
-      fetchShopItems();
-      fetchCartItems();
-    }, [])
-  );
-
-  // Tutorial animation effect
   useEffect(() => {
     if (isTutorialActive && tutorialStep !== null) {
       tutorialAnim.setValue(0);
@@ -264,6 +223,16 @@ export default function PointShop() {
     }
   };
 
+  const showError = useCallback((message: string) => {
+    setErrorMessage(message);
+    errorOpacity.setValue(1);
+    Animated.timing(errorOpacity, {
+      toValue: 0,
+      duration: 2500,
+      useNativeDriver: true,
+    }).start(() => setErrorMessage(null));
+  }, [errorOpacity]);
+
   const [topPageIndex, setTopPageIndex] = useState(0);
   const [bottomPageIndex, setBottomPageIndex] = useState(0);
 
@@ -299,6 +268,15 @@ export default function PointShop() {
         </View>
       </View>
     ));
+
+  if (isLoading) {
+    return (
+      <View style={[styles.container, styles.loadingContainer]}>
+        <ImageBackground source={require("../../assets/point-shop/point-shop-background.png")} style={StyleSheet.absoluteFill} resizeMode="cover" />
+        <ActivityIndicator size="large" color="#fff" style={styles.loadingSpinner} />
+      </View>
+    );
+  }
 
   return (
     <ImageBackground source={require("../../assets/point-shop/point-shop-background.png")} style={styles.container} resizeMode="cover">
@@ -444,7 +422,7 @@ export default function PointShop() {
         visible={showCartModal}
         onClose={() => {
           setShowCartModal(false);
-          fetchProfile();
+          refetchProfile();
         }}
         cartIds={cartIds}
         shopItemData={shopItemData}
@@ -472,6 +450,13 @@ export default function PointShop() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  loadingContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingSpinner: {
+    zIndex: 10,
   },
   safeArea: {
     flex: 1,
