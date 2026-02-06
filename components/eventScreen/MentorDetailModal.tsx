@@ -3,14 +3,15 @@ import { View, Text, StyleSheet, TouchableOpacity, Modal, Pressable, ScrollView 
 export type MentorshipSession = {
   id: string;
   mentorName: string;
-  track: string;
-  startTime: number; // unix seconds
-  endTime: number; // unix seconds
   location: string;
+  startTime: number; // unix seconds
+  endTime: number;   // unix seconds
 
-  bio: string;
-  topics: string[];
-  contact: string;
+  // optional (backend doesn't provide these yet)
+  track?: string;
+  bio?: string;
+  topics?: string[];
+  contact?: string;
 };
 
 interface MentorDetailModalProps {
@@ -30,6 +31,11 @@ const formatTime = (timestamp: number): string => {
 
 export default function MentorDetailModal({ visible, session, onClose }: MentorDetailModalProps) {
   if (!session) return null;
+
+  const topics = session.topics ?? [];
+  const track = session.track?.trim() ? session.track : 'Mentor';
+  const bio = session.bio?.trim() ? session.bio : 'No bio provided yet.';
+  const contact = session.contact?.trim() ? session.contact : 'No contact provided yet.';
 
   return (
     <Modal
@@ -54,7 +60,7 @@ export default function MentorDetailModal({ visible, session, onClose }: MentorD
 
               <View style={styles.pillRow}>
                 <View style={styles.trackPill}>
-                  <Text style={styles.trackText}>{session.track}</Text>
+                  <Text style={styles.trackText}>{track}</Text>
                 </View>
               </View>
 
@@ -64,19 +70,23 @@ export default function MentorDetailModal({ visible, session, onClose }: MentorD
               <Text style={styles.infoText}>{session.location}</Text>
 
               <Text style={styles.sectionHeader}>About</Text>
-              <Text style={styles.bodyText}>{session.bio}</Text>
+              <Text style={styles.bodyText}>{bio}</Text>
 
               <Text style={styles.sectionHeader}>Topics</Text>
-              <View style={styles.topicsWrap}>
-                {session.topics.map((t) => (
-                  <View key={t} style={styles.topicChip}>
-                    <Text style={styles.topicChipText}>{t}</Text>
-                  </View>
-                ))}
-              </View>
+              {topics.length > 0 ? (
+                <View style={styles.topicsWrap}>
+                  {topics.map((t) => (
+                    <View key={t} style={styles.topicChip}>
+                      <Text style={styles.topicChipText}>{t}</Text>
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                <Text style={styles.bodyText}>No topics listed yet.</Text>
+              )}
 
               <Text style={styles.sectionHeader}>Contact</Text>
-              <Text style={styles.bodyText}>{session.contact}</Text>
+              <Text style={styles.bodyText}>{contact}</Text>
             </ScrollView>
           </View>
         </View>
@@ -122,27 +132,11 @@ const styles = StyleSheet.create({
     shadowRadius: 4.65,
     elevation: 8,
   },
-  closeButton: {
-    paddingBottom: 10,
-  },
-  closeText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#000',
-    opacity: 0.5,
-  },
+  closeButton: { paddingBottom: 10 },
+  closeText: { fontSize: 20, fontWeight: 'bold', color: '#000', opacity: 0.5 },
 
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#000',
-    marginBottom: 8,
-  },
-  pillRow: {
-    flexDirection: 'row',
-    marginBottom: 12,
-    marginTop: 4,
-  },
+  title: { fontSize: 28, fontWeight: '800', color: '#000', marginBottom: 8 },
+  pillRow: { flexDirection: 'row', marginBottom: 12, marginTop: 4 },
   trackPill: {
     alignSelf: 'flex-start',
     paddingVertical: 6,
@@ -150,35 +144,14 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: '#eddbff',
   },
-  trackText: {
-    fontSize: 12,
-    fontWeight: '900',
-    color: '#222',
-  },
-  infoText: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#000',
-    marginBottom: 2,
-  },
-  sectionHeader: {
-    marginTop: 14,
-    fontSize: 16,
-    fontWeight: '900',
-    color: '#333',
-  },
-  bodyText: {
-    marginTop: 6,
-    fontSize: 14,
-    color: '#333',
-    lineHeight: 20,
-  },
-  topicsWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 8,
-  },
+  trackText: { fontSize: 12, fontWeight: '900', color: '#222' },
+
+  infoText: { fontSize: 20, fontWeight: '600', color: '#000', marginBottom: 2 },
+
+  sectionHeader: { marginTop: 14, fontSize: 16, fontWeight: '900', color: '#333' },
+  bodyText: { marginTop: 6, fontSize: 14, color: '#333', lineHeight: 20 },
+
+  topicsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
   topicChip: {
     paddingVertical: 6,
     paddingHorizontal: 10,
@@ -187,9 +160,5 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ddd',
   },
-  topicChipText: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#333',
-  },
+  topicChipText: { fontSize: 12, fontWeight: '800', color: '#333' },
 });
