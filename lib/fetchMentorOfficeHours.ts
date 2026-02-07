@@ -26,7 +26,7 @@ async function fetchMentorOfficeHours(): Promise<MentorOfficeHourDto[]> {
     });
 
     const data = response?.data;
-
+    
     if (Array.isArray(data)) return data as MentorOfficeHourDto[];
     if (data && Array.isArray(data.data)) return data.data as MentorOfficeHourDto[];
     if (data && Array.isArray(data.mentors)) return data.mentors as MentorOfficeHourDto[];

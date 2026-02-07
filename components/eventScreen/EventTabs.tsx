@@ -1,0 +1,166 @@
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  View,
+  TouchableOpacity,
+  StyleSheet,
+  Dimensions,
+  Animated,
+  LayoutChangeEvent,
+} from 'react-native';
+import Svg, { Path } from 'react-native-svg';
+import EventText from "../../assets/event/ActiveEvent.svg";
+import MentorshipText from "../../assets/event/ActiveMentorship.svg";
+import PassiveMentorText from "../../assets/event/PassiveMentorship.svg";
+import PassiveEventText from "../../assets/event/PassiveEvent.svg";
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+// --- Configuration ---
+const TAB_HEIGHT = 45;
+const CORNER_RADIUS = 12;
+const LEFT_MARGIN = 20;
+const TAB_GAP = 30;
+const HUMP_PADDING = 25;
+const STROKE_WIDTH = 3;
+const STROKE_OFFSET = 2;
+
+// --- FIX: Nudge the center point for Mentorship ---
+// If the text looks too far left, make this negative.
+// If the text looks too far right (your case), make this positive.
+const MENTORSHIP_OFFSET = 3; 
+
+type TabMode = 'events' | 'mentorship';
+
+interface EventTabsProps {
+  activeTab: TabMode;
+  onTabPress: (tab: TabMode) => void;
+}
+
+export default function EventTabs({ activeTab, onTabPress }: EventTabsProps) {
+  const animatedValue = useRef(new Animated.Value(activeTab === 'events' ? 0 : 1)).current;
+  
+  const [layouts, setLayouts] = useState({
+    events: { x: 0, width: 0 },
+    mentorship: { x: 0, width: 0 },
+  });
+
+  const [currentIndex, setCurrentIndex] = useState(activeTab === 'events' ? 0 : 1);
+
+  useEffect(() => {
+    const targetValue = activeTab === 'events' ? 0 : 1;
+    setCurrentIndex(targetValue);
+    
+    Animated.timing(animatedValue, {
+      toValue: targetValue,
+      duration: 300,
+      useNativeDriver: false,
+    }).start();
+  }, [activeTab]);
+
+  const onLayoutTab = (key: 'events' | 'mentorship', event: LayoutChangeEvent) => {
+    const { x, width } = event.nativeEvent.layout;
+    if (layouts[key].x !== x || layouts[key].width !== width) {
+      setLayouts(prev => ({ ...prev, [key]: { x, width } }));
+    }
+  };
+
+  // --- SVG Path Logic ---
+  const getPath = (index: number) => {
+    const activeKey = index === 0 ? 'events' : 'mentorship';
+    const layout = layouts[activeKey];
+
+    if (layout.width === 0) return `M 0 ${TAB_HEIGHT} L ${SCREEN_WIDTH} ${TAB_HEIGHT}`;
+
+    // 1. Calculate the raw center
+    let centerX = layout.x + (layout.width / 2);
+
+    // 2. Apply the correction offset if it's the Mentorship tab
+    if (activeKey === 'mentorship') {
+        centerX -= MENTORSHIP_OFFSET; 
+    }
+
+    // 3. Calculate start/end based on the corrected center
+    // We also subtract the offset from the width calculation to shrink the hump slightly
+    // if the gap is truly empty space.
+    const effectiveWidth = activeKey === 'mentorship' 
+        ? layout.width - MENTORSHIP_OFFSET 
+        : layout.width;
+        
+    const humpWidth = effectiveWidth + HUMP_PADDING;
+    const startX = centerX - (humpWidth / 2);
+    const endX = centerX + (humpWidth / 2);
+
+    const topY = STROKE_OFFSET;
+    const bottomY = TAB_HEIGHT - STROKE_OFFSET;
+
+    return `
+      M 0 ${bottomY} 
+      L ${startX - CORNER_RADIUS} ${bottomY} 
+      Q ${startX} ${bottomY} ${startX} ${bottomY - CORNER_RADIUS} 
+      L ${startX} ${topY + CORNER_RADIUS} 
+      Q ${startX} ${topY} ${startX + CORNER_RADIUS} ${topY} 
+      L ${endX - CORNER_RADIUS} ${topY} 
+      Q ${endX} ${topY} ${endX} ${topY + CORNER_RADIUS} 
+      L ${endX} ${bottomY - CORNER_RADIUS} 
+      Q ${endX} ${bottomY} ${endX + CORNER_RADIUS} ${bottomY} 
+      L ${SCREEN_WIDTH} ${bottomY}
+    `;
+  };
+
+  return (
+    <View style={styles.container}>
+      <View style={StyleSheet.absoluteFill}>
+        <Svg width={SCREEN_WIDTH} height={TAB_HEIGHT + 5} style={{ top: 0 }}>
+          <Path
+            d={getPath(currentIndex)}
+            stroke="white"
+            strokeWidth={STROKE_WIDTH}
+            fill="none"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </Svg>
+      </View>
+
+      <View style={[styles.tabsContainer, { paddingLeft: LEFT_MARGIN }]}>
+        <TouchableOpacity
+          style={styles.tabButton}
+          onLayout={(e) => onLayoutTab('events', e)}
+          onPress={() => onTabPress('events')}
+          activeOpacity={0.8}
+        >
+          {activeTab === 'events' ? <EventText /> : <PassiveEventText />}
+        </TouchableOpacity>
+
+        <View style={{ width: TAB_GAP }} />
+
+        <TouchableOpacity
+          style={styles.tabButton}
+          onLayout={(e) => onLayoutTab('mentorship', e)}
+          onPress={() => onTabPress('mentorship')}
+          activeOpacity={0.8}
+        >
+          {activeTab === 'mentorship' ? <MentorshipText /> : <PassiveMentorText />}
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    width: '100%',
+    height: 60,
+    justifyContent: 'flex-start',
+  },
+  tabsContainer: {
+    flexDirection: 'row',
+    height: TAB_HEIGHT,
+    alignItems: 'center',
+  },
+  tabButton: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: '100%',
+  },
+});

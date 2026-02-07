@@ -1,6 +1,7 @@
 import { Tabs, Link, usePathname } from "expo-router";
 import { TouchableOpacity, View, StyleSheet } from "react-native";
 import ProfileSvg from "../../assets/profile.svg";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CurvedTabBar } from "../../components/CurvedTabBar";
 import HomeSvg from "../../assets/navbar/Home.svg";
 import CalendarSvg from "../../assets/navbar/Calendar.svg";
@@ -11,6 +12,7 @@ import DuelsSvg from "../../assets/navbar/Duels.svg";
 export default function Layout() {
   const pathname = usePathname();
   const isProfileScreen = pathname === "/Profile";
+  const insets = useSafeAreaInsets();
   return (
       <View style={styles.container}>
         <Tabs
@@ -70,7 +72,7 @@ export default function Layout() {
         </Tabs>
 
         {!isProfileScreen && (
-          <View style={[styles.floatingButton, { top: 60 }]}>
+          <View style={[styles.floatingButton, { top: insets.top + 10 }]}>
             <Link href="/Profile" asChild>
               <TouchableOpacity>
                 <ProfileSvg width={45} height={45} />

@@ -1,68 +1,68 @@
+import React, { useCallback, useState, useMemo, useEffect, useRef } from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
   RefreshControl,
   Animated,
+  Dimensions,
   Pressable,
+  TouchableOpacity
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useFonts, TsukimiRounded_700Bold } from '@expo-google-fonts/tsukimi-rounded';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useCallback, useState, useMemo, useEffect, useRef } from 'react';
-import { useEvents } from '../../lib/fetchEvents';
-import { useSavedEvents } from '../../lib/fetchSavedEvents';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons'; //
+
+// --- Components ---
+import { EventHeader, EventDay } from '../../components/eventScreen/EventHeader';
+import EventTabs from '../../components/eventScreen/EventTabs'; 
 import { EventCard } from '../../components/eventScreen/EventCard';
 import EventDetailModal from '../../components/eventScreen/EventDetailModal';
 import MentorDetailModal from '../../components/eventScreen/MentorDetailModal';
 import MenuModal from '../../components/eventScreen/MenuModal';
 import StarryBackground from '../../components/eventScreen/StarryBackground';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// --- Hooks & Utils ---
+import { useEvents } from '../../lib/fetchEvents';
+import { useSavedEvents } from '../../lib/fetchSavedEvents';
 import { useMentorOfficeHours } from '../../lib/fetchMentorOfficeHours';
 import { Event } from '../../types';
-import Title from '../../assets/event/page title.svg';
-import Moon from '../../assets/event/Moon.svg';
-import Sun from '../../assets/event/Sun.svg';
 
+// --- Types ---
 type ScheduleMode = 'events' | 'mentorship';
 
 type MentorshipSession = {
   id: string;
   mentorName: string;
   location: string;
-  startTime: number; // unix seconds
-  endTime: number; // unix seconds
-
+  startTime: number; 
+  endTime: number;   
   track?: string;
   bio?: string;
   topics?: string[];
   contact?: string;
 };
 
+// --- Constants ---
+const { width, height } = Dimensions.get('window');
+const HEADER_HEIGHT_EXPANDED = 240; 
+const TABS_HEIGHT = 40;
+const IS_TABLET = width > 768;
+
 export default function EventScreen() {
   const insets = useSafeAreaInsets();
   const [scheduleMode, setScheduleMode] = useState<ScheduleMode>('events');
-
+  
+  // Animation Values
   const scrollY = useRef(new Animated.Value(0)).current;
 
-  const { events = [], loading, error, refetch } = useEvents();
+  // --- Data Hooks ---
+  const { events = [], loading: eventsLoading, error: eventsError, refetch: refetchEvents } = useEvents();
   const { savedEventIds: savedEventIdsList } = useSavedEvents();
-  const [savedEventIds, setSavedEventIds] = useState<Set<string>>(new Set());
-  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [selectedDay, setSelectedDay] = useState<string | null>(null);
-  const [selectedSave, setSaveValue] = useState<boolean>(false);
-  const [menuModalVisible, setMenuModalVisible] = useState(false);
-  const [selectedEventForMenu, setSelectedEventForMenu] = useState<Event | null>(null);
-  useFonts({ TsukimiRounded_700Bold });
-
-  const [selectedMentorSession, setSelectedMentorSession] = useState<MentorshipSession | null>(null);
-  const [mentorModalVisible, setMentorModalVisible] = useState(false);
-
-  // Mentors query (only run when on mentorship tab)
+  
   const isMentors = scheduleMode === 'mentorship';
   const {
     mentorOfficeHours,
@@ -71,11 +71,26 @@ export default function EventScreen() {
     refetch: refetchMentors,
   } = useMentorOfficeHours(isMentors);
 
-  // Sync saved events from TanStack Query cache into local Set state
+  // --- State ---
+  const [savedEventIds, setSavedEventIds] = useState<Set<string>>(new Set());
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const [selectedSave, setSaveValue] = useState<boolean>(false);
+  const [menuModalVisible, setMenuModalVisible] = useState(false);
+  const [selectedEventForMenu, setSelectedEventForMenu] = useState<Event | null>(null);
+  
+  const [selectedMentorSession, setSelectedMentorSession] = useState<MentorshipSession | null>(null);
+  const [mentorModalVisible, setMentorModalVisible] = useState(false);
+
+  const [fontsLoaded] = useFonts({ TsukimiRounded_700Bold });
+
   useEffect(() => {
     setSavedEventIds(new Set(savedEventIdsList));
   }, [savedEventIdsList]);
 
+  // --- Handlers ---
   const handleEventPress = (event: Event) => {
     setSelectedEvent(event);
     setModalVisible(true);
@@ -91,40 +106,66 @@ export default function EventScreen() {
     setMentorModalVisible(true);
   };
 
+  // Unified Refresh Logic
   const onRefresh = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setIsRefreshing(true);
 
     if (scheduleMode === 'events') {
-      await refetch();
+      await refetchEvents();
     } else {
       await refetchMentors();
     }
 
     setIsRefreshing(false);
-  }, [refetch, refetchMentors, scheduleMode]);
+  }, [refetchEvents, refetchMentors, scheduleMode]);
 
-  const isToday = (d: Date) => {
-    const today = new Date();
-    return d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth() && d.getDate() === today.getDate();
+  const handleSave = async (eventId: string) => {
+    Haptics.selectionAsync();
+    setSavedEventIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(eventId)) next.delete(eventId);
+      else next.add(eventId);
+
+      AsyncStorage.setItem('savedEvents', JSON.stringify(Array.from(next))).catch((e) =>
+        console.error('Failed to save events', e),
+      );
+      return next;
+    });
   };
 
-  const eventDays = (() => {
+  // --- Data Processing ---
+  const isToday = (d: Date) => {
+    const today = new Date();
+    return (
+      d.getFullYear() === today.getFullYear() &&
+      d.getMonth() === today.getMonth() &&
+      d.getDate() === today.getDate()
+    );
+  };
+
+  const eventDays: EventDay[] = useMemo(() => {
     if (!events.length) return [];
     const dateMap = new Map<string, Date>();
     events.forEach((event) => {
       const eventDate = new Date(event.startTime * 1000);
       const dateKey = eventDate.toDateString();
-      if (!dateMap.has(dateKey)) dateMap.set(dateKey, eventDate);
+      if (!dateMap.has(dateKey)) {
+        dateMap.set(dateKey, eventDate);
+      }
     });
     return Array.from(dateMap.entries())
       .sort(([, dateA], [, dateB]) => dateA.getTime() - dateB.getTime())
       .map(([dateKey, date]) => {
         const dayNum = date.getDate().toString().padStart(2, '0');
         const weekDay = date.toLocaleDateString('en-US', { weekday: 'short' });
-        return { id: dateKey, label: `${dayNum} - ${weekDay}`, date };
+        return {
+          id: dateKey,
+          label: `${dayNum} - ${weekDay}`,
+          date,
+        };
       });
-  })();
+  }, [events]);
 
   const mentorshipSessions: MentorshipSession[] = useMemo(() => {
     return mentorOfficeHours.map((m) => ({
@@ -133,8 +174,6 @@ export default function EventScreen() {
       location: m.location,
       startTime: Math.floor(m.startTime / 1000),
       endTime: Math.floor(m.endTime / 1000),
-
-      // placeholders until backend provides details
       track: 'Mentor',
       bio: 'No bio provided yet.',
       topics: [],
@@ -155,62 +194,31 @@ export default function EventScreen() {
     return scheduleMode === 'events' ? events : mentorshipSessions;
   }, [scheduleMode, events, mentorshipSessions]);
 
-  const sectionTitleText = useMemo(() => {
-    if (!selectedDay) return isMentors ? 'All Mentors' : 'All Events';
-
-    const dayDate = new Date(selectedDay);
-    const isCurrentDay = new Date().toDateString() === selectedDay;
-    const dayPrefix = isCurrentDay ? "Today's" : dayDate.toLocaleDateString('en-US', { weekday: 'long' }) + "'s";
-
-    if (isMentors) return `${dayPrefix} mentors`;
-    return `${dayPrefix} ${selectedSave ? 'Saved Events' : 'Events'}`;
-  }, [selectedDay, selectedSave, isMentors]);
-
-  const filteredItems = (() => {
+  const filteredItems = useMemo(() => {
     let data: any[] = activeItems as any[];
-
+    
     if (selectedDay) {
       data = data.filter((item) => new Date(item.startTime * 1000).toDateString() === selectedDay);
     }
-
+    
     if (scheduleMode === 'events' && selectedSave) {
       data = (data as Event[]).filter((event) => savedEventIds.has(event.eventId));
     }
-
+    
     return data.sort((a, b) => a.startTime - b.startTime);
-  })();
+  }, [activeItems, selectedDay, selectedSave, scheduleMode, savedEventIds]);
 
-  const handleDayPress = (dayId: string) => {
-    setSelectedDay(selectedDay === dayId ? null : dayId);
-  };
 
-  const handleSave = async (eventId: string) => {
-    setSavedEventIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(eventId)) next.delete(eventId);
-      else next.add(eventId);
-
-      AsyncStorage.setItem('savedEvents', JSON.stringify(Array.from(next))).catch((e) =>
-        console.error('Failed to save events', e),
-      );
-
-      return next;
-    });
-  };
+  // --- Render Functions ---
 
   const formatTime = (timestamp: number): string => {
     const date = new Date(timestamp * 1000);
     return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
   };
 
-  const formatDateShort = (timestamp: number): string => {
-    const date = new Date(timestamp * 1000);
-    return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-  };
-
   const renderMentorCard = (m: MentorshipSession, showTimeHeader: boolean, timeHeaderText: string) => {
     return (
-      <View style={{ marginBottom: 40 }}>
+      <View style={{ marginBottom: 40, width: '100%', alignItems: 'center' }}>
         {showTimeHeader && <Text style={styles.timeHeader}>{timeHeaderText}</Text>}
 
         <Pressable onPress={() => handleMentorPress(m)} style={styles.mentorCard}>
@@ -240,22 +248,12 @@ export default function EventScreen() {
   const renderEvent = ({ item, index }: { item: any; index: number }) => {
     const previousItem = filteredItems[index - 1];
     const showTime = index === 0 || previousItem?.startTime !== item.startTime;
-    const showDateSeparator =
-      index > 0 &&
-      new Date(item.startTime * 1000).toDateString() !== new Date(previousItem.startTime * 1000).toDateString();
-    const showDateEverywhere = selectedDay === null;
     const timeHeaderText = formatTime(item.startTime);
 
     if (scheduleMode === 'events') {
       const ev = item as Event;
-
       return (
-        <View style={{ marginBottom: 40 }}>
-          {showDateSeparator && <View style={styles.daySeparator} />}
-          {showTime && <Text style={styles.timeHeader}>{timeHeaderText}</Text>}
-
-          {showDateEverywhere && <Text style={styles.cardDateLabel}>{formatDateShort(ev.startTime)}</Text>}
-
+        <View style={styles.eventWrapper}>
           <EventCard
             event={ev}
             index={index}
@@ -263,7 +261,7 @@ export default function EventScreen() {
             handleSave={handleSave}
             onShowMenu={handleShowMenu}
             saved={savedEventIds.has(ev.eventId)}
-            showTime={false}
+            showTime={showTime} 
           />
         </View>
       );
@@ -273,164 +271,125 @@ export default function EventScreen() {
     return renderMentorCard(m, showTime, timeHeaderText);
   };
 
-  const renderContent = () => {
-    if (loading && scheduleMode === 'events' && events.length === 0 && !isRefreshing) {
-      return (
-        <View style={[styles.emptyContainer, { marginTop: 100 }]}>
-          <ActivityIndicator color="#6100a2" size="large" />
-          <Text style={styles.emptyText}>Loading Events...</Text>
-        </View>
-      );
-    }
+  // --- Animation Interpolations ---
+  const tabsTranslateY = scrollY.interpolate({
+    inputRange: [0, 80],
+    outputRange: [0, -TABS_HEIGHT],
+    extrapolate: 'clamp',
+  });
+  const tabsOpacity = scrollY.interpolate({
+    inputRange: [0, 40],
+    outputRange: [1, 0],
+    extrapolate: 'clamp',
+  });
+  const headerTranslateY = scrollY.interpolate({
+    inputRange: [0, 80],
+    outputRange: [0, -TABS_HEIGHT],
+    extrapolate: 'clamp',
+  });
+  const headerOpacity = scrollY.interpolate({
+    inputRange: [0, 100],
+    outputRange: [1, 0.6], 
+    extrapolate: 'clamp',
+  });
 
-    if (scheduleMode === 'mentorship' && mentorsLoading && mentorshipSessions.length === 0 && !isRefreshing) {
-      return (
-        <View style={[styles.emptyContainer, { marginTop: 100 }]}>
-          <ActivityIndicator color="#6100a2" size="large" />
-          <Text style={styles.emptyText}>Loading Mentors...</Text>
-        </View>
-      );
-    }
-
-    if (isRefreshing) {
-      return (
-        <View style={[styles.emptyContainer, { marginTop: 100 }]}>
-          <ActivityIndicator color="#7229a3" size="large" />
-          <Text style={styles.emptyText}>Refreshing...</Text>
-        </View>
-      );
-    }
-
-    if (error && !isRefreshing && scheduleMode === 'events') {
-      return (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>Error fetching events: {String(error)}</Text>
-          <TouchableOpacity onPress={() => refetch()} style={styles.retryButton}>
-            <Text style={styles.retryText}>Retry</Text>
-          </TouchableOpacity>
-        </View>
-      );
-    }
-
-    if (mentorsError && !isRefreshing && scheduleMode === 'mentorship') {
-      return (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>Error fetching mentors</Text>
-          <TouchableOpacity onPress={() => refetchMentors()} style={styles.retryButton}>
-            <Text style={styles.retryText}>Retry</Text>
-          </TouchableOpacity>
-        </View>
-      );
-    }
-
-    if (filteredItems.length === 0 && !loading && !mentorsLoading) {
-      return (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>
-            {scheduleMode === 'mentorship'
-              ? 'No mentors scheduled ' + (selectedDay !== null ? 'for this day' : '')
-              : selectedSave
-                ? 'No saved events found'
-                : 'No events scheduled ' + (selectedDay !== null ? 'for this day' : '')}
-          </Text>
-        </View>
-      );
-    }
-
-    return (
-      <Animated.FlatList
-        data={[...filteredItems].sort((a, b) => a.startTime - b.startTime)}
-        renderItem={renderEvent}
-        keyExtractor={(item: any) => item.eventId || item.id || item.name + item.startTime}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
-        scrollEventThrottle={16}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={onRefresh}
-            tintColor="#00f0ff"
-            colors={['#00f0ff', '#ff00ff']}
-            progressBackgroundColor="#1a1a1a"
-          />
-        }
-      />
-    );
-  };
+  // --- Loading/Error/Empty States ---
+  const isLoading = (eventsLoading && scheduleMode === 'events') || (mentorsLoading && scheduleMode === 'mentorship');
+  const isError = (eventsError && scheduleMode === 'events') || (mentorsError && scheduleMode === 'mentorship');
+  const isEmpty = !isLoading && !isRefreshing && filteredItems.length === 0;
 
   return (
     <StarryBackground scrollY={scrollY}>
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        <View style={{ marginLeft: insets.left, marginBottom: -80, marginTop: -30, top: 7 }}>
-          <Title style={{ marginLeft: 10 }} />
+      <View style={[styles.container, { paddingTop: insets.top}]}>
+
+        {/* --- Sticky Header Section --- */}
+        <View style={[styles.stickyHeaderContainer, { top: insets.top + 15}]}>
+            <Animated.View style={{ 
+                opacity: tabsOpacity, 
+                transform: [{ translateY: tabsTranslateY }],
+                zIndex: -1 
+            }}>
+                <EventTabs 
+                    activeTab={scheduleMode}
+                    onTabPress={(mode) => {
+                        setScheduleMode(mode);
+                        setSaveValue(false);
+                    }}
+                />
+            </Animated.View>
+
+            <Animated.View style={{ 
+                opacity: headerOpacity,
+                transform: [{ translateY: headerTranslateY }] 
+            }}>
+                <EventHeader 
+                    eventDays={eventDays}
+                    selectedDay={selectedDay}
+                    setSelectedDay={setSelectedDay}
+                    selectedSave={selectedSave}
+                    setSaveValue={setSaveValue}
+                    scheduleMode={scheduleMode}
+                />
+            </Animated.View>
         </View>
 
-        {eventDays.length > 0 && (
-          <View style={styles.daysContainer}>
-            <View
-              style={[
-                styles.tabs,
-                { paddingHorizontal: 30, marginBottom: 10, flexDirection: 'row', justifyContent: 'space-between' },
-              ]}
-            >
-              {eventDays.map((day) => {
-                const isSelected = selectedDay === day.id;
-                const isTodayDate = isToday(day.date);
-
-                return (
-                  <View key={day.id} style={styles.dayWrapper}>
-                    <View style={styles.svgBackground}>
-                      {isSelected ? <Sun width={90} height={90} style={{ marginBottom: 0 }} /> : <Moon width={80} height={80} />}
+        {/* --- Render Content Logic (Reflecting Old Page Behavior) --- */}
+        
+        {/* 1. Refreshing State (Full Screen Loader) */}
+        {isRefreshing ? (
+             <View style={[styles.emptyContainer, { marginTop: 300 }]}>
+                <ActivityIndicator color="#7229a3" size="large" />
+                <Text style={styles.emptyText}>Refreshing...</Text>
+             </View>
+        ) : isLoading && isEmpty ? (
+             <View style={{ marginTop: 300 }}>
+                 <ActivityIndicator size="large" color="#FFF" />
+                 <Text style={styles.emptyText}>Loading...</Text>
+             </View>
+        ) : isError ? (
+             <View style={styles.emptyContainer}>
+                 <Text style={styles.emptyText}>Error fetching data</Text>
+                 <TouchableOpacity onPress={() => scheduleMode === 'events' ? refetchEvents() : refetchMentors()} style={styles.retryButton}>
+                    <Text style={styles.retryText}>Retry</Text>
+                 </TouchableOpacity>
+             </View>
+        ) : (
+            <Animated.FlatList
+                data={filteredItems}
+                renderItem={renderEvent}
+                keyExtractor={(item: any) => item.eventId || item.id || item.name + item.startTime}
+                contentContainerStyle={[
+                    styles.listContent, 
+                    { paddingTop: HEADER_HEIGHT_EXPANDED } 
+                ]}
+                showsVerticalScrollIndicator={false}
+                onScroll={Animated.event(
+                    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                    { useNativeDriver: true }
+                )}
+                scrollEventThrottle={16}
+                // Keep RefreshControl for pull-to-refresh as well
+                refreshControl={
+                    <RefreshControl
+                        refreshing={isRefreshing}
+                        onRefresh={onRefresh}
+                        tintColor="#00f0ff"
+                        progressViewOffset={HEADER_HEIGHT_EXPANDED} 
+                    />
+                }
+                ListEmptyComponent={
+                    <View style={styles.emptyContainer}>
+                        <Text style={styles.emptyText}>
+                            {scheduleMode === 'mentorship' 
+                                ? 'No mentors found.' 
+                                : selectedSave ? 'No saved events.' : 'No events found.'}
+                        </Text>
                     </View>
-
-                    <TouchableOpacity style={styles.dayButtonOverlay} onPress={() => handleDayPress(day.id)}>
-                      <Text style={[styles.dayButtonText, isSelected ? styles.selectedText : styles.unselectedText]}>
-                        {isTodayDate ? 'Today' : day.label}
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                );
-              })}
-            </View>
-            <Text style={styles.sectionTitle}>{sectionTitleText}</Text>
-          </View>
+                }
+            />
         )}
 
-        <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            paddingHorizontal: 30,
-            marginBottom: 15,
-            marginTop: 10,
-          }}
-        >
-          <View style={{ flexDirection: 'row', gap: 80 }}>
-            <TouchableOpacity
-              onPress={() => {
-                setScheduleMode((prev) => (prev === 'events' ? 'mentorship' : 'events'));
-                setSaveValue(false);
-              }}
-              style={[styles.reminderButton, styles.mentorshipButton]}
-            >
-              <Text style={styles.reminderButtonText}>
-                {scheduleMode === 'events' ? 'Mentorship Schedule' : 'Events Schedule'}
-              </Text>
-            </TouchableOpacity>
-
-            {scheduleMode === 'events' && (
-              <TouchableOpacity onPress={() => setSaveValue(!selectedSave)} style={styles.reminderButton}>
-                <Text style={styles.reminderButtonText}>{selectedSave ? 'Close' : 'Saved'}</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
-
-        {renderContent()}
-
-        {scheduleMode === 'events' && selectedEvent && (
+        {selectedEvent && (
           <EventDetailModal
             visible={modalVisible}
             event={selectedEvent}
@@ -440,159 +399,85 @@ export default function EventScreen() {
           />
         )}
 
-        {scheduleMode === 'events' && (
-          <MenuModal
-            visible={menuModalVisible}
-            event={selectedEventForMenu}
-            onClose={() => setMenuModalVisible(false)}
-          />
-        )}
+        <MenuModal 
+            visible={menuModalVisible} 
+            event={selectedEventForMenu} 
+            onClose={() => setMenuModalVisible(false)} 
+        />
 
-        {scheduleMode === 'mentorship' && (
+        {selectedMentorSession && (
           <MentorDetailModal
             visible={mentorModalVisible}
             session={selectedMentorSession}
             onClose={() => setMentorModalVisible(false)}
           />
         )}
+
       </View>
     </StarryBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 20,
+  container: { 
+    flex: 1,
+  },
+  
+  titleContainer: {
+    position: 'absolute',
+    left: 0,
+    zIndex: 101, 
+    marginLeft: 10,
   },
 
-  tabs: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 13,
-    padding: 20,
-  },
-
-  daysContainer: {
-    justifyContent: 'center',
-  },
-
-  daySeparator: {
-    height: 9,
-    backgroundColor: 'rgba(255, 0, 191, 0.82)',
-    marginBottom: 50,
-    marginTop: 10,
-    borderRadius: 4,
-  },
-
-  dayButtonText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    textShadowColor: 'rgba(0, 0, 0, 0.5)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
-  },
-
-  sectionTitle: {
-    color: 'white',
-    fontSize: 28,
-    fontWeight: 'bold',
-    fontFamily: 'TsukimiRounded_700Bold',
-    marginBottom: 10,
-    marginTop: -12,
-    letterSpacing: 0.2,
-    alignSelf: 'center',
-  },
-
-  reminderButton: {
-    backgroundColor: '#E0E0FF',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: 30,
-  },
-
-  reminderButtonText: {
-    color: '#050211',
-    fontWeight: 'bold',
-    fontSize: 14,
+  stickyHeaderContainer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    zIndex: 100, 
   },
 
   listContent: {
-    paddingTop: 10,
-    paddingBottom: 120,
+    paddingBottom: 100, 
+    minHeight: 800,
+  },
+  
+  eventWrapper: {
     width: '100%',
-  },
-
-  emptyContainer: {
     alignItems: 'center',
-    justifyContent: 'center',
-    padding: 20,
+    marginBottom: 0, 
   },
-
-  emptyText: {
-    fontFamily: 'TsukimiRounded_700Bold',
-    color: '#D0F5FF',
-    fontSize: 22,
-    textAlign: 'center',
-  },
-
-  retryButton: {
-    marginTop: 10,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    backgroundColor: '#840386',
-    borderRadius: 8,
-  },
-
-  retryText: {
-    color: '#fff',
-    fontWeight: '600',
-  },
-
+  
   timeHeader: {
     fontSize: 20,
     color: '#ffffffff',
     textAlign: 'center',
     marginBottom: 10,
-  },
-
-  cardDateLabel: {
-    fontSize: 13,
+    marginTop: 10,
     fontWeight: '700',
-    color: 'rgba(255,255,255,0.85)',
-    textAlign: 'center',
-    marginBottom: 8,
   },
 
+  // --- Mentor Card Styles ---
   mentorCard: {
-    marginHorizontal: 16,
-    marginVertical: 8,
+    width: '90%', 
     borderRadius: 16,
     padding: 18,
     backgroundColor: 'rgba(135, 65, 134, 0.75)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.25)',
   },
-
   mentorHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    gap: 10,
+    gap: 12,
   },
-
   mentorName: {
     fontSize: 22,
     fontWeight: '800',
     color: '#fffefeff',
     flex: 1,
   },
-
   mentorTrackPill: {
     paddingVertical: 6,
     paddingHorizontal: 12,
@@ -600,20 +485,17 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.85)',
     alignSelf: 'flex-start',
   },
-
   mentorTrackText: {
     fontSize: 12,
     fontWeight: '800',
     color: '#222',
   },
-
   mentorInfo: {
     marginTop: 8,
     fontSize: 16,
     fontWeight: '600',
     color: '#ffffffff',
   },
-
   mentorMore: {
     marginTop: 10,
     fontSize: 14,
@@ -621,33 +503,28 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  mentorshipButton: {
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-  },
-
-  dayWrapper: {
-    width: 80,
-    height: 80,
-    justifyContent: 'center',
+  // --- Empty / Loading States ---
+  emptyContainer: {
     alignItems: 'center',
-    position: 'relative',
-  },
-  svgBackground: {
-    position: 'absolute',
-    zIndex: 1,
-  },
-  dayButtonOverlay: {
-    zIndex: 2,
     justifyContent: 'center',
-    alignItems: 'center',
-    width: '100%',
-    height: '100%',
+    padding: 20,
+    marginTop: height / 3,
   },
-  selectedText: {
-    color: '#ffffff',
+  emptyText: {
+    color: '#FFF',
+    fontSize: 18,
+    textAlign: 'center',
+    fontFamily: 'TsukimiRounded_700Bold',
   },
-  unselectedText: {
-    color: '#444444',
+  retryButton: {
+    marginTop: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: '#840386',
+    borderRadius: 8,
+  },
+  retryText: {
+    color: '#fff',
+    fontWeight: '600',
   },
 });

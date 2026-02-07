@@ -6,8 +6,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const { width, height } = Dimensions.get('window');
 
 // CONFIGURATION
-const NUM_STARS = 400;
-const PARALLAX_SPEED = 0.15; // Speed of the stars (15% of scroll speed)
+const NUM_STARS = 500;
+const PARALLAX_SPEED = 0.8 // Speed of the stars (15% of scroll speed)
 const STORAGE_KEY = 'HACKILLINOIS_STAR_LAYOUT_V1';
 
 interface Star {

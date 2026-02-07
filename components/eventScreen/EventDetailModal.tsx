@@ -1,4 +1,15 @@
-import { Text, StyleSheet, TouchableOpacity, Modal, Image, ScrollView, View, Pressable } from 'react-native';
+import React from 'react';
+import { 
+  Text, 
+  StyleSheet, 
+  TouchableOpacity, 
+  Modal, 
+  Image, 
+  ScrollView, 
+  View, 
+  Pressable, 
+  Dimensions 
+} from 'react-native';
 import { Event } from '../../types';
 import { PillButton } from './PillButton';
 
@@ -10,6 +21,7 @@ interface FullScreenModalProps {
   saved: boolean;
 }
 
+// Formatting helper
 const formatTime = (timestamp: number): string => {
   const date = new Date(timestamp * 1000);
   return date.toLocaleTimeString('en-US', { 
@@ -19,7 +31,7 @@ const formatTime = (timestamp: number): string => {
   });
 };
 
-export default function FullScreenModal({ visible, event, onClose, handleSave, saved }: FullScreenModalProps) {
+export default function EventDetailModal({ visible, event, onClose, handleSave, saved }: FullScreenModalProps) {
   if (!event) return null;
 
   return (
@@ -30,58 +42,66 @@ export default function FullScreenModal({ visible, event, onClose, handleSave, s
       statusBarTranslucent
       onRequestClose={onClose}
     >
-      
       <View style={styles.backdrop}>
         <Pressable style={styles.backdropPressable} onPress={onClose} />
         
+        {/* WRAPPER: Max Width prevents stretching on iPad */}
         <View style={styles.cardWrapper}>
+          
+          {/* Sakura Pink Background (Rotated Shade) */}
+          <View style={styles.backgroundCard} />
+
+          {/* Main Content Card */}
+          <View style={styles.mainCard}>
+            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+                <Text style={styles.closeText}>✕</Text>
+            </TouchableOpacity>
             
-            <View style={styles.backgroundCard} />
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}> 
+              <View style={styles.headerSection}>
+                  <Text style={styles.title}>{event.name}</Text>
+                  
+                  <View style={styles.pillWrapper}>
+                    <PillButton
+                      toggleSave={() => handleSave(event.eventId)}
+                      points={event.points || 0} 
+                      isSaved={saved}
+                    />
+                  </View>
 
-            <View style={styles.mainCard}>
-              <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                  <Text style={styles.closeText}>✕</Text>
-              </TouchableOpacity>
-              <ScrollView showsVerticalScrollIndicator={false}> 
-                
+                  <Text style={styles.infoText}>
+                      {formatTime(event.startTime)} - {formatTime(event.endTime)}
+                  </Text>
+                  <Text style={styles.infoText}>
+                      {event.locations[0]?.description || 'Siebel 1st Floor'}
+                  </Text>
 
-                <View style={styles.headerSection}>
-                    <Text style={styles.title}>{event.name}</Text>
-                    <View style={styles.pillWrapper}>
-                      <PillButton
-                        toggleSave={() => handleSave(event.eventId)}
-                        points={event.points || 0} 
-                        isSaved={saved}
-                      />
-                    </View>
-                    <Text style={styles.infoText}>
-                        {formatTime(event.startTime)} - {formatTime(event.endTime)}
-                    </Text>
-                    <Text style={styles.infoText}>
-                        {event.locations[0]?.description || 'Siebel 1st Floor'}
-                    </Text>
+                  <Text style={styles.descriptionLabel}>
+                        {event.description}
+                  </Text>
+              </View>
 
-                    <Text style={styles.descriptionLabel}>
-                          {event.description}
-                    </Text>
-                </View>
-
-                {event.mapImageUrl && (
+              {/* Simple Map Image (No Zoom) */}
+              {event.mapImageUrl && (
+                <View style={styles.mapContainer}>
                   <Image
                       source={{ uri: event.mapImageUrl }}
                       style={styles.mapImage}
                       resizeMode="contain"
                   />
-                )}
-              </ScrollView>
-            </View>
+                </View>
+              )}
+            </ScrollView>
+          </View>
 
-            {/* === PAPERCLIP IMAGE ADDED HERE === */}
-            <Image
-                source={require('../../assets/event/paperclip.png')}
-                style={styles.paperclip}
-                resizeMode="contain"
-            />
+          {/* Paperclip: Anchored to corner */}
+          <View style={styles.paperclipContainer}>
+                <Image
+                  source={require('../../assets/event/paperclip.png')}
+                  style={styles.paperclipImage}
+                  resizeMode="contain"
+              />
+          </View>
 
         </View>
       </View>
@@ -99,33 +119,35 @@ const styles = StyleSheet.create({
   backdropPressable: {
     ...StyleSheet.absoluteFillObject,
   },
+  
+  // -- Main Layout Container --
   cardWrapper: {
     width: '85%',
     height: '70%',
+    // IPAD FIX: Limit max width so it stays phone-shaped and keeps design ratios
+    maxWidth: 400, 
     position: 'relative',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  paperclip: {
-    position: 'absolute',
-    top: '20%', 
-    left: '90.5%', 
-    width: 50,   
-    height: 80,  
-    zIndex: 10,  
-    transform: [{ rotate: '-7deg' }], 
-  },
+
+  // -- Background (The Shade) --
   backgroundCard: {
     position: 'absolute',
-    width: '100%',
-    height: '90%',
-    backgroundColor: '#F5C6FF', 
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#FFB7C5', // Sakura Pink
     borderRadius: 20,
-    transform: [{ rotate: '173deg' }],
+    // Constant rotation creates the triangular corners
+    transform: [{ rotate: '4deg' }], 
   },
+
+  // -- Main Content --
   mainCard: {
     width: '100%',
-    height: '80%',
+    height: '100%', 
     backgroundColor: '#D9D9D9',
     borderRadius: 20,
     padding: 24,
@@ -134,25 +156,36 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 4.65,
     elevation: 8,
+    zIndex: 2, 
   },
+
+  // -- Paperclip Logic --
+  paperclipContainer: {
+    position: 'absolute',
+    top: 50,  
+    right: -35, 
+    zIndex: 10,
+  },
+  paperclipImage: {
+    width: 50,   
+    height: 90,  
+    transform: [{ rotate: '-5deg' }], 
+  },
+
+  // -- Content Styles --
   closeButton: {
-    paddingBottom: 10
+    paddingBottom: 10,
+    alignSelf: 'flex-end',
   },
   closeText: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#000',
     opacity: 0.5
   },
-  saveButton: {
-    position: 'absolute',
-    top: 15,
-    right: 20,
-    zIndex: 20,
-  },
   headerSection: {
     marginBottom: 15,
-    marginTop: 10,
+    marginTop: 0,
   },
   title: {
     fontSize: 28,
@@ -172,16 +205,23 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   descriptionLabel: {
-    marginTop: 10,
-    fontSize: 14,
+    marginTop: 15,
+    fontSize: 15,
     color: '#333',
-    fontStyle: 'italic',
+    lineHeight: 22,
+  },
+  mapContainer: {
+    marginTop: 15,
+    width: '100%',
+    height: 200,
+    borderRadius: 12,    
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    overflow: 'hidden',
   },
   mapImage: {
     width: '100%',
-    height: 200,
-    marginTop: 10,
-    borderRadius: 8,    
-    backgroundColor: '#fff' 
-  }
+    height: '100%',
+  },
 });
