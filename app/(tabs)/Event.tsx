@@ -48,7 +48,7 @@ type MentorshipSession = {
 
 // --- Constants ---
 const { width, height } = Dimensions.get('window');
-const HEADER_HEIGHT_EXPANDED = 240; 
+const HEADER_HEIGHT_EXPANDED = height * 0.19; 
 const TABS_HEIGHT = 40;
 const IS_TABLET = width > 768;
 
@@ -218,7 +218,7 @@ export default function EventScreen() {
 
   const renderMentorCard = (m: MentorshipSession, showTimeHeader: boolean, timeHeaderText: string) => {
     return (
-      <View style={{ marginBottom: 40, width: '100%', alignItems: 'center' }}>
+      <>
         {showTimeHeader && <Text style={styles.timeHeader}>{timeHeaderText}</Text>}
 
         <Pressable onPress={() => handleMentorPress(m)} style={styles.mentorCard}>
@@ -241,7 +241,7 @@ export default function EventScreen() {
 
           <Text style={styles.mentorMore}>Tap for details</Text>
         </Pressable>
-      </View>
+      </>
     );
   };
 
@@ -250,10 +250,24 @@ export default function EventScreen() {
     const showTime = index === 0 || previousItem?.startTime !== item.startTime;
     const timeHeaderText = formatTime(item.startTime);
 
+    // Check if we need to show a day header (only when viewing all events)
+    const currentDate = new Date(item.startTime * 1000);
+    const previousDate = previousItem ? new Date(previousItem.startTime * 1000) : null;
+    const showDayHeader = !selectedDay && (index === 0 || (previousDate && currentDate.toDateString() !== previousDate.toDateString()));
+    
+    const dayHeaderText = currentDate.toLocaleDateString('en-US', { 
+      weekday: 'long'
+    });
+
     if (scheduleMode === 'events') {
       const ev = item as Event;
       return (
         <View style={styles.eventWrapper}>
+          {showDayHeader && (
+            <View style={styles.underlineContainer}>
+              <Text style={styles.dayHeader}>{dayHeaderText}</Text>
+            </View>
+          )}
           <EventCard
             event={ev}
             index={index}
@@ -268,7 +282,14 @@ export default function EventScreen() {
     }
 
     const m = item as MentorshipSession;
-    return renderMentorCard(m, showTime, timeHeaderText);
+    return (
+      <View style={{ marginBottom: 40, width: '100%', alignItems: 'center' }}>
+        {showDayHeader && (
+          <Text style={styles.dayHeader}>{dayHeaderText}</Text>
+        )}
+        {renderMentorCard(m, showTime, timeHeaderText)}
+      </View>
+    );
   };
 
   // --- Animation Interpolations ---
@@ -450,11 +471,28 @@ const styles = StyleSheet.create({
   
   timeHeader: {
     fontSize: 20,
-    color: '#ffffffff',
+    color: 'rgba(255, 255, 255, 0.6)',
     textAlign: 'center',
     marginBottom: 10,
     marginTop: 10,
     fontWeight: '700',
+  },
+
+  // --- Day Header Style ---
+  dayHeader: {
+    fontSize: 24,
+    color: '#FFFFFF',
+    textAlign: 'center',
+    marginTop: 30,
+    fontWeight: '900',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    fontFamily: 'TsukimiRounded_700Bold',
+  },
+  underlineContainer: {
+    alignSelf: 'center',           // Wraps width to content
+    borderBottomWidth: 2.5,          // Thicker line
+    borderBottomColor: 'rgb(255, 255, 255)',  // Your neon/theme color
   },
 
   // --- Mentor Card Styles ---
