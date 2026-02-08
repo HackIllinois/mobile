@@ -23,7 +23,6 @@ import MenuModal from '../../components/eventScreen/MenuModal';
 import StarryBackground from '../../components/eventScreen/StarryBackground';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Event } from '../../types';
-import Title from "../../assets/event/page title.svg";
 import Moon from "../../assets/event/Moon.svg"
 import Sun from "../../assets/event/Sun.svg"
 
@@ -381,11 +380,7 @@ export default function EventScreen() {
 
   return (
     <StarryBackground scrollY={scrollY}>
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        <View style={{marginLeft: insets.left, marginBottom: -80, marginTop: -30, top: 7}}> 
-          <Title style={{marginLeft: 10}}/>
-        </View>
-
+      <View style={[styles.container, { paddingTop: insets.top + 55 }]}>
         {eventDays.length > 0 && (
           <View style={styles.daysContainer}>
             <View style={[styles.tabs, { paddingHorizontal: 30, marginBottom: 10, flexDirection: 'row', justifyContent: 'space-between' }]}>

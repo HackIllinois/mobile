@@ -22,7 +22,6 @@ import ButtonSvg from '../assets/profile/profile-screen/button.svg';
 import QRCodeButtonSvg from '../assets/profile/profile-screen/qr-code-button.svg';
 import EditButtonSvg from '../assets/profile/profile-screen/edit-button.svg';
 import BackgroundSvg from '../assets/profile/background.svg';
-import LogoutButtonSvg from '../assets/profile/profile-screen/logout-button.svg';
 import { useProfile, UserProfile } from '../lib/fetchProfile';
 import { queryClient } from '../lib/queryClient';
 
@@ -213,49 +212,7 @@ export default function ProfileScreen() {
         />
       </View>
 
-      {/* Page Title with layered glow */}
-      <View style={{
-        marginLeft: scaleWidth(20),
-        marginTop: scaleWidth(0),
-        marginBottom: scaleWidth(30),
-      }}>
-        {/* Glow layers */}
-        <Text style={{
-          position: 'absolute',
-          fontSize: scaleFontSize(26),
-          fontWeight: 'bold',
-          color: 'transparent',
-          letterSpacing: scaleWidth(1.5),
-          fontFamily: 'Tsukimi Rounded',
-          textShadowColor: 'rgba(243, 77, 255, 0.4)',
-          textShadowOffset: { width: 0, height: 0 },
-          textShadowRadius: 15,
-        }}>PROFILE</Text>
-        <Text style={{
-          position: 'absolute',
-          fontSize: scaleFontSize(26),
-          fontWeight: 'bold',
-          color: 'transparent',
-          letterSpacing: scaleWidth(1.5),
-          fontFamily: 'Tsukimi Rounded',
-          textShadowColor: 'rgba(243, 77, 255, 0.6)',
-          textShadowOffset: { width: 0, height: 0 },
-          textShadowRadius: 8,
-        }}>PROFILE</Text>
-        {/* Main text */}
-        <Text style={{
-          fontSize: scaleFontSize(26),
-          fontWeight: 'bold',
-          color: '#FFFFFF',
-          letterSpacing: scaleWidth(1.5),
-          fontFamily: 'Tsukimi Rounded',
-          textShadowColor: 'rgba(243, 77, 255, 0.9)',
-          textShadowOffset: { width: 0, height: 0 },
-          textShadowRadius: 4,
-        }}>PROFILE</Text>
-      </View>
-
-      <View style={{ flex: 1 }}>
+      <View style={{ flex: 1, marginTop: scaleWidth(50) }}>
         <ProfileAvatar
           avatarUrl={profile.avatarUrl}
           avatarId={profile.avatarId}
@@ -414,24 +371,6 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
       </View>
-
-      {/* Logout Button */}
-      <TouchableOpacity
-        style={{
-          position: 'absolute',
-          top: scaleWidth(55),
-          right: scaleWidth(10),
-          marginTop: scaleWidth(5),
-          zIndex: 100,
-        }}
-        onPress={handleLogout}
-        disabled={isLoading}
-      >
-        <LogoutButtonSvg
-          width={scaleWidth(70)}
-          height={scaleWidth(28)}
-        />
-      </TouchableOpacity>
 
       <QRCodeModal
         visible={showQrModal}
