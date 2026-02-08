@@ -1,259 +1,238 @@
-import { View, Text, StyleSheet, Pressable, TouchableOpacity } from 'react-native';
-import Svg, { Defs, Mask, Rect, Circle, LinearGradient as SvgGradient, Stop } from 'react-native-svg';
-import { PillButton } from './PillButton';
+import React from 'react';
+import { View, Text, StyleSheet, Pressable, Dimensions, TouchableOpacity } from 'react-native';
 import { Event } from '../../types';
-import SpiralTop from "../../assets/event/SpiralTop.svg";
-import SpiralBottom from "../../assets/event/SpiralBottom.svg";
+import UnsavedEvent from '../../assets/event/EventCard.svg';
+import SavedEvent from '../../assets/event/SavedEventCard.svg';
+import ExpiredEvent from '../../assets/event/ExpiredEventCard.svg';
+
+// --- SIZING LOGIC ---
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+// 1. Define the width based on device screen (with margins)
+const CARD_MARGIN = 20;
+const CARD_WIDTH = Math.min(SCREEN_WIDTH - (CARD_MARGIN * 2), 450); // Cap at 350px for readability
+
+// 2. Define a fixed height so ALL cards are exactly the same size.
+//    200px is usually a good "ticket" height for Title + Pills + Time + Loc
+const CARD_HEIGHT = 200; 
 
 interface EventCardProps {
   event: Event;
   index: number;
   onPress: (event: Event) => void;
   handleSave: (eventId: string) => void;
-  onShowMenu: (event: Event) => void;
   saved: boolean;
   showTime: boolean;
+  onShowMenu: (event: Event) => void;
 }
 
 const formatTime = (timestamp: number): string => {
   const date = new Date(timestamp * 1000);
   return date.toLocaleTimeString('en-US', {
-    hour: 'numeric', 
+    hour: 'numeric',
     minute: '2-digit',
-    hour12: true 
+    hour12: true
   });
 };
 
-export function EventCard({ event, index, onPress, handleSave, onShowMenu, saved, showTime }: EventCardProps) {
-  const handlePress = () => onPress(event);
-  const handleSavePress = () => handleSave(event.eventId);
-  const handleShowMenuPress = () => onShowMenu(event);
-  
+export function EventCard({ event, index, onPress, handleSave, saved, showTime, onShowMenu }: EventCardProps) {
+  const expired = event.endTime * 1000 < Date.now();
+  let CardBackground = UnsavedEvent;
+  if (expired) {
+    CardBackground = ExpiredEvent;
+  } else if (saved) {
+    CardBackground = SavedEvent;
+  }
+
   return (
-    <View style={styles.container}>
+    <View style={styles.outerContainer}>
+      
+      {/* Time Header */}
       {showTime && (
-        <Text style={styles.dateText}>
+        <Text style={styles.timeHeader}>
           {formatTime(event.startTime)}
         </Text>
       )}
-      <View style={styles.cardContainer}>
-        <View style={styles.backgroundCard} />
-        
-        <Pressable
-          onPress={handlePress}
-          style={({ pressed }) => [
-            styles.pressableContainer, 
-            pressed && styles.pressed, 
-          ]}
-        >
-          {/* SVG Masked Gradient replacing the standard LinearGradient */}
-          <View style={[StyleSheet.absoluteFill]}>
-            <Svg height="100%" width="100%">
-              <Defs>
-                <SvgGradient id="grad" x1="0" y1="0" x2="1" y2="1">
-                  <Stop offset="0" stopColor="#874186" stopOpacity="1" />
-                  <Stop offset="1" stopColor="#56269F" stopOpacity="1" />
-                </SvgGradient>
-                <Mask id="holeMask">
-                  <Rect width="100%" height="100%" fill="white" rx="16" />
-                  {/* Black circle cuts the hole. Adjusted cx to align with buttonContainer */}
-                  <Circle cx="96%" cy="16" r="7" fill="black" />
-                </Mask>
-              </Defs>
-              <Rect width="100%" height="100%" fill="url(#grad)" mask="url(#holeMask)" />
-            </Svg>
-          </View>
 
-          {/* Original Padding and Layout */}
-          <View style={styles.gradientBackground}>
-            <View style={styles.header}>
-              <Text numberOfLines={3} ellipsizeMode="tail" style={styles.title}>{event.name}</Text>
-              
-              <View style={styles.buttonContainer}>
-                {/* Transparent placeholder for the hole */}
-                <View style={{ height:2 }} />
-                <PillButton
-                  toggleSave={handleSavePress}
-                  points={event.points || 0} 
-                  isSaved={saved}
-                />
-              </View>
-            </View>
-
-            <Text style={styles.time}>
-              {formatTime(event.startTime)} - {formatTime(event.endTime)}
-            </Text>
-
-            {event.sponsor && <Text style={styles.secondaryText}>{event.sponsor}</Text>}
-            
-            {event.locations?.[0]?.description && (
-                <Text numberOfLines={1} ellipsizeMode="tail" style={styles.location}>
-                    {event.locations?.[0]?.description || 'TBA'}
-                </Text>
-            )}
-            <View style={styles.buttonContainer}>
-              <Text numberOfLines={1} ellipsizeMode="tail" style={styles.description}>
-                  {event.description}
-              </Text>
-              {event.eventType === "MEAL" && (
-                  <TouchableOpacity 
-                    style={styles.menuButton} 
-                    onPress={handleShowMenuPress}
-                  >
-                    <Text style={styles.menuButtonText}>Show Menu</Text>
-                  </TouchableOpacity>
-                )}
-            </View>
-          </View>
-        </Pressable>
-        <View style={styles.spiralTopContainer}>
-           <SpiralTop width={90} height={40} />
+      {/* Main Card Wrapper (Fixed Size) */}
+      <Pressable
+        onPress={() => onPress(event)}
+        style={({ pressed }) => [
+          styles.cardWrapper,
+          pressed && styles.pressed
+        ]}
+      >
+        {/* A. Background SVG (Stretches to fixed size) */}
+        <View style={StyleSheet.absoluteFill}>
+           <CardBackground 
+              width="100%" 
+              height="100%" 
+              preserveAspectRatio="none" // Forces SVG to match our exact CARD_WIDTH/HEIGHT
+           />
         </View>
-        <View style={styles.spiralBottomContainer}>
-           <SpiralBottom width={400} height={55} />
-        </View>      
-      </View>
+
+        {/* B. Content Overlay (Absolute positioning over SVG) */}
+        <View style={styles.contentOverlay}>
+          
+          {/* Title: Max 2 lines, then ... */}
+          <Text 
+            numberOfLines={2} 
+            ellipsizeMode="tail" 
+            style={styles.title}
+          >
+            {event.name}
+          </Text>
+
+          {/* Pill Row */}
+          <View style={styles.pillRow}>
+             <View style={styles.pillPoints}>
+               <Text style={styles.pillTextBlack}>+ {event.points || 0}Pt</Text>
+             </View>
+             {event.eventType === 'MEAL' ? (
+               // If MEAL: Render a Button
+               <TouchableOpacity 
+                 style={styles.pillTrack}
+                 onPress={() => onShowMenu(event)}
+                 activeOpacity={0.6}
+                 // Add hitSlop to make it easier to tap without opening the card
+                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+               >
+                 <Text style={styles.pillTextWhite}>Show Menu</Text>
+               </TouchableOpacity>
+             ) : (
+               // If NOT Meal: Render static Label
+               <View style={styles.pillTrack}>
+                 <Text style={styles.pillTextWhite}>{event.eventType || 'General'}</Text>
+               </View>
+             )}
+          </View>
+
+          {/* Time Info */}
+          <Text style={styles.timeText}>
+             {formatTime(event.startTime)} - {formatTime(event.endTime)}
+          </Text>
+          
+          {/* Location: Max 1 line, then ... */}
+          <Text 
+            numberOfLines={1} 
+            ellipsizeMode="tail" 
+            style={styles.locationText}
+          >
+             {event.locations?.[0]?.description || 'Siebel 1st Floor'}
+          </Text>
+
+        </View>
+
+        {/* C. Save Button Hit Area */}
+        <Pressable 
+           style={styles.saveHitArea}
+           onPress={() => handleSave(event.eventId)}
+        />
+
+      </Pressable>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    marginBottom: 20 
+  outerContainer: {
+    alignItems: 'center',
+    marginBottom: 10,
+    width: '100%',
   },
-  cardContainer: {
-    marginHorizontal: 14,
-    marginVertical: 8,
-    position: 'relative',
+  timeHeader: {
+    fontSize: 20,
+    color: '#ffffff',
+    fontWeight: '700',
+    marginBottom: 8,
+    marginTop: 10,
+    textShadowColor: 'rgba(0,0,0,0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
-  backgroundCard: {
-    backgroundColor: '#F5C6FF', 
-    borderRadius: 16,    
-    position: 'absolute',
-    left: 12, 
-    right: -10,
-    top: 4, 
-    bottom: -4,
-    transform: [{ rotate: '2deg' }], 
-  },  
-  pressableContainer: {
-    flex: 1,
-    borderRadius: 16,
-    transform: [{ rotate: '-7deg' }],
+  
+  // The Card itself
+  cardWrapper: {
+    width: CARD_WIDTH,
+    height: CARD_HEIGHT,
+    position: 'relative', // Context for absolute children
+    
+    // Optional: Drop shadow for the whole card
     shadowColor: '#000',
     shadowOpacity: 0.25,
     shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 6,
-    elevation: 8,
-    backgroundColor: 'transparent',
-  }, 
-  gradientBackground: {
-    flex: 1, 
-    borderRadius: 16, 
-    padding: 18, 
-  },  
-  mainCard: {
-    backgroundColor: '#D9D9D9',
-    borderRadius: 12,
-    padding: 16,
-    zIndex: 1,      
-    transform: [{ rotate: '-5deg' }],
-  },  
+    shadowRadius: 5,
+    elevation: 6,
+  },
+  
   pressed: {
-    opacity: 0.7, 
-    transform: [
-      { scale: 0.98 }, 
-      { rotate: '-5deg' }, 
-    ], 
-  },  
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start', 
-    marginBottom: 6,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '800', 
-    color: '#fffefeff',
-    flex: 1, 
-    marginRight: 10, 
-  },
-  buttonContainer: {
-    flexDirection: 'column',
-    alignItems: 'center',
-    flex: 0,
-  },
-  saveButton: {
-    padding: 4,
-  },
-  menuButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 100,
-    backgroundColor: 'transparent',
-    borderColor: '#ffffffff',
-    borderWidth: 1.5,
-    marginTop: 10, 
-    alignSelf: 'flex-end',
-  },
-  menuButtonText: {
-    color: '#ffffffff',
-    fontWeight: '600',
-    textAlign: 'center',
-    fontSize: 14,
-  },  
-  time: {
-    fontSize: 17,
-    fontWeight: '600', 
-    color: '#ffffffff',
-    marginBottom: 2,
-  },
-  secondaryText: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: '#FFFFFF',
-    marginBottom: 2,
-  },
-  location: {
-    marginTop: 5,
-    fontSize: 14,
-    color: '#ffffffff',
-    fontWeight: '600'
-  },
-  description: {
-    marginTop: 4,
-    width: '100%',
-    fontSize: 14,
-    color: '#ffffffff',
-    marginBottom: 5,
-    alignSelf: 'flex-start',
-  },
-  dateDescription: {
-    justifyContent: 'center',
-    alignItems: 'flex-end',
-  },
-  dateText: {
-    fontSize: 20,
-    color: '#ffffffff',
-    textAlign: 'center',
-    marginBottom: 25,
-  },
-  spiralTopContainer: {
-    position: 'absolute',
-    zIndex: 10,
-    right: -34,  
-    top: -50,    
-    pointerEvents: 'none', 
-    transform: [{rotate: '-20deg'}],
+    opacity: 0.95,
+    transform: [{ scale: 0.98 }],
   },
 
-  spiralBottomContainer: {
+  contentOverlay: {
     position: 'absolute',
-    zIndex: -1,
-    right: -175,   
-    top: -60,    
-    pointerEvents: 'none',
-    transform: [{rotate: '-20deg'}],
+    top: 20,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingHorizontal: 24, // Inner padding
+    paddingVertical: 20,
+    justifyContent: 'center', // Vertically center the text block
+  },
+
+  // -- Typography --
+  title: {
+    fontSize: 24,
+    fontFamily: 'TsukimiRounded_700Bold',
+    fontWeight: '800',
+    color: '#FFFFFF',
+    marginBottom: 12,
+    lineHeight: 28, // Fixes clipping on some fonts
+  },
+  
+  // -- Pills --
+  pillRow: {
+    flexDirection: 'row',
+    marginBottom: 12,
+  },
+  pillPoints: {
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 5,
+    paddingHorizontal: 12,
+    borderTopLeftRadius: 10,
+    borderBottomLeftRadius: 10,
+  },
+  pillTrack: {
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    paddingVertical: 5,
+    paddingHorizontal: 12,
+    borderTopRightRadius: 10,
+    borderBottomRightRadius: 10,
+  },
+  pillTextBlack: { color: '#000', fontWeight: '800', fontSize: 13 },
+  pillTextWhite: { color: '#FFF', fontWeight: '800', fontSize: 13, textTransform: 'uppercase' },
+
+  // -- Info --
+  timeText: {
+    fontSize: 16,
+    color: '#FFFFFF',
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  locationText: {
+    fontSize: 16,
+    color: '#FFFFFF',
+    opacity: 0.9,
+    fontWeight: '500',
+  },
+
+  // -- Hit Areas --
+  saveHitArea: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: CARD_WIDTH/5, // Generous hit box
+    height: CARD_WIDTH/3.8,
   },
 });
