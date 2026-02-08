@@ -23,6 +23,7 @@ interface CartModalProps {
   onAddItem: (itemId: string) => Promise<{ success: boolean; errorMessage?: string }>;
   onRemoveItem: (itemId: string) => Promise<{ success: boolean; errorMessage?: string }>;
   onError: (message: string) => void;
+  onRefresh: () => void;
 }
 
 export default function CartModal({
@@ -33,6 +34,7 @@ export default function CartModal({
   onAddItem,
   onRemoveItem,
   onError,
+  onRefresh,
 }: CartModalProps) {
   const [qrCodeData, setQrCodeData] = useState<string | null>();
 
@@ -45,6 +47,7 @@ export default function CartModal({
 
   const handleBackToCart = () => {
     setQrCodeData(null);
+    onRefresh();
   };
 
   const calculateTotal = (): number => {

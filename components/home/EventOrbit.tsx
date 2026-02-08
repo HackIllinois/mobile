@@ -9,7 +9,9 @@ interface EventOrbitProps {
   centerY: number;
 }
 
-const { width } = Dimensions.get("window");
+import { getConstrainedWidth } from "../../lib/layout";
+
+const width = getConstrainedWidth();
 const CENTER_X = width / 2;
 
 export default function EventOrbit({

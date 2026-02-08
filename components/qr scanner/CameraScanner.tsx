@@ -6,7 +6,10 @@ import { Ionicons } from '@expo/vector-icons';
 import ChooseImageButton from '../../assets/qr-scanner/choose-image-button.svg';
 import { ScanResult, ScanResultOverlay } from './ScanModals';
 
-const { width, height } = Dimensions.get('window');
+import { getConstrainedWidth } from '../../lib/layout';
+
+const { height } = Dimensions.get('window');
+const width = getConstrainedWidth();
 
 interface CameraScannerViewProps {
   visible: boolean;

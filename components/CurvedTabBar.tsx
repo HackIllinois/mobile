@@ -8,7 +8,9 @@ import QrCodeIcon from '../assets/navbar/Camera.svg';
 import PointsIcon from '../assets/navbar/Shop.svg';
 import DuelsIcon from '../assets/navbar/Duels.svg';
 
-const { width } = Dimensions.get('window');
+import { getConstrainedWidth } from '../lib/layout';
+
+const width = getConstrainedWidth();
 const BAR_HEIGHT = 85;
 const CENTER_BUTTON_SIZE = 85;
 const ICON_SIZE = 40;

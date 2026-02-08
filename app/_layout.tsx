@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Animated, Easing } from "react-native";
+import { Animated, Easing, View, StyleSheet } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Stack } from "expo-router";
 import { useFonts } from "expo-font";
@@ -349,13 +349,33 @@ function AnimationInitializer() {
   return null;
 }
 
+import { MAX_APP_WIDTH } from "../lib/layout";
+
+const styles = StyleSheet.create({
+  outerContainer: {
+    flex: 1,
+    backgroundColor: '#000',
+    alignItems: 'center',
+  },
+  innerContainer: {
+    flex: 1,
+    width: '100%',
+    maxWidth: MAX_APP_WIDTH,
+    overflow: 'hidden',
+  },
+});
+
 export default function RootLayout() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AnimationProvider>
-        <AnimationInitializer />
-        <RootLayoutContent />
-      </AnimationProvider>
-    </QueryClientProvider>
+    <View style={styles.outerContainer}>
+      <View style={styles.innerContainer}>
+        <QueryClientProvider client={queryClient}>
+          <AnimationProvider>
+            <AnimationInitializer />
+            <RootLayoutContent />
+          </AnimationProvider>
+        </QueryClientProvider>
+      </View>
+    </View>
   );
 }

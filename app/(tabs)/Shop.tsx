@@ -26,7 +26,10 @@ import CartModal from "../../components/point shop/CartModal";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
+import { getConstrainedWidth } from "../../lib/layout";
+
+const { width: windowWidth } = Dimensions.get("window");
+const SCREEN_WIDTH = getConstrainedWidth();
 const CHUNK_SIZE = 2;
 const TUTORIAL_KEY = "@shop_tutorial_completed";
 
@@ -80,7 +83,8 @@ export default function PointShop() {
   const HEADER_Y = insets.top + 8;   // SAME value used by profile button
   const HEADER_HEIGHT = 90;
 
-  const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
+  const { height: screenHeight } = Dimensions.get("window");
+  const screenWidth = getConstrainedWidth();
   
   const containerWidth = screenWidth;
   const containerHeight = screenHeight;
@@ -423,12 +427,17 @@ export default function PointShop() {
         onClose={() => {
           setShowCartModal(false);
           refetchProfile();
+          fetchCartItems();
         }}
         cartIds={cartIds}
         shopItemData={shopItemData}
         onAddItem={addToCart}
         onRemoveItem={removeFromCart}
         onError={showError}
+        onRefresh={() => {
+          refetchProfile();
+          fetchCartItems();
+        }}
       />
 
       {/* Fading error message */}
