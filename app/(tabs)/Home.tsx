@@ -9,7 +9,11 @@ import { getTimeRemaining } from "../../components/home/countdown";
 import HomeBackground from "../../assets/home/home_bg.svg";
 import TimerOutline from "../../assets/home/timer_outline.svg";
 
-const { width, height } = Dimensions.get("window");
+import { getConstrainedWidth } from "../../lib/layout";
+
+const window = Dimensions.get("window");
+const width = getConstrainedWidth();
+const height = window.height;
 
 export type StageKey =
   | "checkin"
