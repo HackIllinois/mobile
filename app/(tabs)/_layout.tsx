@@ -106,7 +106,11 @@ export default function Layout() {
         {/* Header */}
         {title && (
           <View style={[styles.headerRow, { top: insets.top }]}>
-            <Text style={styles.headerTitle}>{title}</Text>
+            <View>
+              <Text style={[styles.headerTitle, styles.glowWide]}>{title}</Text>
+              <Text style={[styles.headerTitle, styles.glowMid]}>{title}</Text>
+              <Text style={[styles.headerTitle, styles.titleFront]}>{title}</Text>
+            </View>
             {isProfileScreen ? (
               <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
                 <LogoutButtonSvg width={70} height={28} />
@@ -143,7 +147,26 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontFamily: 'Tsukimi-Rounded-Bold',
     letterSpacing: 2,
+  },
+  glowWide: {
+    position: 'absolute',
+    color: 'transparent',
+    textShadowColor: 'rgba(243, 77, 255, 0.4)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 15,
+  },
+  glowMid: {
+    position: 'absolute',
+    color: 'transparent',
+    textShadowColor: 'rgba(243, 77, 255, 0.6)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 8,
+  },
+  titleFront: {
     color: '#FFFFFF',
+    textShadowColor: 'rgba(243, 77, 255, 0.9)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 4,
   },
   logoutButton: {
     marginRight: -7,
