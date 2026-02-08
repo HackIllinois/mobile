@@ -294,25 +294,6 @@ export default function PointShop() {
 
   return (
     <ImageBackground source={require("../../assets/point-shop/point-shop-background.png")} style={styles.container} resizeMode="cover">
-      {/* Title */}
-      {/* <View style={{ position: "absolute", top: TITLE_Y, left: 20, zIndex: 10 }}> */}
-      <View
-        style={{
-          position: "absolute",
-          top: HEADER_Y,
-          left: 10,
-          height: HEADER_HEIGHT,
-          justifyContent: "center",
-          zIndex: 10,
-        }}
-      >
-        <Image
-          source={require("../../assets/point-shop/point-shop-title.png")}
-          style={{ width: titleWidth, height: titleHeight }}
-          resizeMode="contain"
-        />
-      </View>
-
       {/* Points */}
       <View style={{ position: "absolute", top: POINTS_Y, width: "100%", alignItems: "center", zIndex: 10 }}>
         <Points points={userPoints} />
