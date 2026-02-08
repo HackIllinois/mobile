@@ -14,7 +14,7 @@ export interface UserProfile {
   ranking?: number;
 }
 
-async function fetchProfile(): Promise<UserProfile> {
+export async function fetchProfile(): Promise<UserProfile> {
   const response: any = await api.get<UserProfile>("profile");
   return response.data;
 }

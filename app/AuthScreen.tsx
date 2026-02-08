@@ -18,6 +18,9 @@ import { AxiosResponse } from "axios";
 import LoginBackground from "../assets/login-background.svg";
 
 import api from "../api";
+import { queryClient } from "../lib/queryClient";
+import { fetchProfile } from "../lib/fetchProfile";
+import { fetchSavedEvents } from "../lib/fetchSavedEvents";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -120,6 +123,12 @@ export default function AuthScreen({ navigation }: any) {
 
       const roles = roleResponse.data.roles;
       await SecureStore.setItemAsync("userRoles", JSON.stringify(roles));
+
+      // Fetch auth-dependent data
+      await Promise.all([
+        queryClient.fetchQuery({ queryKey: ["profile"], queryFn: fetchProfile }),
+        queryClient.fetchQuery({ queryKey: ["savedEvents"], queryFn: fetchSavedEvents }),
+      ]).catch(err => console.error("Error fetching auth data:", err));
 
       // Request notification permissions and register push token
       try {
