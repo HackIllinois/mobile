@@ -1,9 +1,9 @@
 {
   "expo": {
     "scheme": "hackillinois",
-    "name": "mobile",
+    "name": "HackIllinois",
     "slug": "mobile",
-    "version": "2026.0.1",
+    "version": "2026.0.2",
     "orientation": "portrait",
     "icon": "./assets/logo.png",
     "userInterfaceStyle": "light",

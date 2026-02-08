@@ -61,7 +61,6 @@ type Bullet = {
   startX: number;   // initial spawn X
   startY: number;   // initial spawn Y
   ownerId: 'player' | 'opponent';
-  isLaser?: boolean; // true if this is a laser shot
 };
 
 type Powerup = {
@@ -74,15 +73,14 @@ type GameMessage =
   | { type: 'ready'; screenRatio: number }
   | { type: 'start_game'; worldRatio: number }
   | { type: 'state'; x: number; y: number; angle: number; hostScore?: number; guestScore?: number }
-  | { type: 'bullet'; id: string; x: number; y: number; angle: number; spawnTime: number; isLaser?: boolean }
+  | { type: 'bullet'; id: string; x: number; y: number; angle: number; spawnTime: number }
   | { type: 'hit'; victimId: string }
   | { type: 'round_result'; winner: 'host' | 'guest' | 'tie' }
   | { type: 'round_ack' }
   | { type: 'game_over'; winner: 'host' | 'guest' }
   | { type: 'restart' }
   | { type: 'start_tutorial' }
-  | { type: 'tutorial_complete' }
-  | { type: 'powerup_collected'; collectorId: 'player' | 'opponent' };
+  | { type: 'tutorial_complete' };
 
 // ======================
 // CONSTANTS
@@ -100,10 +98,6 @@ const MAX_AMMO = 3;             // Maximum bullets player can have
 const RELOAD_TIME = 1500;       // ms to reload one bullet
 const TIE_WINDOW = 50;         // ms window to consider simultaneous hits as a tie
 const BORDER_MARGIN_PX = 5;    // Keep ships away from screen edges (in pixels)
-const POWERUP_SIZE = 0.02;     // normalized size for powerup collision (smaller)
-const LASER_WIDTH = 8;          // pixels width of laser beam
-const LASER_LENGTH = 2000;      // pixels length of laser beam (very long)
-const LASER_DURATION = 500;     // ms - how long laser is visible and can hit
 
 export default function Duels() {
   // ======================
@@ -145,10 +139,7 @@ export default function Duels() {
   const [minTimeElapsed, setMinTimeElapsed] = useState(false);
   const [guestReadyToRestart, setGuestReadyToRestart] = useState(false);
 
-  // Powerup and Laser state
-  const [powerup, setPowerup] = useState<Powerup>({ x: 0.5, y: 0.5, active: true });
-  const [hasLaser, setHasLaser] = useState(false); // Player has collected powerup
-  const [opponentHasLaser, setOpponentHasLaser] = useState(false); // Opponent has collected powerup
+
 
   // Refs for game loop
   const myShipRef = useRef(myShip);
@@ -158,8 +149,7 @@ export default function Duels() {
   const opponentBulletsRef = useRef(opponentBullets);
   const isRotatingRef = useRef(isRotating);
   const gamePhaseRef = useRef(gamePhase);
-  const powerupRef = useRef(powerup);
-  const hasLaserRef = useRef(hasLaser);
+
   
   // Refs for tie detection timing
   // We track a pending result to allow for tie detection window
@@ -182,8 +172,7 @@ export default function Duels() {
     opponentBulletsRef.current = opponentBullets;
     isRotatingRef.current = isRotating;
     gamePhaseRef.current = gamePhase;
-    powerupRef.current = powerup;
-    hasLaserRef.current = hasLaser;
+
   });
   
   // Screen dimensions
@@ -290,10 +279,7 @@ export default function Duels() {
     setAmmo(MAX_AMMO);
     setReloading(0);
     
-    // Reset powerup and laser state - spawn powerup at center
-    setPowerup({ x: 0.5, y: 0.5, active: true });
-    setHasLaser(false);
-    setOpponentHasLaser(false);
+
   }, [role]);
 
   const shoot = useCallback(() => {
@@ -301,7 +287,6 @@ export default function Duels() {
     
     const ship = myShipRef.current;
     const now = Date.now();
-    const isLaserShot = hasLaserRef.current;
     
     const bullet: Bullet = {
       id: `${now}-${Math.random()}`,
@@ -311,17 +296,11 @@ export default function Duels() {
       spawnTime: now,
       startX: ship.x,
       startY: ship.y,
-      ownerId: 'player',
-      isLaser: isLaserShot
+      ownerId: 'player'
     };
     setMyBullets(prev => [...prev, bullet]);
     setAmmo(prev => prev - 1);
     setReloading(prev => prev + 1);
-    
-    // Consume laser if used
-    if (isLaserShot) {
-      setHasLaser(false);
-    }
     
     // Send bullet spawn to opponent (only initial data, they simulate locally)
     const bulletMsg: GameMessage = {
@@ -330,21 +309,9 @@ export default function Duels() {
       x: bullet.startX,
       y: bullet.startY,
       angle: bullet.angle,
-      spawnTime: bullet.spawnTime,
-      isLaser: isLaserShot
+      spawnTime: bullet.spawnTime
     };
     LocalConnectionModule.sendData(JSON.stringify(bulletMsg));
-    
-    // If Host shoots laser, check collision instantly (Shooter calculation)
-    if (role === 'host' && isLaserShot) {
-        const hit = checkLaserHit(bullet, opponentShipRef.current);
-        if (hit) {
-            roundWon();
-            setGamePhase('win');
-            const resultMsg: GameMessage = { type: 'round_result', winner: 'host' };
-            LocalConnectionModule.sendData(JSON.stringify(resultMsg));
-        }
-    }
     
     // Start reload timer for this bullet
     const timeoutId = setTimeout(() => {
@@ -358,42 +325,7 @@ export default function Duels() {
     reloadTimeoutsRef.current.push(timeoutId);
   }, [ammo]);
 
-  const checkLaserHit = (laser: {x: number, y: number, angle: number}, ship: Ship): boolean => {
-      // For lasers, check if ship is anywhere along the laser beam line
-      // The laser extends from the bullet spawn point in the direction of the angle
-      const laserStartX = laser.x;
-      const laserStartY = laser.y;
-      const laserDirX = Math.cos(laser.angle);
-      const laserDirY = Math.sin(laser.angle);
-      
-      // Project ship position onto the laser line
-      const toShipX = ship.x - laserStartX;
-      const toShipY = ship.y - laserStartY;
-      
-      // Dot product to find projection distance along laser
-      const projection = toShipX * laserDirX + toShipY * laserDirY;
-      
-      // Only check if ship is in front of the laser (positive projection)
-      if (projection < 0) return false;
-      
-      // Find the closest point on the laser line to the ship
-      const closestX = laserStartX + laserDirX * projection;
-      const closestY = laserStartY + laserDirY * projection;
-      
-      // Distance from ship to the closest point on laser
-      const distX = ship.x - closestX;
-      const distY = ship.y - closestY;
-      const distance = Math.sqrt(distX * distX + distY * distY);
-      
-      // Hit if within ship size
-      return distance < SHIP_SIZE / 2;
-  };
-
   const checkBulletHit = (bullet: Bullet, ship: Ship): boolean => {
-    // Only regular bullets check collision in the loop now
-    if (bullet.isLaser) return false;
-    
-    // Regular bullet collision
     const dx = Math.abs(bullet.x - ship.x);
     const dy = Math.abs(bullet.y - ship.y);
     return dx < (BULLET_SIZE + SHIP_SIZE) / 2 && dy < (BULLET_SIZE + SHIP_SIZE) / 2;
@@ -496,30 +428,11 @@ export default function Duels() {
                   spawnTime: msg.spawnTime,
                   startX: msg.x,
                   startY: msg.y,
-                  ownerId: 'opponent' as const,
-                  isLaser: msg.isLaser
+                  ownerId: 'opponent' as const
                 }];
               });
 
-              // Check for Instant Laser Hit (Victim calculation)
-              if (msg.isLaser) {
-                  const amIHit = checkLaserHit(msg, myShipRef.current);
-                  if (amIHit) {
-                      if (role === 'host') {
-                          // Host hit by Guest laser -> Host Lose
-                          roundLost();
-                          setGamePhase('lose');
-                          const resultMsg: GameMessage = { type: 'round_result', winner: 'guest' };
-                          LocalConnectionModule.sendData(JSON.stringify(resultMsg));
-                      } else if (role === 'guest') {
-                          // Guest hit by Host laser -> Tell Host "I'm Hit"
-                           // Guest pauses, waits for host confirmation
-                          setGamePhase('waiting_result');
-                          const hitMsg: GameMessage = { type: 'hit', victimId: 'guest' };
-                          LocalConnectionModule.sendData(JSON.stringify(hitMsg));
-                      }
-                  }
-              }
+
               break;
             case 'hit':
               // Host receives hit confirmation from Guest
@@ -582,11 +495,7 @@ export default function Duels() {
             case 'tutorial_complete':
               setOpponentFinishedTutorial(true);
               break;
-            case 'powerup_collected':
-              // Opponent collected the powerup
-              setPowerup(prev => ({ ...prev, active: false }));
-              setOpponentHasLaser(true);
-              break;
+
           }
           return;
         } catch {
@@ -712,29 +621,14 @@ export default function Duels() {
       });
       
       // Helper to update and filter bullets
-      // Lasers stay in place and expire after LASER_DURATION
-      // Regular bullets move and are removed when hitting borders
       const updateBullets = (bullets: Bullet[]) =>
         bullets
-          .map(b => {
-            if (b.isLaser) {
-              // Lasers don't move, they stay at spawn position
-              return b;
-            }
-            return {
-              ...b,
-              x: b.x + Math.cos(b.angle) * BULLET_SPEED * dt,
-              y: b.y + Math.sin(b.angle) * BULLET_SPEED * dt,
-            };
-          })
-          .filter(b => {
-            if (b.isLaser) {
-              // Lasers expire after LASER_DURATION
-              return (now - b.spawnTime) < LASER_DURATION;
-            }
-            // Regular bullets are removed when hitting borders
-            return b.x >= borderMarginX && b.x <= 1 - borderMarginX && b.y >= borderMarginY && b.y <= 1 - borderMarginY;
-          });
+          .map(b => ({
+            ...b,
+            x: b.x + Math.cos(b.angle) * BULLET_SPEED * dt,
+            y: b.y + Math.sin(b.angle) * BULLET_SPEED * dt,
+          }))
+          .filter(b => b.x >= borderMarginX && b.x <= 1 - borderMarginX && b.y >= borderMarginY && b.y <= 1 - borderMarginY);
       
       // 3. Update my bullets
       setMyBullets(updateBullets);
@@ -761,22 +655,7 @@ export default function Duels() {
         return { ...prev, x: newX, y: newY, angle: newAngle };
       });
       
-      // 5.5 Check powerup collection
-      const currentPowerup = powerupRef.current;
-      const myShipPos = myShipRef.current;
-      if (currentPowerup.active) {
-        const dx = Math.abs(myShipPos.x - currentPowerup.x);
-        const dy = Math.abs(myShipPos.y - currentPowerup.y);
-        if (dx < (SHIP_SIZE + POWERUP_SIZE) / 2 && dy < (SHIP_SIZE + POWERUP_SIZE) / 2) {
-          // Player collected the powerup
-          setPowerup(prev => ({ ...prev, active: false }));
-          setHasLaser(true);
-          
-          // Notify opponent
-          const powerupMsg: GameMessage = { type: 'powerup_collected', collectorId: 'player' };
-          LocalConnectionModule.sendData(JSON.stringify(powerupMsg));
-        }
-      }
+
       
       // 6. Check collisions - detect both hit directions
       const opponent = opponentShipRef.current;
@@ -1285,107 +1164,41 @@ export default function Duels() {
             resizeMode="contain"
           />
           
-          {/* Powerup - two parallel glowing white lines in center */}
-          {powerup.active && (
-            <View
-              style={[
-                styles.powerup,
-                {
-                  left: powerup.x * gameWidth - 10,
-                  top: powerup.y * gameHeight - 7.5,
-                }
-              ]}
-            >
-              <View style={styles.powerupLine} />
-              <View style={styles.powerupLine} />
-            </View>
-          )}
+
           
           {/* My bullets */}
-          {myBullets.map(b => {
-            if (b.isLaser) {
-              const elapsed = Date.now() - b.spawnTime;
-              const opacity = Math.max(0, 1 - elapsed / LASER_DURATION);
-              return (
-                <View
-                  key={b.id}
-                  style={[
-                    styles.laser,
-                    styles.myLaser,
-                    {
-                      left: b.x * gameWidth,
-                      top: b.y * gameHeight,
-                      opacity: opacity,
-                      transform: [
-                        { translateX: -LASER_WIDTH / 2 },
-                        { translateY: -LASER_LENGTH },
-                        { rotate: `${b.angle + Math.PI / 2}rad` }
-                      ],
-                      transformOrigin: 'bottom center'
-                    }
-                  ]}
-                />
-              );
-            }
-            return (
-              <Image
-                key={b.id}
-                source={bulletImage}
-                style={[
-                  styles.bullet,
-                  {
-                    left: b.x * gameWidth - BULLET_DISPLAY_SIZE / 2,
-                    top: b.y * gameHeight - BULLET_DISPLAY_SIZE / 2,
-                    transform: [{ rotate: `${b.angle + Math.PI / 2}rad` }]
-                  }
-                ]}
-                resizeMode="contain"
-              />
-            );
-          })}
+          {myBullets.map(b => (
+            <Image
+              key={b.id}
+              source={bulletImage}
+              style={[
+                styles.bullet,
+                {
+                  left: b.x * gameWidth - BULLET_DISPLAY_SIZE / 2,
+                  top: b.y * gameHeight - BULLET_DISPLAY_SIZE / 2,
+                  transform: [{ rotate: `${b.angle + Math.PI / 2}rad` }]
+                }
+              ]}
+              resizeMode="contain"
+            />
+          ))}
           
           {/* Opponent bullets */}
-          {opponentBullets.map(b => {
-            if (b.isLaser) {
-              const elapsed = Date.now() - b.spawnTime;
-              const opacity = Math.max(0, 1 - elapsed / LASER_DURATION);
-              return (
-                <View
-                  key={b.id}
-                  style={[
-                    styles.laser,
-                    styles.opponentLaser,
-                    {
-                      left: b.x * gameWidth,
-                      top: b.y * gameHeight,
-                      opacity: opacity,
-                      transform: [
-                        { translateX: -LASER_WIDTH / 2 },
-                        { translateY: -LASER_LENGTH },
-                        { rotate: `${b.angle + Math.PI / 2}rad` }
-                      ],
-                      transformOrigin: 'bottom center'
-                    }
-                  ]}
-                />
-              );
-            }
-            return (
-              <Image
-                key={b.id}
-                source={bulletImage}
-                style={[
-                  styles.bullet,
-                  {
-                    left: b.x * gameWidth - BULLET_DISPLAY_SIZE / 2,
-                    top: b.y * gameHeight - BULLET_DISPLAY_SIZE / 2,
-                    transform: [{ rotate: `${b.angle + Math.PI / 2}rad` }]
-                  }
-                ]}
-                resizeMode="contain"
-              />
-            );
-          })}
+          {opponentBullets.map(b => (
+            <Image
+              key={b.id}
+              source={bulletImage}
+              style={[
+                styles.bullet,
+                {
+                  left: b.x * gameWidth - BULLET_DISPLAY_SIZE / 2,
+                  top: b.y * gameHeight - BULLET_DISPLAY_SIZE / 2,
+                  transform: [{ rotate: `${b.angle + Math.PI / 2}rad` }]
+                }
+              ]}
+              resizeMode="contain"
+            />
+          ))}
         </View>
         
         {/* Multitouch Controls Container */}
@@ -1419,10 +1232,7 @@ export default function Duels() {
           {/* Ammo indicator */}
           <View style={styles.ammoContainerCenter}>
             <Text style={styles.ammoText}>{ammo}/{MAX_AMMO}</Text>
-            {hasLaser && (
-              <Text style={styles.laserReadyText}>LASER READY!</Text>
-            )}
-            {reloading > 0 && !hasLaser && (
+            {reloading > 0 && (
               <Text style={styles.reloadingText}>reloading...</Text>
             )}
           </View>
@@ -1581,41 +1391,7 @@ const styles = StyleSheet.create({
     width: BULLET_DISPLAY_SIZE,
     height: BULLET_DISPLAY_SIZE,
   },
-  laser: {
-    position: 'absolute',
-    width: LASER_WIDTH,
-    height: LASER_LENGTH,
-    backgroundColor: '#ffffff',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 1,
-    shadowRadius: 15,
-  },
-  myLaser: {
-    shadowColor: '#00ffff',
-    backgroundColor: '#ffffff',
-  },
-  opponentLaser: {
-    shadowColor: '#ff3366',
-    backgroundColor: '#ffffff',
-  },
-  powerup: {
-    position: 'absolute',
-    width: 20,
-    height: 15,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  powerupLine: {
-    width: 3,
-    height: 15,
-    backgroundColor: '#ffffff',
-    borderRadius: 1.5,
-    shadowColor: '#ffffff',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 1,
-    shadowRadius: 6,
-  },
+
   controlsContainer: {
     position: 'absolute',
     bottom: 0,
@@ -1666,16 +1442,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
     letterSpacing: 1,
   },
-  laserReadyText: {
-    color: '#00ffff',
-    fontSize: 12,
-    fontWeight: '700',
-    marginTop: 2,
-    letterSpacing: 1,
-    textShadowColor: '#00ffff',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 8,
-  },
+
   overlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
