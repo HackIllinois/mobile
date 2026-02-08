@@ -20,8 +20,11 @@ const VISIBLE_PLANETS = 4; // Show 4 planets at a time
 const FULL_SVG_WIDTH = 859;
 const FULL_SVG_HEIGHT = 56; // All navbar SVGs now use 859x56
 
+import { MAX_APP_WIDTH } from "../../lib/layout";
+
 export default function InteractiveNavbar({ currentScreen, onPlanetPress }: InteractiveNavbarProps) {
-    const { width } = useWindowDimensions();
+    const { width: windowWidth } = useWindowDimensions();
+    const width = Math.min(windowWidth, MAX_APP_WIDTH);
     const scrollViewRef = useRef<ScrollView>(null);
     const prevScreenRef = useRef<number>(currentScreen);
 

@@ -3,12 +3,15 @@ import { View, StyleSheet, Dimensions, StatusBar, Animated } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const { width, height } = Dimensions.get('window');
+import { getConstrainedWidth } from '../../lib/layout';
+
+const { height } = Dimensions.get('window');
+const width = getConstrainedWidth();
 
 // CONFIGURATION
 const NUM_STARS = 400;
 const PARALLAX_SPEED = 0.15; // Speed of the stars (15% of scroll speed)
-const STORAGE_KEY = 'HACKILLINOIS_STAR_LAYOUT_V1';
+const STORAGE_KEY = 'HACKILLINOIS_STAR_LAYOUT_V3';
 
 interface Star {
   id: number;

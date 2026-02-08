@@ -26,7 +26,10 @@ import CartModal from "../../components/point shop/CartModal";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
+import { getConstrainedWidth } from "../../lib/layout";
+
+const { width: windowWidth } = Dimensions.get("window");
+const SCREEN_WIDTH = getConstrainedWidth();
 const CHUNK_SIZE = 2;
 const TUTORIAL_KEY = "@shop_tutorial_completed";
 
@@ -80,7 +83,8 @@ export default function PointShop() {
   const HEADER_Y = insets.top + 8;   // SAME value used by profile button
   const HEADER_HEIGHT = 90;
 
-  const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
+  const { height: screenHeight } = Dimensions.get("window");
+  const screenWidth = getConstrainedWidth();
   
   const containerWidth = screenWidth;
   const containerHeight = screenHeight;
@@ -89,15 +93,25 @@ export default function PointShop() {
   const coverScale = getCoverScale(containerWidth, containerHeight);
   
   // Title size in the original image (approximate) - scales with background
-  const TITLE_BASE_WIDTH = 800;  // Base width in image pixels
-  const TITLE_BASE_HEIGHT = 400; // Base height in image pixels
+  const TITLE_BASE_WIDTH = 600;  // Base width in image pixels
+  const TITLE_BASE_HEIGHT = 300; // Base height in image pixels
   const titleWidth = TITLE_BASE_WIDTH * coverScale;
   const titleHeight = TITLE_BASE_HEIGHT * coverScale;
   
   const TITLE_Y = imageYToScreenY(TITLE_IMAGE_Y, containerWidth, containerHeight) + safeAreaAdjustment;
   const POINTS_Y = imageYToScreenY(POINTS_IMAGE_Y, containerWidth, containerHeight) + safeAreaAdjustment;
-  const TOP_ROW_Y = imageYToScreenY(MERCH_ROW_IMAGE_Y, containerWidth, containerHeight) + safeAreaAdjustment;
-  const BOTTOM_ROW_Y = imageYToScreenY(RAFFLE_ROW_IMAGE_Y, containerWidth, containerHeight) + safeAreaAdjustment;
+  
+  // Calculate base row positions from image mapping
+  const baseTopRowY = imageYToScreenY(MERCH_ROW_IMAGE_Y, containerWidth, containerHeight) + safeAreaAdjustment;
+  const baseBottomRowY = imageYToScreenY(RAFFLE_ROW_IMAGE_Y, containerWidth, containerHeight) + safeAreaAdjustment;
+  
+  // On abnormally tall screens (height > 900), push rows down by the extra height
+  const NORMAL_HEIGHT = 900;
+  const extraHeight = Math.max(0, containerHeight - NORMAL_HEIGHT);
+  const tallScreenOffset = extraHeight * 0.2; // Push down by half the extra height
+  
+  const TOP_ROW_Y = baseTopRowY + tallScreenOffset;
+  const BOTTOM_ROW_Y = baseBottomRowY + tallScreenOffset;
 
 
   const { shopItems: shopItemData, loading: shopLoading } = useShopItems();
@@ -280,6 +294,25 @@ export default function PointShop() {
 
   return (
     <ImageBackground source={require("../../assets/point-shop/point-shop-background.png")} style={styles.container} resizeMode="cover">
+      {/* Title */}
+      {/* <View style={{ position: "absolute", top: TITLE_Y, left: 20, zIndex: 10 }}> */}
+      <View
+        style={{
+          position: "absolute",
+          top: HEADER_Y,
+          left: 10,
+          height: HEADER_HEIGHT,
+          justifyContent: "center",
+          zIndex: 10,
+        }}
+      >
+        <Image
+          source={require("../../assets/point-shop/point-shop-title.png")}
+          style={{ width: titleWidth, height: titleHeight }}
+          resizeMode="contain"
+        />
+      </View>
+
       {/* Points */}
       <View style={{ position: "absolute", top: POINTS_Y, width: "100%", alignItems: "center", zIndex: 10 }}>
         <Points points={userPoints} />
@@ -404,12 +437,17 @@ export default function PointShop() {
         onClose={() => {
           setShowCartModal(false);
           refetchProfile();
+          fetchCartItems();
         }}
         cartIds={cartIds}
         shopItemData={shopItemData}
         onAddItem={addToCart}
         onRemoveItem={removeFromCart}
         onError={showError}
+        onRefresh={() => {
+          refetchProfile();
+          fetchCartItems();
+        }}
       />
 
       {/* Fading error message */}

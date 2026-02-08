@@ -33,7 +33,9 @@ interface OrbitItemProps {
   jigglePx?: number; // how far to slide along the orbit
 }
 
-const { width } = Dimensions.get("window");
+import { getConstrainedWidth } from "../../lib/layout";
+
+const width = getConstrainedWidth();
 const CENTER_X = width / 2;
 
 export default function OrbitItem({
