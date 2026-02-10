@@ -1,9 +1,10 @@
-import { StyleSheet, View, Text, TouchableOpacity, Animated, useWindowDimensions } from "react-native";
+import { StyleSheet, View, Text, TouchableOpacity, Animated, useWindowDimensions, Image } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Clouds from "../../assets/onboarding/loading/clouds.svg";
 import TinyStars from "../../assets/onboarding/loading/tiny stars.svg";
 import NextButton from "../../assets/onboarding/next-button.svg";
-import ScheduleIphone from "../../assets/schedule-iphone.svg";
+// import ScheduleIphone from "../../assets/schedule-iphone.svg";
+import ScheduleIphone from "../../assets/onboarding/onboarding-schedule-png.png"
 import InteractiveNavbar from "./InteractiveNavbar";
 
 type OnSkipProps = {
@@ -99,13 +100,15 @@ export default function ScreenThree({ onFinish, onStart, cloudX1, cloudX2, starO
             </View>
 
             {/* iPhone */}
-            <ScheduleIphone
-                width={IPHONE_WIDTH}
-                height={IPHONE_HEIGHT}
+            <Image
+                source={ScheduleIphone}
                 style={{
-                    position: 'absolute',
+                    width: IPHONE_WIDTH,
+                    height: IPHONE_HEIGHT,
+                    position: "absolute",
                     top: IPHONE_TOP,
                     left: IPHONE_LEFT,
+                    resizeMode: "contain",
                 }}
             />
 

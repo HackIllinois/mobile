@@ -1,9 +1,10 @@
-import { StyleSheet, View, Text, TouchableOpacity, Animated, useWindowDimensions } from "react-native";
+import { StyleSheet, View, Text, TouchableOpacity, Animated, useWindowDimensions, Image } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Clouds from "../../assets/onboarding/loading/clouds.svg";
 import TinyStars from "../../assets/onboarding/loading/tiny stars.svg";
 import NextButton from "../../assets/onboarding/next-button.svg";
-import ProfileIphone from "../../assets/profile-iphone.svg";
+// import ProfileIphone from "../../assets/profile-iphone.svg";
+import ProfileIphone from "../../assets/onboarding/onboarding-profile-png.png"
 import InteractiveNavbar from "./InteractiveNavbar";
 
 type OnSkipProps = {
@@ -99,13 +100,15 @@ export default function ScreenThree({ onFinish, onStart, cloudX1, cloudX2, starO
             </View>
 
             {/* iPhone */}
-            <ProfileIphone
-                width={IPHONE_WIDTH}
-                height={IPHONE_HEIGHT}
+            <Image
+                source={ProfileIphone}
                 style={{
-                    position: 'absolute',
+                    width: IPHONE_WIDTH,
+                    height: IPHONE_HEIGHT,
+                    position: "absolute",
                     top: IPHONE_TOP,
                     left: IPHONE_LEFT,
+                    resizeMode: "contain",
                 }}
             />
 

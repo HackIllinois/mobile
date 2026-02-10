@@ -1,9 +1,10 @@
-import { StyleSheet, View, Text, TouchableOpacity, Animated, useWindowDimensions } from "react-native";
+import { StyleSheet, View, Text, TouchableOpacity, Animated, useWindowDimensions, Image } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Clouds from "../../assets/onboarding/loading/clouds.svg";
 import TinyStars from "../../assets/onboarding/loading/tiny stars.svg";
 import GetStartedButton from "../../assets/onboarding/get-started-button.svg";
-import DuelsIphone from "../../assets/duels-iphone.svg";
+// import DuelsIphone from "../../assets/duels-iphone.svg";
+import DuelsIphone from "../../assets/onboarding/onboarding-duels-png.png"
 import InteractiveNavbar from "./InteractiveNavbar";
 
 type OnSkipProps = {
@@ -99,13 +100,15 @@ export default function ScreenThree({ onFinish, onStart, cloudX1, cloudX2, starO
             </View>
 
             {/* iPhone */}
-            <DuelsIphone
-                width={IPHONE_WIDTH}
-                height={IPHONE_HEIGHT}
+            <Image
+                source={DuelsIphone}
                 style={{
-                    position: 'absolute',
+                    width: IPHONE_WIDTH,
+                    height: IPHONE_HEIGHT,
+                    position: "absolute",
                     top: IPHONE_TOP,
                     left: IPHONE_LEFT,
+                    resizeMode: "contain",
                 }}
             />
 
