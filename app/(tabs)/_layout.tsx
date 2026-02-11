@@ -37,6 +37,8 @@ export default function Layout() {
           style: "destructive",
           onPress: async () => {
             await SecureStore.deleteItemAsync("jwt");
+            await SecureStore.deleteItemAsync("isGuest");
+            await SecureStore.deleteItemAsync("userRoles");
             queryClient.clear();
             router.replace("/AuthScreen");
           },
