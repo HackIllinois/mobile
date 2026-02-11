@@ -188,6 +188,9 @@ export default function PointShop() {
         return { success: true };
       } catch (error: any) {
         console.error("Failed to add item to cart:", error);
+        if (error.response?.status === 401) {
+          return { success: false, errorMessage: "You must login to purchase items" };
+        }
         const data = error.response?.data;
         const errorMessage = data?.message || data?.error || "Failed to add item to cart";
         return { success: false, errorMessage };
@@ -238,6 +241,7 @@ export default function PointShop() {
   };
 
   const showError = useCallback((message: string) => {
+    errorOpacity.stopAnimation();
     setErrorMessage(message);
     errorOpacity.setValue(1);
     Animated.timing(errorOpacity, {

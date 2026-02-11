@@ -105,6 +105,8 @@ export default function ProfileScreen() {
           style: "destructive",
           onPress: async () => {
             await SecureStore.deleteItemAsync("jwt");
+            await SecureStore.deleteItemAsync("isGuest");
+            await SecureStore.deleteItemAsync("userRoles");
             queryClient.clear();
             setQrInfo(null);
             router.replace("/AuthScreen");
