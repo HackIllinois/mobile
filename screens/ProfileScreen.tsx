@@ -239,7 +239,7 @@ export default function ProfileScreen() {
               <UserStatsCard
                 displayName={profile.displayName}
                 foodWave={profile.foodWave}
-                track={profile.teamStatus || 'GENERAL'}
+                track={profile.track || 'GENERAL'}
                 rank={profile.ranking || 0}
                 points={profile.points}
                 pointsToNextRank={Math.max(0, 100 - (profile.points % 100))}
