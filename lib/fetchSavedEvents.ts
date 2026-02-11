@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-async function fetchSavedEvents(): Promise<string[]> {
+export async function fetchSavedEvents(): Promise<string[]> {
   const stored = await AsyncStorage.getItem("savedEvents");
   if (stored) {
     return JSON.parse(stored) as string[];

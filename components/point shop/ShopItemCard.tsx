@@ -21,7 +21,6 @@ const ShopItemCard = memo(({ item, onPress, scale = 1 }: ShopItemCardProps) => {
 
     // Only animate if the API call succeeded
     if (result.success) {
-      // Reset animations
       floatAnim.setValue(0);
       opacityAnim.setValue(1);
 
