@@ -54,9 +54,10 @@ function RootLayoutContent() {
         setShowOnboarding(!hasCompleted);
         markProgress();
 
-        // Task 2: Check JWT
+        // Task 2: Check JWT or guest flag
         const jwt = await SecureStore.getItemAsync("jwt");
-        setIsLoggedIn(!!jwt);
+        const isGuest = await SecureStore.getItemAsync("isGuest");
+        setIsLoggedIn(!!jwt || !!isGuest);
         markProgress();
 
         // Task 3: Check roles

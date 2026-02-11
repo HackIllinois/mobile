@@ -8,7 +8,8 @@ export default function Index() {
   useEffect(() => {
     const checkToken = async () => {
       const jwt = await SecureStore.getItemAsync("jwt");
-      setHasToken(!!jwt);
+      const isGuest = await SecureStore.getItemAsync("isGuest");
+      setHasToken(!!jwt || !!isGuest);
     };
     checkToken();
   }, []);

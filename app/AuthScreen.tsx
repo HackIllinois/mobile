@@ -87,6 +87,7 @@ interface AuthRolesResponse {
 export default function AuthScreen({ navigation }: any) {
   const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [loadingGitHub, setLoadingGitHub] = useState(false);
+  const [loadingGuest, setLoadingGuest] = useState(false);
   const router = useRouter();
 
   const redirectUri = "hackillinois://auth";
@@ -140,6 +141,22 @@ export default function AuthScreen({ navigation }: any) {
       }
     } else {
       Alert.alert("Login canceled or failed");
+    }
+  };
+
+  const handleGuestLogin = async () => {
+    try {
+      setLoadingGuest(true);
+      await SecureStore.setItemAsync("isGuest", "true");
+      await SecureStore.setItemAsync("userRoles", JSON.stringify(["GUEST"]));
+      router.replace("/(tabs)/Home");
+    } catch (err) {
+      console.error(err);
+      await SecureStore.deleteItemAsync("isGuest");
+      await SecureStore.deleteItemAsync("userRoles");
+      Alert.alert("Guest login failed", "Please try again.");
+    } finally {
+      setLoadingGuest(false);
     }
   };
 
@@ -225,30 +242,71 @@ export default function AuthScreen({ navigation }: any) {
       <TouchableOpacity
         style={[styles.overlayButton, attendeeBtnStyle]}
         onPress={handleGitHubLogin}
-        disabled={loadingGoogle || loadingGitHub}
+        disabled={loadingGoogle || loadingGitHub || loadingGuest}
         activeOpacity={0.7}
       >
         {loadingGitHub && <ActivityIndicator color="#fff" />}
       </TouchableOpacity>
 
-      {/* Staff button below attendee */}
-      <TouchableOpacity
+      {/* -OR- divider */}
+      <Text
         style={[
-          styles.staffButton,
+          styles.orText,
           {
             position: "absolute",
-            top: (ATTENDEE_BTN.y + ATTENDEE_BTN.height) * scale + offsetY + 20,
+            top: (ATTENDEE_BTN.y + ATTENDEE_BTN.height) * scale + offsetY + 14,
             alignSelf: "center",
           },
         ]}
+      >
+        -OR-
+      </Text>
+
+      {/* Staff button */}
+      <TouchableOpacity
+        style={[
+          styles.outlineButton,
+          {
+            position: "absolute",
+            left: ATTENDEE_BTN.x * scale + offsetX,
+            top: (ATTENDEE_BTN.y + ATTENDEE_BTN.height) * scale + offsetY + 50,
+            width: ATTENDEE_BTN.width * scale,
+            height: ATTENDEE_BTN.height * scale,
+            borderRadius: 23.5 * scale,
+          },
+        ]}
         onPress={handleGoogleLogin}
-        disabled={loadingGoogle || loadingGitHub}
+        disabled={loadingGoogle || loadingGitHub || loadingGuest}
         activeOpacity={0.7}
       >
         {loadingGoogle ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={styles.staffText}>Staff</Text>
+          <Text style={styles.outlineButtonText}>STAFF</Text>
+        )}
+      </TouchableOpacity>
+
+      {/* Guest button */}
+      <TouchableOpacity
+        style={[
+          styles.outlineButton,
+          {
+            position: "absolute",
+            left: ATTENDEE_BTN.x * scale + offsetX,
+            top: (ATTENDEE_BTN.y + ATTENDEE_BTN.height) * scale + offsetY + 50 + ATTENDEE_BTN.height * scale + 10,
+            width: ATTENDEE_BTN.width * scale,
+            height: ATTENDEE_BTN.height * scale,
+            borderRadius: 23.5 * scale,
+          },
+        ]}
+        onPress={handleGuestLogin}
+        disabled={loadingGoogle || loadingGitHub || loadingGuest}
+        activeOpacity={0.7}
+      >
+        {loadingGuest ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.outlineButtonText}>GUEST</Text>
         )}
       </TouchableOpacity>
     </View>
@@ -271,15 +329,24 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  staffButton: {
+  orText: {
+    fontFamily: "Tsukimi-Rounded-Bold",
+    fontSize: 16,
+    color: "#FFFFFF",
     left: 0,
     right: 0,
-    alignItems: "center",
-    paddingVertical: 12,
+    textAlign: "center",
   },
-  staffText: {
+  outlineButton: {
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "rgba(255, 255, 255, 0.5)",
+  },
+  outlineButtonText: {
     fontFamily: "Tsukimi-Rounded-Bold",
     fontSize: 18,
     color: "#FFFFFF",
+    letterSpacing: 2,
   },
 });

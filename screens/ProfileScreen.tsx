@@ -90,6 +90,31 @@ export default function ProfileScreen() {
     }, [profile, fetchQrCode]) 
   );
 
+  const handleLogout = () => {
+    Alert.alert(
+      "Log Out",
+      "Are you sure you want to log out?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Log Out",
+          style: "destructive",
+          onPress: async () => {
+            await SecureStore.deleteItemAsync("jwt");
+            await SecureStore.deleteItemAsync("isGuest");
+            await SecureStore.deleteItemAsync("userRoles");
+            queryClient.clear();
+            setQrInfo(null);
+            router.replace("/AuthScreen");
+          }
+        }
+      ]
+    );
+  };
+
   if (isLoading) {
     return (
       <SafeAreaView style={{
