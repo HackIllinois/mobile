@@ -86,6 +86,7 @@ export default function AuthScreen({ navigation }: any) {
   const { width, height } = useWindowDimensions();
   const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [loadingGitHub, setLoadingGitHub] = useState(false);
+  const [loadingGuest, setLoadingGuest] = useState(false);
   const router = useRouter();
 
   const scaleWidth = (size: number) => (width / FIGMA_WIDTH) * size;
@@ -138,6 +139,22 @@ export default function AuthScreen({ navigation }: any) {
       }
     } else {
       Alert.alert("Login canceled or failed");
+    }
+  };
+
+  const handleGuestLogin = async () => {
+    try {
+      setLoadingGuest(true);
+      await SecureStore.setItemAsync("isGuest", "true");
+      await SecureStore.setItemAsync("userRoles", JSON.stringify(["GUEST"]));
+      router.replace("/(tabs)/Home");
+    } catch (err) {
+      console.error(err);
+      await SecureStore.deleteItemAsync("isGuest");
+      await SecureStore.deleteItemAsync("userRoles");
+      Alert.alert("Guest login failed", "Please try again.");
+    } finally {
+      setLoadingGuest(false);
     }
   };
 
@@ -262,7 +279,7 @@ export default function AuthScreen({ navigation }: any) {
           height: scaleHeight(47),
         }}
         onPress={handleGitHubLogin}
-        disabled={isLoading}
+        disabled={loadingGoogle || loadingGitHub || loadingGuest}
         activeOpacity={0.7}
       >
         {loadingGitHub ? (
@@ -278,46 +295,41 @@ export default function AuthScreen({ navigation }: any) {
         )}
       </TouchableOpacity>
 
-      {/* -or- */}
-      <View
-        style={{
-          position: "absolute",
-          top: scaleHeight(696),
-          left: scaleWidth(197),
-          width: scaleWidth(47),
-          height: scaleHeight(25),
-        }}
+      {/* -OR- divider */}
+      <Text
+        style={[
+          styles.orText,
+          {
+            position: "absolute",
+            top: (ATTENDEE_BTN.y + ATTENDEE_BTN.height) * scale + offsetY + 14,
+            alignSelf: "center",
+          },
+        ]}
       >
-        <OrSvg
-          width={scaleWidth(47)}
-          height={scaleHeight(25)}
-          preserveAspectRatio="xMidYMid meet"
-        />
-      </View>
+        -OR-
+      </Text>
 
-      {/* Staff Button (Google login) */}
+      {/* Staff button */}
       <TouchableOpacity
-        style={{
-          position: "absolute",
-          top: scaleHeight(740),
-          left: scaleWidth(116),
-          width: scaleWidth(209),
-          height: scaleHeight(42),
-          justifyContent: "center",
-          alignItems: "center",
-        }}
+        style={[
+          styles.outlineButton,
+          {
+            position: "absolute",
+            left: ATTENDEE_BTN.x * scale + offsetX,
+            top: (ATTENDEE_BTN.y + ATTENDEE_BTN.height) * scale + offsetY + 50,
+            width: ATTENDEE_BTN.width * scale,
+            height: ATTENDEE_BTN.height * scale,
+            borderRadius: 23.5 * scale,
+          },
+        ]}
         onPress={handleGoogleLogin}
-        disabled={isLoading}
+        disabled={loadingGoogle || loadingGitHub || loadingGuest}
         activeOpacity={0.7}
       >
         {loadingGoogle ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <StaffButtonSvg
-            width={scaleWidth(209)}
-            height={scaleHeight(42)}
-            preserveAspectRatio="xMidYMid meet"
-          />
+          <Text style={styles.outlineButtonText}>STAFF</Text>
         )}
       </TouchableOpacity>
 
@@ -362,5 +374,25 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+  orText: {
+    fontFamily: "Tsukimi-Rounded-Bold",
+    fontSize: 16,
+    color: "#FFFFFF",
+    left: 0,
+    right: 0,
+    textAlign: "center",
+  },
+  outlineButton: {
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "rgba(255, 255, 255, 0.5)",
+  },
+  outlineButtonText: {
+    fontFamily: "Tsukimi-Rounded-Bold",
+    fontSize: 18,
+    color: "#FFFFFF",
+    letterSpacing: 2,
   },
 });

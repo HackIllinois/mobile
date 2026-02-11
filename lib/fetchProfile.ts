@@ -10,13 +10,46 @@ export interface UserProfile {
   points: number;
   pointsAccumulated: number;
   foodWave: number;
-  teamStatus?: string;
+  track?: string;
   ranking?: number;
 }
 
+interface RankingResponse {
+  ranking: number;
+}
+
+interface AdmissionRsvpResponse {
+  userId: string;
+  status: string;
+  admittedPro: boolean;
+  response: string;
+  emailSent: boolean;
+  reimbursementValue: number;
+}
+
 async function fetchProfile(): Promise<UserProfile> {
-  const response: any = await api.get<UserProfile>("profile");
-  return response.data;
+  const [profileRes, rankingRes, rsvpRes] = await Promise.allSettled([
+    api.get<UserProfile>("profile"),
+    api.get<RankingResponse>("profile/ranking"),
+    api.get<AdmissionRsvpResponse>("admission/rsvp"),
+  ]);
+
+  if (profileRes.status === "rejected") {
+    throw profileRes.reason;
+  }
+
+  const profile = (profileRes.value as any).data as UserProfile;
+
+  if (rankingRes.status === "fulfilled") {
+    profile.ranking = (rankingRes.value as any).data.ranking;
+  }
+
+  if (rsvpRes.status === "fulfilled") {
+    const rsvp = (rsvpRes.value as any).data as AdmissionRsvpResponse;
+    profile.track = rsvp.admittedPro ? "PRO" : "GENERAL";
+  }
+
+  return profile;
 }
 
 export function useProfile() {

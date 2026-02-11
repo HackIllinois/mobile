@@ -3,12 +3,12 @@ import {
   Text,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
   View,
   useWindowDimensions,
+  StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import api from '../api';
 import { AxiosResponse } from 'axios';
@@ -22,6 +22,7 @@ import ButtonSvg from '../assets/profile/profile-screen/button.svg';
 import QRCodeButtonSvg from '../assets/profile/profile-screen/qr-code-button.svg';
 import EditButtonSvg from '../assets/profile/profile-screen/edit-button.svg';
 import BackgroundSvg from '../assets/profile/background.svg';
+import StarryBackground from '../components/eventScreen/StarryBackground';
 import { useProfile, UserProfile } from '../lib/fetchProfile';
 import { queryClient } from '../lib/queryClient';
 
@@ -40,8 +41,6 @@ export default function ProfileScreen() {
   const scaleFontSize = (size: number) => Math.min(scaleWidth(size), scaleHeight(size));
 
   const { profile, loading: isLoading, refetch: refetchProfile } = useProfile();
-  const router = useRouter();
-
   const [qrCode, setQrInfo] = useState<string | null>(null);
   const [qrLoading, setQrLoading] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
@@ -105,6 +104,8 @@ export default function ProfileScreen() {
           style: "destructive",
           onPress: async () => {
             await SecureStore.deleteItemAsync("jwt");
+            await SecureStore.deleteItemAsync("isGuest");
+            await SecureStore.deleteItemAsync("userRoles");
             queryClient.clear();
             setQrInfo(null);
             router.replace("/AuthScreen");
@@ -129,65 +130,61 @@ export default function ProfileScreen() {
 
   if (!profile) {
     return (
-      <SafeAreaView style={{
-        flex: 1,
-        backgroundColor: '#F5F5F5',
-        justifyContent: 'center',
-        alignItems: 'center',
-      }}>
-        <Text style={{
-          color: '#FF5555',
-          fontSize: scaleFontSize(30),
-          textAlign: 'center',
-          width: '80%',
-          marginBottom: scaleHeight(30),
-        }}>Could not load profile.</Text>
-        <Text style={{
-          color: '#180161',
-          fontSize: scaleFontSize(18),
-          textAlign: 'center',
-          width: '80%',
-          marginBottom: scaleHeight(5),
-        }}>Staff currently do not have profiles.</Text>
-        <Text style={{
-          color: '#180161',
-          fontSize: scaleFontSize(18),
-          textAlign: 'center',
-          width: '80%',
-          marginBottom: scaleHeight(20),
-        }}>If you are an attendee, please email contact@hackillinois.org for support.</Text>
-        <TouchableOpacity style={{
-          backgroundColor: '#180161',
-          padding: scaleWidth(15),
-          borderRadius: scaleWidth(40),
+      <StarryBackground>
+        <View style={{
+          ...StyleSheet.absoluteFillObject,
+          backgroundColor: 'rgba(0, 0, 0, 0.35)',
+          zIndex: 0,
+        }} />
+        <SafeAreaView style={{
+          flex: 1,
+          justifyContent: 'center',
           alignItems: 'center',
-          width: '30%',
-          marginBottom: scaleHeight(70),
-        }} onPress={() => refetchProfile()}>
+        }}>
           <Text style={{
-            color: '#FFFFFF',
+            color: '#FFE0B4',
+            fontSize: scaleFontSize(28),
+            fontFamily: 'Tsukimi Rounded',
+            fontWeight: '700',
+            textAlign: 'center',
+            width: '80%',
+            marginBottom: scaleHeight(20),
+          }}>Could not load profile.</Text>
+          <Text style={{
+            color: 'rgba(255, 255, 255, 0.85)',
             fontSize: scaleFontSize(16),
-            fontWeight: 'bold',
-          }}>Try Again</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={{
-            backgroundColor: '#FF5555',
-            padding: scaleWidth(15),
+            fontFamily: 'Tsukimi Rounded',
+            fontWeight: '700',
+            textAlign: 'center',
+            width: '80%',
+            marginBottom: scaleHeight(5),
+          }}>Staff currently do not have profiles.</Text>
+          <Text style={{
+            color: 'rgba(255, 255, 255, 0.9)',
+            fontSize: scaleFontSize(14),
+            fontWeight: '600',
+            textAlign: 'center',
+            width: '80%',
+            marginBottom: scaleHeight(30),
+          }}>If you are an attendee, please email contact@hackillinois.org for support.</Text>
+          <TouchableOpacity style={{
+            backgroundColor: 'rgba(24, 1, 97, 0.8)',
+            paddingVertical: scaleWidth(12),
+            paddingHorizontal: scaleWidth(30),
             borderRadius: scaleWidth(40),
             alignItems: 'center',
-            width: '50%',
-            marginBottom: scaleHeight(15),
-          }}
-          onPress={handleLogout}
-        >
-          <Text style={{
-            color: '#FFFFFF',
-            fontSize: scaleFontSize(18),
-            fontWeight: 'bold',
-          }}>Log Out</Text>
-        </TouchableOpacity>
-      </SafeAreaView>
+            borderWidth: 1,
+            borderColor: 'rgba(255, 224, 180, 0.3)',
+          }} onPress={() => refetchProfile()}>
+            <Text style={{
+              color: '#FFFFFF',
+              fontSize: scaleFontSize(14),
+              fontFamily: 'Tsukimi Rounded',
+              fontWeight: '700',
+            }}>Try Again</Text>
+          </TouchableOpacity>
+        </SafeAreaView>
+      </StarryBackground>
     );
   }
 
@@ -267,7 +264,7 @@ export default function ProfileScreen() {
               <UserStatsCard
                 displayName={profile.displayName}
                 foodWave={profile.foodWave}
-                track={profile.teamStatus || 'GENERAL'}
+                track={profile.track || 'GENERAL'}
                 rank={profile.ranking || 0}
                 points={profile.points}
                 pointsToNextRank={Math.max(0, 100 - (profile.points % 100))}
