@@ -106,26 +106,28 @@ export default function Layout() {
         </Tabs>
 
         {/* Header */}
-        {title && (
-          <View style={[styles.headerRow, { top: insets.top }]}>
+        <View style={[styles.headerRow, { top: insets.top }]}>
+          {title ? (
             <View>
               <Text style={[styles.headerTitle, styles.glowWide]}>{title}</Text>
               <Text style={[styles.headerTitle, styles.glowMid]}>{title}</Text>
               <Text style={[styles.headerTitle, styles.titleFront]}>{title}</Text>
             </View>
-            {isProfileScreen ? (
-              <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
-                <LogoutButtonSvg width={70} height={28} />
+          ) : (
+            <View />
+          )}
+          {isProfileScreen ? (
+            <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
+              <LogoutButtonSvg width={70} height={28} />
+            </TouchableOpacity>
+          ) : (
+            <Link href="/Profile" asChild>
+              <TouchableOpacity>
+                <ProfileSvg width={45} height={45} />
               </TouchableOpacity>
-            ) : (
-              <Link href="/Profile" asChild>
-                <TouchableOpacity>
-                  <ProfileSvg width={45} height={45} />
-                </TouchableOpacity>
-              </Link>
-            )}
-          </View>
-        )}
+            </Link>
+          )}
+        </View>
 
       </View>
   );

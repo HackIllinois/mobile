@@ -25,6 +25,9 @@ import StaffButtonSvg from "../assets/login/staff-button.svg";
 import GuestButtonSvg from "../assets/login/guest-button.svg";
 
 import api from "../api";
+import { queryClient } from "../lib/queryClient";
+import { fetchProfile } from "../lib/fetchProfile";
+import { fetchSavedEvents } from "../lib/fetchSavedEvents";
 
 WebBrowser.maybeCompleteAuthSession();
 
