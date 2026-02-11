@@ -205,7 +205,7 @@ export default function AuthScreen({ navigation }: any) {
     }
   };
 
-  const isLoading = loadingGoogle || loadingGitHub;
+  const isLoading = loadingGoogle || loadingGitHub || loadingGuest;
 
   return (
     <View style={styles.container}>
@@ -296,40 +296,45 @@ export default function AuthScreen({ navigation }: any) {
       </TouchableOpacity>
 
       {/* -OR- divider */}
-      <Text
-        style={[
-          styles.orText,
-          {
-            position: "absolute",
-            top: (ATTENDEE_BTN.y + ATTENDEE_BTN.height) * scale + offsetY + 14,
-            alignSelf: "center",
-          },
-        ]}
+      <View
+        style={{
+          position: "absolute",
+          top: scaleHeight(693),
+          left: scaleWidth(197),
+          width: scaleWidth(45),
+          height: scaleHeight(15),
+        }}
       >
-        -OR-
-      </Text>
+        <OrSvg
+          width={scaleWidth(45)}
+          height={scaleHeight(15)}
+          preserveAspectRatio="xMidYMid meet"
+        />
+      </View>
 
       {/* Staff button */}
       <TouchableOpacity
-        style={[
-          styles.outlineButton,
-          {
-            position: "absolute",
-            left: ATTENDEE_BTN.x * scale + offsetX,
-            top: (ATTENDEE_BTN.y + ATTENDEE_BTN.height) * scale + offsetY + 50,
-            width: ATTENDEE_BTN.width * scale,
-            height: ATTENDEE_BTN.height * scale,
-            borderRadius: 23.5 * scale,
-          },
-        ]}
+        style={{
+          position: "absolute",
+          top: scaleHeight(720),
+          left: scaleWidth(114),
+          width: scaleWidth(212),
+          height: scaleHeight(45),
+        }}
         onPress={handleGoogleLogin}
         disabled={loadingGoogle || loadingGitHub || loadingGuest}
         activeOpacity={0.7}
       >
         {loadingGoogle ? (
-          <ActivityIndicator color="#fff" />
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator color="#fff" />
+          </View>
         ) : (
-          <Text style={styles.outlineButtonText}>STAFF</Text>
+          <StaffButtonSvg
+            width={scaleWidth(212)}
+            height={scaleHeight(45)}
+            preserveAspectRatio="xMidYMid meet"
+          />
         )}
       </TouchableOpacity>
 
@@ -337,14 +342,14 @@ export default function AuthScreen({ navigation }: any) {
       <TouchableOpacity
         style={{
           position: "absolute",
-          top: scaleHeight(794),
+          top: scaleHeight(780),
           left: scaleWidth(115),
           width: scaleWidth(209),
-          height: scaleHeight(42),
+          height: scaleHeight(45),
           justifyContent: "center",
           alignItems: "center",
         }}
-        onPress={() => {}}
+        onPress={handleGuestLogin}
         disabled={isLoading}
         activeOpacity={0.7}
       >
@@ -374,25 +379,5 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-  },
-  orText: {
-    fontFamily: "Tsukimi-Rounded-Bold",
-    fontSize: 16,
-    color: "#FFFFFF",
-    left: 0,
-    right: 0,
-    textAlign: "center",
-  },
-  outlineButton: {
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: "rgba(255, 255, 255, 0.5)",
-  },
-  outlineButtonText: {
-    fontFamily: "Tsukimi-Rounded-Bold",
-    fontSize: 18,
-    color: "#FFFFFF",
-    letterSpacing: 2,
   },
 });
