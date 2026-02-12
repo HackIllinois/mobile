@@ -5182,6 +5182,7 @@ export interface components {
          *     }
          */
         Event: {
+            menu: string[];
             eventId: components["schemas"]["EventId"];
             isStaff: boolean;
             name: string;
