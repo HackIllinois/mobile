@@ -155,7 +155,7 @@ function RootLayoutContent() {
   };
 
   if (!fontsLoaded || showOnboarding === null) {
-    return <ImageBackground source={require("../assets/splash_screen.png")} style={{ flex: 1 }} resizeMode="cover" />;
+    return null;
   }
 
   if (showLoading) {
@@ -218,7 +218,7 @@ function RootLayoutContent() {
   }
 
   return (
-     <Stack screenOptions={{ headerShown: false }}>
+     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: 'transparent' } }}>
       {!isLoggedIn ? (
         <Stack.Screen name="AuthScreen" />
       ) : (
