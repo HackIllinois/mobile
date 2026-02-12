@@ -3,11 +3,12 @@ import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-nati
 import Moon from "../../assets/event/Moon.svg";
 import Sun from "../../assets/event/Sun";
 import PinkMoon from "../../assets/event/PinkMoon.svg";
+let SCREEN_WIDTH = Dimensions.get('window').width;
+SCREEN_WIDTH = Math.min(SCREEN_WIDTH, 450); // Cap width for larger devices
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // --- SIZING CONSTANTS ---
-const MAX_ITEM_SIZE = 130;
+const MAX_ITEM_SIZE = 180;
 const ITEM_SIZE = Math.min(SCREEN_WIDTH * 0.18, MAX_ITEM_SIZE); // Width of the moon
 
 const SUN_SCALE = 1.35; 

@@ -41,18 +41,17 @@ export default function MenuModal({ visible, event, onClose }: MenuModalProps) {
                         contentContainerStyle={styles.scrollContent}
                         showsVerticalScrollIndicator={false}
                     >
-                        <Text style={styles.placeholderText}>
-                            Menu details for this meal will appear here.
-                        </Text>
-                        {/* TODO: Map through actual menu items here */}
-                        <View style={styles.menuItemPlaceholder}>
-                            <Text style={styles.itemTitle}>• Main Course</Text>
-                            <Text style={styles.itemDesc}>TBA</Text>
-                        </View>
-                        <View style={styles.menuItemPlaceholder}>
-                            <Text style={styles.itemTitle}>• Vegetarian Option</Text>
-                            <Text style={styles.itemDesc}>TBA</Text>
-                        </View>
+                        {event.menu && event.menu.length > 0 ? (
+                            event.menu.map((item, index) => (
+                                <View key={index} style={styles.menuItemPlaceholder}>
+                                    <Text style={styles.itemTitle}>• {item}</Text>
+                                </View>
+                            ))
+                        ) : (
+                            <Text style={styles.placeholderText}>
+                                Menu details for this meal will appear here.
+                            </Text>
+                        )}
                     </ScrollView>
                 </View>
             </View>
