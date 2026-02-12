@@ -14,7 +14,7 @@ import * as Haptics from 'expo-haptics';
 import { useFonts, TsukimiRounded_700Bold } from '@expo-google-fonts/tsukimi-rounded';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Ionicons } from '@expo/vector-icons'; //
+import { Ionicons } from '@expo/vector-icons';
 
 // --- Components ---
 import { EventHeader, EventDay } from '../../components/eventScreen/EventHeader';
@@ -30,8 +30,6 @@ import { useEvents } from '../../lib/fetchEvents';
 import { useSavedEvents } from '../../lib/fetchSavedEvents';
 import { useMentorOfficeHours } from '../../lib/fetchMentorOfficeHours';
 import { Event } from '../../types';
-import Moon from "../../assets/event/Moon.svg"
-import Sun from "../../assets/event/Sun.svg"
 
 // --- Types ---
 type ScheduleMode = 'events' | 'mentorship';
@@ -324,22 +322,85 @@ export default function EventScreen() {
   return (
     <StarryBackground scrollY={scrollY}>
       <View style={[styles.container, { paddingTop: insets.top + 55 }]}>
-        {eventDays.length > 0 && (
-          <View style={styles.daysContainer}>
-            <View style={[styles.tabs, { paddingHorizontal: 30, marginBottom: 10, flexDirection: 'row', justifyContent: 'space-between' }]}>
-              {eventDays.map((day) => {
-                const isSelected = selectedDay === day.id;
-                const isTodayDate = isToday(day.date);
+        {/* --- Sticky Header Section --- */}
+        <View style={[styles.stickyHeaderContainer, { top: insets.top + 45 }]}>
+            <Animated.View style={{
+                opacity: tabsOpacity,
+                transform: [{ translateY: tabsTranslateY }],
+                zIndex: -1
+            }}>
+                <EventTabs
+                    activeTab={scheduleMode}
+                    onTabPress={(mode) => {
+                        setScheduleMode(mode);
+                        setSaveValue(false);
+                    }}
+                />
+            </Animated.View>
 
-                return (
-                  <View key={day.id} style={styles.dayWrapper}>
-                    {/* Background Layer: The Large SVG */}
-                    <View style={styles.svgBackground}>
-                      {isSelected ? (
-                        <Sun width={90} height={90} style={{marginBottom: 0}}/> 
-                      ) : (
-                        <Moon width={80} height={80} />
-                      )}
+            <Animated.View style={{
+                opacity: headerOpacity,
+                transform: [{ translateY: headerTranslateY }]
+            }}>
+                <EventHeader
+                    eventDays={eventDays}
+                    selectedDay={selectedDay}
+                    setSelectedDay={setSelectedDay}
+                    selectedSave={selectedSave}
+                    setSaveValue={setSaveValue}
+                    scheduleMode={scheduleMode}
+                />
+            </Animated.View>
+        </View>
+
+        {/* --- Render Content Logic --- */}
+        {isRefreshing ? (
+             <View style={[styles.emptyContainer, { marginTop: 300 }]}>
+                <ActivityIndicator color="#7229a3" size="large" />
+                <Text style={styles.emptyText}>Refreshing...</Text>
+             </View>
+        ) : isLoading && isEmpty ? (
+             <View style={{ marginTop: 300 }}>
+                 <ActivityIndicator size="large" color="#FFF" />
+                 <Text style={styles.emptyText}>Loading...</Text>
+             </View>
+        ) : isError ? (
+             <View style={styles.emptyContainer}>
+                 <Text style={styles.emptyText}>Error fetching data</Text>
+                 <TouchableOpacity onPress={() => scheduleMode === 'events' ? refetchEvents() : refetchMentors()} style={styles.retryButton}>
+                    <Text style={styles.retryText}>Retry</Text>
+                 </TouchableOpacity>
+             </View>
+        ) : (
+            <Animated.FlatList
+                data={filteredItems}
+                renderItem={renderEvent}
+                keyExtractor={(item: any) => item.eventId || item.id || item.name + item.startTime}
+                contentContainerStyle={[
+                    styles.listContent,
+                    { paddingTop: HEADER_HEIGHT_EXPANDED }
+                ]}
+                showsVerticalScrollIndicator={false}
+                onScroll={Animated.event(
+                    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                    { useNativeDriver: true }
+                )}
+                scrollEventThrottle={16}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={isRefreshing}
+                        onRefresh={onRefresh}
+                        tintColor="#00f0ff"
+                        progressViewOffset={HEADER_HEIGHT_EXPANDED}
+                    />
+                }
+                ListEmptyComponent={
+                    <View style={styles.emptyContainer}>
+                        <Text style={styles.emptyText}>
+                            {scheduleMode === 'mentorship'
+                                ? 'No mentors found.'
+                                : selectedSave ? 'No saved events.' : 'No events found.'}
+                        </Text>
                     </View>
                 }
             />
