@@ -155,7 +155,7 @@ function RootLayoutContent() {
   };
 
   if (!fontsLoaded || showOnboarding === null) {
-    return null;
+    return <ImageBackground source={require("../assets/splash_screen.png")} style={{ flex: 1 }} resizeMode="cover" />;
   }
 
   if (showLoading) {
