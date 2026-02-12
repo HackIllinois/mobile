@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Event } from "../types";
 
-async function fetchEvents(): Promise<Event[]> {
+export async function fetchEvents(): Promise<Event[]> {
   const res = await fetch("https://adonix.hackillinois.org/event/");
   if (!res.ok) {
     throw new Error(`HTTP ${res.status}: ${res.statusText}`);

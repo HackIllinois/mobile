@@ -318,16 +318,15 @@ export default function EventScreen() {
 
   return (
     <StarryBackground scrollY={scrollY}>
-      <View style={[styles.container, { paddingTop: insets.top}]}>
-
+      <View style={[styles.container, { paddingTop: insets.top + 55 }]}>
         {/* --- Sticky Header Section --- */}
-        <View style={[styles.stickyHeaderContainer, { top: insets.top + 15}]}>
-            <Animated.View style={{ 
-                opacity: tabsOpacity, 
+        <View style={[styles.stickyHeaderContainer, { top: insets.top + 45 }]}>
+            <Animated.View style={{
+                opacity: tabsOpacity,
                 transform: [{ translateY: tabsTranslateY }],
-                zIndex: -1 
+                zIndex: -1
             }}>
-                <EventTabs 
+                <EventTabs
                     activeTab={scheduleMode}
                     onTabPress={(mode) => {
                         setScheduleMode(mode);
@@ -336,11 +335,11 @@ export default function EventScreen() {
                 />
             </Animated.View>
 
-            <Animated.View style={{ 
+            <Animated.View style={{
                 opacity: headerOpacity,
-                transform: [{ translateY: headerTranslateY }] 
+                transform: [{ translateY: headerTranslateY }]
             }}>
-                <EventHeader 
+                <EventHeader
                     eventDays={eventDays}
                     selectedDay={selectedDay}
                     setSelectedDay={setSelectedDay}
@@ -351,9 +350,7 @@ export default function EventScreen() {
             </Animated.View>
         </View>
 
-        {/* --- Render Content Logic (Reflecting Old Page Behavior) --- */}
-        
-        {/* 1. Refreshing State (Full Screen Loader) */}
+        {/* --- Render Content Logic --- */}
         {isRefreshing ? (
              <View style={[styles.emptyContainer, { marginTop: 300 }]}>
                 <ActivityIndicator color="#7229a3" size="large" />
@@ -377,8 +374,8 @@ export default function EventScreen() {
                 renderItem={renderEvent}
                 keyExtractor={(item: any) => item.eventId || item.id || item.name + item.startTime}
                 contentContainerStyle={[
-                    styles.listContent, 
-                    { paddingTop: HEADER_HEIGHT_EXPANDED } 
+                    styles.listContent,
+                    { paddingTop: HEADER_HEIGHT_EXPANDED }
                 ]}
                 showsVerticalScrollIndicator={false}
                 onScroll={Animated.event(
@@ -386,20 +383,19 @@ export default function EventScreen() {
                     { useNativeDriver: true }
                 )}
                 scrollEventThrottle={16}
-                // Keep RefreshControl for pull-to-refresh as well
                 refreshControl={
                     <RefreshControl
                         refreshing={isRefreshing}
                         onRefresh={onRefresh}
                         tintColor="#00f0ff"
-                        progressViewOffset={HEADER_HEIGHT_EXPANDED} 
+                        progressViewOffset={HEADER_HEIGHT_EXPANDED}
                     />
                 }
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
                         <Text style={styles.emptyText}>
-                            {scheduleMode === 'mentorship' 
-                                ? 'No mentors found.' 
+                            {scheduleMode === 'mentorship'
+                                ? 'No mentors found.'
                                 : selectedSave ? 'No saved events.' : 'No events found.'}
                         </Text>
                     </View>

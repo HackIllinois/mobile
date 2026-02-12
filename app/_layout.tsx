@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Animated, Easing, View, StyleSheet } from "react-native";
+import { Animated, Easing, View, StyleSheet, ImageBackground } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Stack } from "expo-router";
 import { useFonts } from "expo-font";
@@ -11,6 +11,8 @@ import WelcomePage from "../components/onboarding/WelcomePage";
 import * as SecureStore from "expo-secure-store";
 import { AnimationProvider, useAnimations } from "../contexts/OnboardingAnimationContext";
 import { queryClient } from "../lib/queryClient";
+import { fetchEvents } from "../lib/fetchEvents";
+import { fetchShopItems } from "../lib/fetchShopItems";
 
 // Onboarding testing:
 // true = show onboarding every reload
@@ -39,7 +41,7 @@ function RootLayoutContent() {
     const loadAppData = async () => {
       const startTime = Date.now();
       let completedTasks = 0;
-      const totalTasks = 6; // onboarding, jwt, roles, profile, events, shop+savedEvents
+      const totalTasks = 4; // onboarding, jwt, public data, + 1 for minimum wait
 
       const markProgress = () => {
         completedTasks++;
@@ -54,72 +56,23 @@ function RootLayoutContent() {
         setShowOnboarding(!hasCompleted);
         markProgress();
 
-        // Task 2: Check JWT
+        // Task 2: Check JWT or guest flag
         const jwt = await SecureStore.getItemAsync("jwt");
-        setIsLoggedIn(!!jwt);
+        const isGuest = await SecureStore.getItemAsync("isGuest");
+        setIsLoggedIn(!!jwt || !!isGuest);
         markProgress();
 
-        // Task 3: Check roles
-        await SecureStore.getItemAsync("userRoles");
-        markProgress();
-
-        // Tasks 4-6: Prefetch data in parallel (only if logged in)
-        if (jwt) {
-          const prefetchPromises = [
-            // Task 4: Profile
-            queryClient.prefetchQuery({
-              queryKey: ["profile"],
-              queryFn: async () => {
-                const api = (await import("../api")).default;
-                const response: any = await api.get("profile");
-                return response.data;
-              },
-            }).then(markProgress).catch(markProgress),
-
-            // Task 5: Events
-            queryClient.prefetchQuery({
-              queryKey: ["events"],
-              queryFn: async () => {
-                const res = await fetch("https://adonix.hackillinois.org/event/");
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                const data = await res.json();
-                if (data && Array.isArray(data.events)) return data.events;
-                if (Array.isArray(data)) return data;
-                if (data && data.data && Array.isArray(data.data.events)) return data.data.events;
-                return [];
-              },
-            }).then(markProgress).catch(markProgress),
-
-            // Task 6: Shop items + saved events (grouped)
-            Promise.all([
-              queryClient.prefetchQuery({
-                queryKey: ["shopItems"],
-                queryFn: async () => {
-                  const res = await fetch("https://adonix.hackillinois.org/shop/");
-                  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                  const data = await res.json();
-                  if (Array.isArray(data)) return data;
-                  if (data && Array.isArray(data.data)) return data.data;
-                  return [];
-                },
-              }),
-              queryClient.prefetchQuery({
-                queryKey: ["savedEvents"],
-                queryFn: async () => {
-                  const stored = await AsyncStorage.getItem("savedEvents");
-                  return stored ? JSON.parse(stored) : [];
-                },
-              }),
-            ]).then(markProgress).catch(markProgress),
-          ];
-
-          await Promise.all(prefetchPromises);
-        } else {
-          // Not logged in, skip prefetching but still mark progress
-          markProgress();
-          markProgress();
-          markProgress();
-        }
+        // Task 3: Public data (no auth needed)
+        await Promise.all([
+          queryClient.fetchQuery({
+            queryKey: ["events"],
+            queryFn: fetchEvents,
+          }),
+          queryClient.fetchQuery({
+            queryKey: ["shopItems"],
+            queryFn: fetchShopItems,
+          }),
+        ]).then(markProgress).catch(markProgress);
       } catch (e) {
         console.error("Error during app initialization:", e);
         setShowOnboarding(true);
@@ -352,9 +305,12 @@ function AnimationInitializer() {
 import { MAX_APP_WIDTH } from "../lib/layout";
 
 const styles = StyleSheet.create({
+  backgroundImage: {
+    flex: 1,
+  },
   outerContainer: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: 'transparent',
     alignItems: 'center',
   },
   innerContainer: {
@@ -367,15 +323,21 @@ const styles = StyleSheet.create({
 
 export default function RootLayout() {
   return (
-    <View style={styles.outerContainer}>
-      <View style={styles.innerContainer}>
-        <QueryClientProvider client={queryClient}>
-          <AnimationProvider>
-            <AnimationInitializer />
-            <RootLayoutContent />
-          </AnimationProvider>
-        </QueryClientProvider>
+    <ImageBackground 
+      source={require("../assets/duels/duels-background.png")} 
+      style={styles.backgroundImage}
+      resizeMode="cover"
+    >
+      <View style={styles.outerContainer}>
+        <View style={styles.innerContainer}>
+          <QueryClientProvider client={queryClient}>
+            <AnimationProvider>
+              <AnimationInitializer />
+              <RootLayoutContent />
+            </AnimationProvider>
+          </QueryClientProvider>
+        </View>
       </View>
-    </View>
+    </ImageBackground>
   );
 }

@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { ShopItem } from "../types";
 
-async function fetchShopItems(): Promise<ShopItem[]> {
+export async function fetchShopItems(): Promise<ShopItem[]> {
   const res = await fetch("https://adonix.hackillinois.org/shop/");
   if (!res.ok) {
     throw new Error(`HTTP ${res.status}: ${res.statusText}`);
