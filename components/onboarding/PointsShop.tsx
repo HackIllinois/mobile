@@ -1,8 +1,10 @@
-import { StyleSheet, View, Image, Text, TouchableOpacity, Animated, useWindowDimensions } from "react-native";
+import { StyleSheet, View, Text, TouchableOpacity, Animated, useWindowDimensions, Image } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Clouds from "../../assets/onboarding/loading/clouds.svg";
 import TinyStars from "../../assets/onboarding/loading/tiny stars.svg";
 import NextButton from "../../assets/onboarding/next-button.svg";
+// import PointShopIphone from "../../assets/point-shop-iphone.svg";
+import PointShopIphone from "../../assets/onboarding/onboarding-point-png.png"
 import InteractiveNavbar from "./InteractiveNavbar";
 
 type OnSkipProps = {
@@ -97,31 +99,17 @@ export default function ScreenThree({ onFinish, onStart, cloudX1, cloudX2, starO
                 <InteractiveNavbar currentScreen={currentScreen} onPlanetPress={goToScreen} />
             </View>
 
-            {/* Screenshot inside iPhone */}
-            <Image
-                source={require("../../assets/onboarding/Points-Shop.png")}
-                style={{
-                    position: 'absolute',
-                    top: IPHONE_TOP + scaleHeight(8),
-                    left: IPHONE_LEFT + scaleWidth(7),
-                    width: IPHONE_WIDTH - scaleWidth(14),
-                    height: IPHONE_HEIGHT - scaleHeight(16),
-                    borderRadius: scaleWidth(20),
-                }}
-                resizeMode="cover"
-            />
-
             {/* iPhone */}
             <Image
-                source={require("../../assets/onboarding/iphone.png")}
+                source={PointShopIphone}
                 style={{
-                    position: 'absolute',
-                    top: IPHONE_TOP,
-                    left: IPHONE_LEFT,
                     width: IPHONE_WIDTH,
                     height: IPHONE_HEIGHT,
+                    position: "absolute",
+                    top: IPHONE_TOP,
+                    left: IPHONE_LEFT,
+                    resizeMode: "contain",
                 }}
-                resizeMode="contain"
             />
 
             {/* Header */}
