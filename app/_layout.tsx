@@ -1,14 +1,30 @@
 import { useEffect, useRef, useState } from "react";
-import { Animated, Easing } from "react-native";
+import { Animated, Easing, View, StyleSheet, ImageBackground } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Stack } from "expo-router";
 import { useFonts } from "expo-font";
+import { QueryClientProvider } from "@tanstack/react-query";
+import * as Notifications from "expo-notifications";
 import StartupAnimation from "../components/hackrocket/StartupAnimation";
 import OnboardingScreens from "../components/onboarding/OnboardingScreen";
 import LoadingScreen from "../src/components/loading/LoadingScreen";
 import WelcomePage from "../components/onboarding/WelcomePage";
 import * as SecureStore from "expo-secure-store";
 import { AnimationProvider, useAnimations } from "../contexts/OnboardingAnimationContext";
+import { queryClient } from "../lib/queryClient";
+import { fetchEvents } from "../lib/fetchEvents";
+import { fetchShopItems } from "../lib/fetchShopItems";
+import { setupNotificationListeners } from "../lib/notifications";
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
 
 // Onboarding testing:
 // true = show onboarding every reload
@@ -21,6 +37,7 @@ function RootLayoutContent() {
   const [showAnimation, setShowAnimation] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const welcomeFadeAnim = useRef(new Animated.Value(0)).current;
   const onboardingContentFadeAnim = useRef(new Animated.Value(0)).current;
@@ -33,20 +50,62 @@ function RootLayoutContent() {
   });
 
   useEffect(() => {
-    const checkOnboardingStatus = async () => {
+    const cleanup = setupNotificationListeners();
+    return cleanup;
+  }, []);
+
+  useEffect(() => {
+    const loadAppData = async () => {
+      const startTime = Date.now();
+      let completedTasks = 0;
+      const totalTasks = 4; // onboarding, jwt, public data, + 1 for minimum wait
+
+      const markProgress = () => {
+        completedTasks++;
+        setLoadingProgress(completedTasks / totalTasks);
+      };
+
       try {
+        // Task 1: Check onboarding status
         const hasCompleted = TESTING_MODE
           ? false
           : await AsyncStorage.getItem("hasCompletedOnboarding");
-        const jwt = await SecureStore.getItemAsync("jwt");
-        setIsLoggedIn(!!jwt);
         setShowOnboarding(!hasCompleted);
+        markProgress();
+
+        // Task 2: Check JWT or guest flag
+        const jwt = await SecureStore.getItemAsync("jwt");
+        const isGuest = await SecureStore.getItemAsync("isGuest");
+        setIsLoggedIn(!!jwt || !!isGuest);
+        markProgress();
+
+        // Task 3: Public data (no auth needed)
+        await Promise.all([
+          queryClient.fetchQuery({
+            queryKey: ["events"],
+            queryFn: fetchEvents,
+          }),
+          queryClient.fetchQuery({
+            queryKey: ["shopItems"],
+            queryFn: fetchShopItems,
+          }),
+        ]).then(markProgress).catch(markProgress);
       } catch (e) {
-        console.error("Error checking onboarding status:", e);
+        console.error("Error during app initialization:", e);
         setShowOnboarding(true);
+        setLoadingProgress(1);
       }
+
+      // Ensure minimum 0.75s loading time for smooth animation
+      const elapsed = Date.now() - startTime;
+      const remaining = Math.max(0, 750 - elapsed);
+      if (remaining > 0) {
+        await new Promise((resolve) => setTimeout(resolve, remaining));
+      }
+      setLoadingProgress(1);
     };
-    checkOnboardingStatus();
+
+    loadAppData();
   }, []);
 
   const handleLoadingFinish = () => {
@@ -117,7 +176,7 @@ function RootLayoutContent() {
   }
 
   if (showLoading) {
-    return <LoadingScreen onFinish={handleLoadingFinish} cloudX1={cloudX1} cloudX2={cloudX2} starOpacity={starOpacity} />;
+    return <LoadingScreen onFinish={handleLoadingFinish} progress={loadingProgress} cloudX1={cloudX1} cloudX2={cloudX2} starOpacity={starOpacity} />;
   }
 
   if (showWelcome || showAnimation) {
@@ -260,11 +319,42 @@ function AnimationInitializer() {
   return null;
 }
 
+import { MAX_APP_WIDTH } from "../lib/layout";
+
+const styles = StyleSheet.create({
+  backgroundImage: {
+    flex: 1,
+  },
+  outerContainer: {
+    flex: 1,
+    backgroundColor: 'transparent',
+    alignItems: 'center',
+  },
+  innerContainer: {
+    flex: 1,
+    width: '100%',
+    maxWidth: MAX_APP_WIDTH,
+    overflow: 'hidden',
+  },
+});
+
 export default function RootLayout() {
   return (
-    <AnimationProvider>
-      <AnimationInitializer />
-      <RootLayoutContent />
-    </AnimationProvider>
+    <ImageBackground 
+      source={require("../assets/duels/duels-background.png")} 
+      style={styles.backgroundImage}
+      resizeMode="cover"
+    >
+      <View style={styles.outerContainer}>
+        <View style={styles.innerContainer}>
+          <QueryClientProvider client={queryClient}>
+            <AnimationProvider>
+              <AnimationInitializer />
+              <RootLayoutContent />
+            </AnimationProvider>
+          </QueryClientProvider>
+        </View>
+      </View>
+    </ImageBackground>
   );
 }

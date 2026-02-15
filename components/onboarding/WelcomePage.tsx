@@ -14,8 +14,11 @@ type OnSkipProps = {
   starOpacity: Animated.Value;
 };
 
+import { MAX_APP_WIDTH } from "../../lib/layout";
+
 export default function WelcomePage({ onFinish, onStart, cloudX1, cloudX2, starOpacity }: OnSkipProps) {
-    const { width, height } = useWindowDimensions();
+    const { width: windowWidth, height } = useWindowDimensions();
+    const width = Math.min(windowWidth, MAX_APP_WIDTH);
     const figmaWidth = 393;
     const figmaHeight = 852;
 

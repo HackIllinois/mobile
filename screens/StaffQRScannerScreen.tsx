@@ -6,7 +6,6 @@ import axios, { AxiosResponse } from 'axios';
 import api from '../api';
 import { Svg, SvgUri } from 'react-native-svg';
 import ButtonSvg from '../assets/qr-scanner/button.svg';
-import PageTitle from '../assets/qr-scanner/page title.svg';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -398,8 +397,6 @@ export default function StaffQRScannerScreen() {
         resizeMode="cover"
       >
         <SafeAreaView style={styles.safeArea}>
-          <PageTitle style={styles.menuTitle} />
-
           <TouchableOpacity
             style={styles.menuButtonFirst}
             onPress={() => {
@@ -489,11 +486,6 @@ const styles = StyleSheet.create({
       paddingVertical: 20,
       paddingHorizontal: 30,
       paddingBottom: 100,
-    },
-    menuTitle: {
-      position: 'absolute',
-      top: SCREEN_HEIGHT * 0.05,
-      left: SCREEN_WIDTH * 0.05,
     },
     menuButton: {
       marginBottom: 20,
