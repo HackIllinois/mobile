@@ -131,10 +131,10 @@ export default function HomeScreen() {
     { eventKey: "closing", x: anchorX, y: anchorY, size: 150, fixed: true },
 
     { eventKey: "showcase", orbit: orbits[0], angle: 140, size: 80, offsetY: -6, jigglePx: 14, jigglePeriodMs: 5200 },
-    { eventKey: "hacking", orbit: orbits[1], angle: 60, size: 90, jigglePx: 12, jigglePeriodMs: 6100 },
-    { eventKey: "opening", orbit: orbits[2], angle: 105, size: 90, jigglePx: 10, jigglePeriodMs: 6900 },
-    { eventKey: "scavenger", orbit: orbits[3], angle: 70, size: 90, jigglePx: 12, jigglePeriodMs: 7600 },
-    { eventKey: "checkin", orbit: orbits[4], angle: 100, size: 90, offsetY: -8, jigglePx: 9, jigglePeriodMs: 8400 },
+    { eventKey: "hacking", orbit: orbits[1], angle: 60, size: 80, jigglePx: 12, jigglePeriodMs: 6100 },
+    { eventKey: "opening", orbit: orbits[2], angle: 105, size: 70, jigglePx: 10, jigglePeriodMs: 6900 },
+    { eventKey: "scavenger", orbit: orbits[3], angle: 70, size: 80, jigglePx: 12, jigglePeriodMs: 7600 },
+    { eventKey: "checkin", orbit: orbits[4], angle: 100, size: 80, offsetY: -8, jigglePx: 9, jigglePeriodMs: 8400 },
   ];
 
   
@@ -250,6 +250,11 @@ export default function HomeScreen() {
               offsetX={item.offsetX}
               offsetY={item.offsetY}
               variant={getVariantFor(item.eventKey)}
+              onPress={(key) => {
+                // open modal or navigate
+                // e.g. navigation.navigate("Event", { key })
+                console.log("pressed", key);
+              }}
             />
           );
         }

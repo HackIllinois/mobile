@@ -20,6 +20,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { EventHeader, EventDay } from '../../components/eventScreen/EventHeader';
 import EventTabs from '../../components/eventScreen/EventTabs'; 
 import { EventCard } from '../../components/eventScreen/EventCard';
+import { useWindowDimensions } from "react-native";
+
+
 import EventDetailModal from '../../components/eventScreen/EventDetailModal';
 import MentorDetailModal from '../../components/eventScreen/MentorDetailModal';
 import MenuModal from '../../components/eventScreen/MenuModal';
