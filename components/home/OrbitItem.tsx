@@ -1,19 +1,20 @@
-import React, { useMemo } from "react";
-import { Dimensions, Animated, View } from "react-native";
+import React, { useMemo, useRef } from "react";
+import { Dimensions, Animated, View, Image, Pressable } from "react-native";
+import * as Haptics from "expo-haptics";
 
-import CheckInTextPlanet from "../../assets/home/check-in_text.svg";
-import ScavengerTextPlanet from "../../assets/home/scavenger_text.svg";
-import CeremonyTextPlanet from "../../assets/home/ceremony_text.svg";
-import ShowcaseTextPlanet from "../../assets/home/showcase_text.svg";
-import HackingTextPlanet from "../../assets/home/hacking_text.svg";
-import ClosingTextPlanet from "../../assets/home/closing_text.svg";
+import CheckInPng from "../../assets/home/check_in-png.png";
+import ScavengerPng from "../../assets/home/scavenger-png.png";
+import OpeningPng from "../../assets/home/opening-png.png";
+import HackingPng from "../../assets/home/hacking-png.png";
+import ShowcasePng from "../../assets/home/project-png.png";
+import ClosingPng from "../../assets/home/closing-png.png";
 
-import CheckInFinished from "../../assets/home/check-in_finished.svg";
-import ScavengerFinished from "../../assets/home/scavenger_finished.svg";
-import CeremonyFinished from "../../assets/home/ceremony_finished.svg";
-import ShowcaseFinished from "../../assets/home/showcase_finished.svg";
-import HackingFinished from "../../assets/home/hacking_finished.svg";
-import ClosingFinished from "../../assets/home/closing_finished.svg";
+import CheckInFinishedPng from "../../assets/home/check_in_finished-png.png";
+import ScavengerFinishedPng from "../../assets/home/scavenger_finished-png.png";
+import OpeningFinishedPng from "../../assets/home/opening_finished-png.png";
+import HackingFinishedPng from "../../assets/home/hacking_finished-png.png";
+import ShowcaseFinishedPng from "../../assets/home/project_finished-png.png";
+import ClosingFinishedPng from "../../assets/home/closing_finished-png.png";
 
 interface OrbitItemProps {
   radius: number;
@@ -28,9 +29,12 @@ interface OrbitItemProps {
 
   variant?: "normal" | "finished";
 
-  //  jiggle 
+  // jiggle
   jiggle?: Animated.Value; // 0..1 loop
   jigglePx?: number; // how far to slide along the orbit
+
+  // ✅ optional: let HomeScreen react to taps (navigation/modal)
+  onPress?: (eventKey: NonNullable<OrbitItemProps["eventKey"]>) => void;
 }
 
 const { width } = Dimensions.get("window");
@@ -41,23 +45,22 @@ export default function OrbitItem({
   angle,
   centerY,
   size = 60,
-  eventKey,
+  eventKey = "closing",
   dimmed = false,
   offsetX = 0,
   offsetY = 0,
   variant = "normal",
-
   jiggle,
   jigglePx = 10,
+  onPress,
 }: OrbitItemProps) {
   const rad = (angle * Math.PI) / 180;
 
-  // Base orbit position 
+  // Base orbit position
   const baseX = useMemo(() => radius * Math.cos(rad), [radius, rad]);
   const baseY = useMemo(() => radius * Math.sin(rad), [radius, rad]);
 
   // Tangent unit vector at angle
-  // tangent = (-sin(rad), cos(rad))
   const tanX = useMemo(() => -Math.sin(rad), [rad]);
   const tanY = useMemo(() => Math.cos(rad), [rad]);
 
@@ -71,7 +74,6 @@ export default function OrbitItem({
   const jiggleX: any = jiggle ? Animated.multiply(jiggleScalar, tanX) : 0;
   const jiggleY: any = jiggle ? Animated.multiply(jiggleScalar, tanY) : 0;
 
-  // Final translate = base + jiggle + manual offsets
   const translateX: any = jiggle
     ? Animated.add(Animated.add(baseX + offsetX, jiggleX), 0)
     : baseX + offsetX;
@@ -82,30 +84,65 @@ export default function OrbitItem({
 
   const containerSize = size * 1.6;
 
-  const PlanetIcon =
+  const planetSrc =
     variant === "finished"
       ? eventKey === "checkin"
-        ? CheckInFinished
+        ? CheckInFinishedPng
         : eventKey === "scavenger"
-        ? ScavengerFinished
+        ? ScavengerFinishedPng
         : eventKey === "opening"
-        ? CeremonyFinished
+        ? OpeningFinishedPng
         : eventKey === "showcase"
-        ? ShowcaseFinished
+        ? ShowcaseFinishedPng
         : eventKey === "hacking"
-        ? HackingFinished
-        : ClosingFinished
+        ? HackingFinishedPng
+        : ClosingFinishedPng
       : eventKey === "checkin"
-      ? CheckInTextPlanet
+      ? CheckInPng
       : eventKey === "scavenger"
-      ? ScavengerTextPlanet
+      ? ScavengerPng
       : eventKey === "opening"
-      ? CeremonyTextPlanet
+      ? OpeningPng
       : eventKey === "showcase"
-      ? ShowcaseTextPlanet
+      ? ShowcasePng
       : eventKey === "hacking"
-      ? HackingTextPlanet
-      : ClosingTextPlanet;
+      ? HackingPng
+      : ClosingPng;
+
+  // ✅ tap jiggle: quick scale pop
+  const pressAnim = useRef(new Animated.Value(0)).current;
+
+  const pressScale = pressAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 1.06],
+  });
+
+  const pressRotate = pressAnim.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: ["0deg", "3deg", "-3deg"], // small wiggle
+  });
+
+  const handlePress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    pressAnim.stopAnimation();
+    pressAnim.setValue(0);
+
+    Animated.sequence([
+      Animated.timing(pressAnim, {
+        toValue: 1,
+        duration: 140,
+        useNativeDriver: true,
+      }),
+      Animated.timing(pressAnim, {
+        toValue: 0,
+        duration: 160,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    onPress?.(eventKey);
+  };
 
   return (
     <Animated.View
@@ -117,25 +154,39 @@ export default function OrbitItem({
         height: containerSize,
         opacity: dimmed ? 0.55 : 1,
         overflow: "visible",
-        transform: [{ translateX }, { translateY }],
+        transform: [
+          { translateX },
+          { translateY },
+          { scale: pressScale },
+          { rotate: pressRotate },   
+        ],
       }}
     >
-      <View
-        style={{
-          width: containerSize,
-          height: containerSize,
-          justifyContent: "center",
-          alignItems: "center",
-          overflow: "visible",
-        }}
+      <Pressable
+        onPress={handlePress}
+        hitSlop={12}
+        style={{ width: containerSize, height: containerSize }}
       >
-        <PlanetIcon
-          width={containerSize}
-          height={containerSize}
-          preserveAspectRatio="xMidYMid meet"
-          style={{ overflow: "visible" }}
-        />
-      </View>
+        <View
+          style={{
+            width: containerSize,
+            height: containerSize,
+            justifyContent: "center",
+            alignItems: "center",
+            overflow: "visible",
+          }}
+        >
+          <Image
+            source={planetSrc}
+            style={{
+              width: containerSize,
+              height: containerSize,
+              opacity: variant === "finished" ? 0.65 : 1,
+            }}
+            resizeMode="contain"
+          />
+        </View>
+      </Pressable>
     </Animated.View>
   );
 }

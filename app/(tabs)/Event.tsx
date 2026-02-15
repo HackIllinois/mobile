@@ -16,6 +16,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCallback, useState, useMemo, useEffect, useRef } from 'react';
 import { useEvents } from '../../lib/fetchEvents';
 import { EventCard } from '../../components/eventScreen/EventCard';
+import { useWindowDimensions } from "react-native";
+
+
 import EventDetailModal from '../../components/eventScreen/EventDetailModal';
 import MentorDetailModal from '../../components/eventScreen/MentorDetailModal';
 import MenuModal from '../../components/eventScreen/MenuModal';
@@ -42,8 +45,13 @@ type MentorshipSession = {
   contact: string;
 };
 
+
+
+
 export default function EventScreen() {
   const insets = useSafeAreaInsets();
+  const { width: screenW } = useWindowDimensions();
+
   const [scheduleMode, setScheduleMode] = useState<ScheduleMode>('events');
 
   // 1. Create the Scroll Value Tracker
@@ -200,7 +208,7 @@ export default function EventScreen() {
     }
   }, [eventDays]);
 
-  // minimal switching: pick the list based on mode 
+  
   const activeItems = useMemo(() => {
     return scheduleMode === 'events' ? events : mentorshipSessions;
   }, [scheduleMode, events, mentorshipSessions]);
@@ -387,6 +395,18 @@ export default function EventScreen() {
     );
   };
 
+  const dayCount = eventDays.length || 1;
+
+  const H_PADDING = 30; // matches your current tabs paddingHorizontal
+  const GAP = 13;       // matches your styles.tabs gap
+
+  const available =
+    screenW - insets.left - insets.right - (H_PADDING * 2) - (GAP * (dayCount - 1));
+
+  const itemSize = Math.max(56, Math.floor(available / dayCount)); // clamp so it doesn't get too tiny
+  const moonSize = Math.floor(itemSize * 1.0);
+  const sunSize  = Math.floor(itemSize * 1.12);
+
   return (
     <StarryBackground scrollY={scrollY}>
       <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -396,7 +416,7 @@ export default function EventScreen() {
 
         {eventDays.length > 0 && (
           <View style={styles.daysContainer}>
-            <View style={[styles.tabs, { paddingHorizontal: 30, marginBottom: 10, flexDirection: 'row', justifyContent: 'space-between' }]}>
+            <View style={[styles.tabs, { paddingHorizontal: H_PADDING, marginBottom: 10, gap: GAP }]}>
               {eventDays.map((day) => {
                 const isSelected = selectedDay === day.id;
                 const isTodayDate = isToday(day.date);
@@ -406,9 +426,9 @@ export default function EventScreen() {
                     {/* Background Layer: The Large SVG */}
                     <View style={styles.svgBackground}>
                       {isSelected ? (
-                        <Sun width={90} height={90} style={{marginBottom: 0}}/> 
+                        <Sun width={sunSize} height={sunSize} style={{ marginBottom: 0 }} /> 
                       ) : (
-                        <Moon width={80} height={80} />
+                        <Moon width={moonSize} height={moonSize} />
                       )}
                     </View>
 
@@ -416,10 +436,15 @@ export default function EventScreen() {
                       style={styles.dayButtonOverlay}
                       onPress={() => handleDayPress(day.id)}
                     >
-                      <Text style={[
-                        styles.dayButtonText, 
-                        isSelected ? styles.selectedText : styles.unselectedText
-                      ]}>
+                      <Text
+                        numberOfLines={1}
+                        adjustsFontSizeToFit
+                        minimumFontScale={0.7}
+                        style={[
+                          styles.dayButtonText,
+                          isSelected ? styles.selectedText : styles.unselectedText,
+                        ]}
+                      >
                         {isTodayDate ? 'Today' : day.label}
                       </Text>
                     </TouchableOpacity>
@@ -507,8 +532,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 13,
-    padding: 20,
   },
 
   title: {
@@ -760,8 +783,6 @@ const styles = StyleSheet.create({
   },
   modalTopicChipText: { fontSize: 12, fontWeight: '800', color: '#333' },
   dayWrapper: {
-    width: 80,
-    height: 80,
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative', // Key for absolute children
