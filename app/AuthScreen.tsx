@@ -26,7 +26,8 @@ import GuestButtonSvg from "../assets/login/guest-button.svg";
 
 import api from "../api";
 import { queryClient } from "../lib/queryClient";
-import { fetchProfile } from "../lib/fetchProfile";
+import { fetchProfile, prefetchAvatarImage } from "../lib/fetchProfile";
+import { prefetchShopImages } from "../lib/fetchShopItems";
 import { fetchSavedEvents } from "../lib/fetchSavedEvents";
 
 WebBrowser.maybeCompleteAuthSession();
@@ -133,6 +134,19 @@ export default function AuthScreen({ navigation }: any) {
           }
         } catch (notifError) {
           console.error("Failed to register push notifications:", notifError);
+        }
+
+        // Pre-fetch profile and shop images in background before navigating
+        queryClient.fetchQuery({
+          queryKey: ["profile"],
+          queryFn: fetchProfile,
+        }).then((profile) => {
+          prefetchAvatarImage(profile.avatarUrl);
+        }).catch(() => {});
+
+        const cachedShopItems = queryClient.getQueryData<any[]>(["shopItems"]);
+        if (cachedShopItems) {
+          prefetchShopImages(cachedShopItems);
         }
 
         Alert.alert("Login successful!");

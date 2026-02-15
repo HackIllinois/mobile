@@ -12,7 +12,8 @@ import * as SecureStore from "expo-secure-store";
 import { AnimationProvider, useAnimations } from "../contexts/OnboardingAnimationContext";
 import { queryClient } from "../lib/queryClient";
 import { fetchEvents } from "../lib/fetchEvents";
-import { fetchShopItems } from "../lib/fetchShopItems";
+import { fetchShopItems, prefetchShopImages } from "../lib/fetchShopItems";
+import { fetchProfile, prefetchAvatarImage } from "../lib/fetchProfile";
 
 // Onboarding testing:
 // true = show onboarding every reload
@@ -62,8 +63,8 @@ function RootLayoutContent() {
         setIsLoggedIn(!!jwt || !!isGuest);
         markProgress();
 
-        // Task 3: Public data (no auth needed)
-        await Promise.all([
+        // Task 3: Public data + profile if logged in
+        const publicDataPromises: Promise<any>[] = [
           queryClient.fetchQuery({
             queryKey: ["events"],
             queryFn: fetchEvents,
@@ -71,8 +72,26 @@ function RootLayoutContent() {
           queryClient.fetchQuery({
             queryKey: ["shopItems"],
             queryFn: fetchShopItems,
+          }).then((items) => {
+            prefetchShopImages(items);
+            return items;
           }),
-        ]).then(markProgress).catch(markProgress);
+        ];
+
+        // Pre-fetch profile data if user has a JWT (logged in)
+        if (jwt) {
+          publicDataPromises.push(
+            queryClient.fetchQuery({
+              queryKey: ["profile"],
+              queryFn: fetchProfile,
+            }).then((profile) => {
+              prefetchAvatarImage(profile.avatarUrl);
+              return profile;
+            }).catch(() => {})
+          );
+        }
+
+        await Promise.all(publicDataPromises).then(markProgress).catch(markProgress);
       } catch (e) {
         console.error("Error during app initialization:", e);
         setShowOnboarding(true);
