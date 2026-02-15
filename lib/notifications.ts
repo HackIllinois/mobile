@@ -2,7 +2,7 @@ import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
 import { Platform } from "react-native";
 
-const PROJECT_ID = "a4fc2e31-68df-44c8-aca8-0b64e256e974";
+const PROJECT_ID = "873c594c-d13f-48ba-8d72-a57354b3980b";
 
 export async function registerForPushNotificationsAsync(): Promise<string | null> {
   if (!Device.isDevice) {

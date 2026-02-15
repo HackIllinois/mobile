@@ -71,16 +71,16 @@ type Powerup = {
 };
 
 type GameMessage = 
-  | { type: 'ready'; screenRatio: number }
+  | { type: 'ready'; screenRatio: number; userId: string }
   | { type: 'start_game'; worldRatio: number }
-  | { type: 'state'; x: number; y: number; angle: number; hostScore?: number; guestScore?: number }
+  | { type: 'state'; x: number; y: number; angle: number; hostScore?: number; guestScore?: number; obstaclePhase?: number }
   | { type: 'bullet'; id: string; x: number; y: number; angle: number; spawnTime: number }
   | { type: 'hit'; victimId: string }
   | { type: 'round_result'; winner: 'host' | 'guest' | 'tie' }
   | { type: 'round_ack' }
   | { type: 'game_over'; winner: 'host' | 'guest' }
   | { type: 'restart' }
-  | { type: 'start_tutorial' }
+  | { type: 'start_tutorial'; duelId: string }
   | { type: 'tutorial_complete' };
 
 // ======================
@@ -120,18 +120,16 @@ export default function Duels() {
   const [role, setRole] = useState<Role | null>(null);
   const [gamePhase, setGamePhase] = useState<GamePhase>('waiting');
   const [guestRatio, setGuestRatio] = useState<number | null>(null);
+  const [guestUserId, setGuestUserId] = useState<string | null>(null);
+  const [duelId, setDuelId] = useState<string | null>(null);
   const [worldRatio, setWorldRatio] = useState<number>(1);
   
-  const [myShip, setMyShip] = useState<Ship>({ x: 0.5, y: 0.5, angle: 0, id: 'player' });
-  const [opponentShip, setOpponentShip] = useState<Ship>({ x: 0.5, y: 0.5, angle: 0, id: 'opponent' });
   const [myScore, setMyScore] = useState(0);
   const [opponentScore, setOpponentScore] = useState(0);
   const [finalWinner, setFinalWinner] = useState<'player' | 'opponent' | null>(null);
-  const [opponentTarget, setOpponentTarget] = useState<Ship>({ x: 0.5, y: 0.5, angle: 0, id: 'opponent' }); // Target for interpolation
-  const [myBullets, setMyBullets] = useState<Bullet[]>([]);
-  const [opponentBullets, setOpponentBullets] = useState<Bullet[]>([]);
-  
-  const [obstacle, setObstacle] = useState({ x: 0.5, y: 0.0, phase: 0, rotation: 0 });
+
+  // Render tick - increment at ~30fps to trigger renders for ref-based game state
+  const [, setRenderTick] = useState(0);
 
   const [isRotating, setIsRotating] = useState(false);
   const [ammo, setAmmo] = useState(MAX_AMMO);
@@ -147,15 +145,19 @@ export default function Duels() {
 
 
 
-  // Refs for game loop
-  const myShipRef = useRef(myShip);
-  const myBulletsRef = useRef(myBullets);
-  const opponentShipRef = useRef(opponentShip);
-  const opponentTargetRef = useRef(opponentTarget);
-  const opponentBulletsRef = useRef(opponentBullets);
-  const obstacleRef = useRef(obstacle);
+  // Refs for game loop (these are the source of truth for per-frame game state)
+  const myShipRef = useRef<Ship>({ x: 0.5, y: 0.5, angle: 0, id: 'player' });
+  const myBulletsRef = useRef<Bullet[]>([]);
+  const opponentShipRef = useRef<Ship>({ x: 0.5, y: 0.5, angle: 0, id: 'opponent' });
+  const opponentTargetRef = useRef<Ship>({ x: 0.5, y: 0.5, angle: 0, id: 'opponent' });
+  const opponentBulletsRef = useRef<Bullet[]>([]);
+  const obstacleRef = useRef({ x: 0.5, y: 0.0, phase: 0, rotation: 0 });
   const isRotatingRef = useRef(isRotating);
   const gamePhaseRef = useRef(gamePhase);
+  const myScoreRef = useRef(myScore);
+  const opponentScoreRef = useRef(opponentScore);
+  const duelIdRef = useRef(duelId);
+  const ammoRef = useRef(ammo);
 
   
   // Refs for tie detection timing
@@ -170,17 +172,14 @@ export default function Duels() {
   // Refs for ammo reload cleanup
   const reloadTimeoutsRef = useRef<NodeJS.Timeout[]>([]);
   
-  // Keep refs in sync
+  // Keep non-game refs in sync with their state
   useEffect(() => {
-    myShipRef.current = myShip;
-    myBulletsRef.current = myBullets;
-    opponentShipRef.current = opponentShip;
-    opponentTargetRef.current = opponentTarget;
-    opponentBulletsRef.current = opponentBullets;
-    obstacleRef.current = obstacle;
     isRotatingRef.current = isRotating;
     gamePhaseRef.current = gamePhase;
-
+    myScoreRef.current = myScore;
+    opponentScoreRef.current = opponentScore;
+    duelIdRef.current = duelId;
+    ammoRef.current = ammo;
   });
   
   // Screen dimensions
@@ -199,8 +198,9 @@ export default function Duels() {
   const borderMarginX = BORDER_MARGIN_PX / gameWidth;
   const borderMarginY = BORDER_MARGIN_PX / gameHeight;
 
-  // Profile state - fetch displayName from API
+  // Profile state - fetch displayName and userId from API
   const [displayName, setDisplayName] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
 
   // Fetch profile on mount
@@ -210,6 +210,9 @@ export default function Duels() {
         const response: any = await api.get('/profile/');
         if (response?.data?.displayName) {
           setDisplayName(response.data.displayName);
+        }
+        if (response?.data?.userId) {
+          setUserId(response.data.userId);
         }
       } catch (error) {
         console.error('Failed to fetch profile:', error);
@@ -228,6 +231,8 @@ export default function Duels() {
     setRole(null);
     setGamePhase('waiting');
     setGuestRatio(null);
+    setGuestUserId(null);
+    setDuelId(null);
     setTutorialStep(0);
     setOpponentFinishedTutorial(false);
     setMyScore(0);
@@ -247,8 +252,8 @@ export default function Duels() {
     setTutorialStep(0);
     setOpponentFinishedTutorial(false);
     // Re-send ready message if guest
-    if (role === 'guest') {
-      const msg: GameMessage = { type: 'ready', screenRatio };
+    if (role === 'guest' && userId) {
+      const msg: GameMessage = { type: 'ready', screenRatio, userId };
       LocalConnectionModule.sendData(JSON.stringify(msg));
     }
   }
@@ -279,24 +284,25 @@ export default function Duels() {
       ? { x: 0.8, y: 0.8, angle: -3 * Math.PI / 4 }
       : { x: 0.2, y: 0.2, angle: Math.PI / 4 };
     
-    setMyShip({ ...startPos, id: 'player' });
-    setOpponentShip({ ...opponentStartPos, id: 'opponent' });
-    setOpponentTarget({ ...opponentStartPos, id: 'opponent' });
-    setMyBullets([]);
-    setOpponentBullets([]);
+    myShipRef.current = { ...startPos, id: 'player' };
+    opponentShipRef.current = { ...opponentStartPos, id: 'opponent' };
+    opponentTargetRef.current = { ...opponentStartPos, id: 'opponent' };
+    myBulletsRef.current = [];
+    opponentBulletsRef.current = [];
     setAmmo(MAX_AMMO);
     setReloading(0);
-    setObstacle({ x: 0.5, y: 0.0, phase: 0, rotation: 0 });
+    setIsRotating(false);
+    obstacleRef.current = { x: 0.5, y: 0.0, phase: 0, rotation: 0 };
 
 
   }, [role]);
 
   const shoot = useCallback(() => {
-    if (ammo <= 0) return; // No ammo available
-    
+    if (ammoRef.current <= 0) return; // No ammo available
+
     const ship = myShipRef.current;
     const now = Date.now();
-    
+
     const bullet: Bullet = {
       id: `${now}-${Math.random()}`,
       x: ship.x,
@@ -307,10 +313,10 @@ export default function Duels() {
       startY: ship.y,
       ownerId: 'player'
     };
-    setMyBullets(prev => [...prev, bullet]);
+    myBulletsRef.current = [...myBulletsRef.current, bullet];
     setAmmo(prev => prev - 1);
     setReloading(prev => prev + 1);
-    
+
     // Send bullet spawn to opponent (only initial data, they simulate locally)
     const bulletMsg: GameMessage = {
       type: 'bullet',
@@ -321,18 +327,18 @@ export default function Duels() {
       spawnTime: bullet.spawnTime
     };
     LocalConnectionModule.sendData(JSON.stringify(bulletMsg));
-    
+
     // Start reload timer for this bullet
     const timeoutId = setTimeout(() => {
       setReloading(prev => prev - 1);
       setAmmo(prev => Math.min(prev + 1, MAX_AMMO));
-      
+
       // Remove this timeout from the ref list
       reloadTimeoutsRef.current = reloadTimeoutsRef.current.filter(id => id !== timeoutId);
     }, RELOAD_TIME);
-    
+
     reloadTimeoutsRef.current.push(timeoutId);
-  }, [ammo]);
+  }, []);
 
   const checkBulletHit = (bullet: Bullet, ship: Ship): boolean => {
     const dx = Math.abs(bullet.x - ship.x);
@@ -389,8 +395,9 @@ export default function Duels() {
           const msg: GameMessage = JSON.parse(event.data);
           switch (msg.type) {
             case 'ready':
-              // Host receives guest's screen ratio
+              // Host receives guest's screen ratio and userId
               setGuestRatio(msg.screenRatio);
+              setGuestUserId(msg.userId);
               break;
             case 'start_game':
               // Guest receives world ratio and starts
@@ -401,35 +408,40 @@ export default function Duels() {
               setGamePhase('playing');
               break;
             case 'state':
+              // NaN guard — reject corrupt state messages
+              if (isNaN(msg.x) || isNaN(msg.y) || isNaN(msg.angle)) break;
+
               // Implicit Restart: If we are stuck in a post-game screen but receiving live game state,
               // it means we missed the 'restart' message. Sync up immediately.
-              // Also check 'waiting_result' to fix frozen duel screen deadlock.
-              if (role === 'guest' && (gamePhaseRef.current === 'win' || gamePhaseRef.current === 'lose' || gamePhaseRef.current === 'tie' || gamePhaseRef.current === 'waiting_result')) {
+              // (waiting_result is NOT included here — the 5s timeout handles that recovery)
+              if (role === 'guest' && (gamePhaseRef.current === 'win' || gamePhaseRef.current === 'lose' || gamePhaseRef.current === 'tie')) {
                  resetGameState();
                  setGamePhase('playing');
               }
 
               // Update opponent target position (will be interpolated in game loop)
-              setOpponentTarget(prev => ({ ...prev, x: msg.x, y: msg.y, angle: msg.angle }));
-              
+              opponentTargetRef.current = { ...opponentTargetRef.current, x: msg.x, y: msg.y, angle: msg.angle };
+
               if (role === 'guest') {
                 if (msg.hostScore !== undefined) setOpponentScore(msg.hostScore);
                 if (msg.guestScore !== undefined) setMyScore(msg.guestScore);
+                // Sync obstacle phase from host
+                if (msg.obstaclePhase !== undefined) {
+                  const obs = obstacleRef.current;
+                  obstacleRef.current = { ...obs, phase: msg.obstaclePhase, y: (1 - Math.cos(msg.obstaclePhase)) / 2 };
+                }
               }
               break;
             case 'bullet':
               // Implicit Restart check for bullet messages too
-              // Also check 'waiting_result' to fix frozen duel screen deadlock.
-              if (role === 'guest' && (gamePhaseRef.current === 'win' || gamePhaseRef.current === 'lose' || gamePhaseRef.current === 'tie' || gamePhaseRef.current === 'waiting_result')) {
+              if (role === 'guest' && (gamePhaseRef.current === 'win' || gamePhaseRef.current === 'lose' || gamePhaseRef.current === 'tie')) {
                  resetGameState();
                  setGamePhase('playing');
               }
 
               // Opponent fired a bullet - add it with initial data for local simulation
-              setOpponentBullets(prev => {
-                // Avoid duplicate bullets
-                if (prev.some(b => b.id === msg.id)) return prev;
-                return [...prev, {
+              if (!opponentBulletsRef.current.some(b => b.id === msg.id)) {
+                opponentBulletsRef.current = [...opponentBulletsRef.current, {
                   id: msg.id,
                   x: msg.x,
                   y: msg.y,
@@ -439,7 +451,7 @@ export default function Duels() {
                   startY: msg.y,
                   ownerId: 'opponent' as const
                 }];
-              });
+              }
 
 
               break;
@@ -471,6 +483,23 @@ export default function Duels() {
                         roundLost();
                         setGamePhase('lose');
                     }
+
+                    // Guest reports round result to backend
+                    const currentDuelId = duelIdRef.current;
+                    if (currentDuelId) {
+                        const hostScore = msg.winner === 'host' ? opponentScoreRef.current + 1 : opponentScoreRef.current;
+                        const guestScore = msg.winner === 'guest' ? myScoreRef.current + 1 : myScoreRef.current;
+                        console.log(`GUEST MADE PUT CALL TO DUEL WITH ID: ${currentDuelId}`);
+                        api.put(`/duel/${currentDuelId}`, {
+                            hostScore,
+                            guestScore,
+                            hostHasDisconnected: false,
+                            guestHasDisconnected: false,
+                            hasFinished: hostScore >= 3 || guestScore >= 3,
+                        }).catch(error => {
+                            console.error('Failed to update duel:', error);
+                        });
+                    }
                 }
                 
                 // Acknowledge receipt so host knows we are ready for next round
@@ -497,6 +526,7 @@ export default function Duels() {
               setGamePhase('playing');
               break;
             case 'start_tutorial':
+              setDuelId(msg.duelId);
               resetGameState();
               setTutorialStep(0);
               setGamePhase('tutorial');
@@ -583,53 +613,49 @@ export default function Duels() {
 
   // Guest sends ready message when connected
   useEffect(() => {
-    if (screen === 'connected' && role === 'guest' && gamePhase === 'waiting') {
-      const msg: GameMessage = { type: 'ready', screenRatio };
+    if (screen === 'connected' && role === 'guest' && gamePhase === 'waiting' && userId) {
+      const msg: GameMessage = { type: 'ready', screenRatio, userId };
       LocalConnectionModule.sendData(JSON.stringify(msg));
     }
-  }, [screen, role, gamePhase, screenRatio]);
+  }, [screen, role, gamePhase, screenRatio, userId]);
 
   // ======================
   // GAME LOOP
   // ======================
   useEffect(() => {
     if (gamePhase !== 'playing') return;
-    
+
     let lastTime = Date.now();
     let animationId: number;
-    
+
     const loop = () => {
       const now = Date.now();
       const dt = (now - lastTime) / 1000;
       lastTime = now;
-      
+
       if (gamePhaseRef.current !== 'playing') return;
-      
-      // 1. Update rotation if rotating
+
+      // 1. Update rotation + position in one step
+      const ship = myShipRef.current;
+      let newAngle = ship.angle;
       if (isRotatingRef.current) {
-        setMyShip(prev => ({
-          ...prev,
-          angle: prev.angle + ROTATION_SPEED * dt
-        }));
+        newAngle = ship.angle + ROTATION_SPEED * dt;
       }
-      
-      // 2. Update my ship position (constant forward movement)
-      setMyShip(prev => {
-        let newX = prev.x + Math.cos(prev.angle) * SHIP_SPEED * dt;
-        let newY = prev.y + Math.sin(prev.angle) * SHIP_SPEED * dt;
-        
-        // Border collision (stop at walls, don't bounce) - use margin to keep ships visible
-        newX = Math.max(borderMarginX, Math.min(1 - borderMarginX, newX));
-        newY = Math.max(borderMarginY, Math.min(1 - borderMarginY, newY));
-        
-        // Check for edge case where ships could go out of bounds if they were already out
-        if(isNaN(newX)) newX = 0.5;
-        if(isNaN(newY)) newY = 0.5;
-        
-        return { ...prev, x: newX, y: newY };
-      });
-      
-      // Helper to update and filter bullets
+
+      let newX = ship.x + Math.cos(newAngle) * SHIP_SPEED * dt;
+      let newY = ship.y + Math.sin(newAngle) * SHIP_SPEED * dt;
+
+      // Border collision (stop at walls, don't bounce)
+      newX = Math.max(borderMarginX, Math.min(1 - borderMarginX, newX));
+      newY = Math.max(borderMarginY, Math.min(1 - borderMarginY, newY));
+
+      // NaN guard
+      if (isNaN(newX)) newX = 0.5;
+      if (isNaN(newY)) newY = 0.5;
+
+      myShipRef.current = { ...ship, x: newX, y: newY, angle: newAngle };
+
+      // 2. Helper to update and filter bullets (despawn when fully off-screen)
       const updateBullets = (bullets: Bullet[]) =>
         bullets
           .map(b => ({
@@ -637,51 +663,50 @@ export default function Duels() {
             x: b.x + Math.cos(b.angle) * BULLET_SPEED * dt,
             y: b.y + Math.sin(b.angle) * BULLET_SPEED * dt,
           }))
-          .filter(b => b.x >= borderMarginX && b.x <= 1 - borderMarginX && b.y >= borderMarginY && b.y <= 1 - borderMarginY);
-      
-      // 3. Update my bullets
-      setMyBullets(updateBullets);
-      
-      // 4. Update opponent bullets (simulate locally based on initial angle)
-      setOpponentBullets(updateBullets);
+          .filter(b => b.x >= -0.05 && b.x <= 1.05 && b.y >= -0.05 && b.y <= 1.05);
 
-      // 4.5. Update obstacle position (bounces top<->bottom with ease in/out)
-      setObstacle(prev => {
-        const newPhase = prev.phase + OBSTACLE_SPEED * Math.PI * dt;
+      // 3. Update my bullets
+      myBulletsRef.current = updateBullets(myBulletsRef.current);
+
+      // 4. Update opponent bullets (simulate locally based on initial angle)
+      opponentBulletsRef.current = updateBullets(opponentBulletsRef.current);
+
+      // 4.5. Update obstacle position — only host computes, guest syncs via state messages
+      if (role === 'host') {
+        const obs = obstacleRef.current;
+        const newPhase = obs.phase + OBSTACLE_SPEED * Math.PI * dt;
         const y = (1 - Math.cos(newPhase)) / 2;
-        const rotation = prev.rotation + Math.PI * 2 * dt;
-        return { x: 0.5, y, phase: newPhase, rotation };
-      });
+        const rotation = obs.rotation + Math.PI * 2 * dt;
+        obstacleRef.current = { x: 0.5, y, phase: newPhase, rotation };
+      } else {
+        // Guest: just update rotation for visual spin, position comes from synced phase
+        const obs = obstacleRef.current;
+        const rotation = obs.rotation + Math.PI * 2 * dt;
+        obstacleRef.current = { ...obs, rotation };
+      }
 
       // 5. Interpolate opponent ship towards target position (smoothing)
       const target = opponentTargetRef.current;
-      setOpponentShip(prev => {
-        const lerpFactor = 1 - Math.exp(-INTERPOLATION_SPEED * dt);
-        
-        // Interpolate position
-        const newX = prev.x + (target.x - prev.x) * lerpFactor;
-        const newY = prev.y + (target.y - prev.y) * lerpFactor;
-        
-        // Interpolate angle (handle wraparound)
-        let angleDiff = target.angle - prev.angle;
-        // Normalize angle difference to [-PI, PI]
-        while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
-        while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
-        const newAngle = prev.angle + angleDiff * lerpFactor;
-        
-        return { ...prev, x: newX, y: newY, angle: newAngle };
-      });
-      
+      const prev = opponentShipRef.current;
+      const lerpFactor = 1 - Math.exp(-INTERPOLATION_SPEED * dt);
 
-      
+      const interpX = prev.x + (target.x - prev.x) * lerpFactor;
+      const interpY = prev.y + (target.y - prev.y) * lerpFactor;
+
+      let angleDiff = target.angle - prev.angle;
+      while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
+      while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
+      const interpAngle = prev.angle + angleDiff * lerpFactor;
+
+      opponentShipRef.current = { ...prev, x: interpX, y: interpY, angle: interpAngle };
+
       // 6. Check collisions - detect both hit directions
       const opponent = opponentShipRef.current;
       const myShipCurrent = myShipRef.current;
-      // Note: 'now' is already defined at the top of the loop
-      
+
       let iHitOpponent = false;
       let opponentHitMe = false;
-      
+
       // Check if my bullets hit opponent
       for (const bullet of myBulletsRef.current) {
         if (checkBulletHit(bullet, opponent)) {
@@ -689,7 +714,7 @@ export default function Duels() {
           break;
         }
       }
-      
+
       // Check if opponent bullets hit me
       for (const bullet of opponentBulletsRef.current) {
         if (checkBulletHit(bullet, myShipCurrent)) {
@@ -700,9 +725,9 @@ export default function Duels() {
 
       // Check if ships hit the obstacle (hitting it = you lose)
       const obs = obstacleRef.current;
-      const checkObstacleHit = (ship: Ship): boolean => {
-        const dx = Math.abs(obs.x - ship.x);
-        const dy = Math.abs(obs.y - ship.y);
+      const checkObstacleHit = (s: Ship): boolean => {
+        const dx = Math.abs(obs.x - s.x);
+        const dy = Math.abs(obs.y - s.y);
         return dx < (OBSTACLE_SIZE + SHIP_SIZE) / 2 && dy < (OBSTACLE_SIZE + SHIP_SIZE) / 2;
       };
       if (checkObstacleHit(myShipCurrent)) opponentHitMe = true;
@@ -718,17 +743,14 @@ export default function Duels() {
             const resultMsg: GameMessage = { type: 'round_result', winner: 'tie' };
             LocalConnectionModule.sendData(JSON.stringify(resultMsg));
             setGamePhase('tie');
-            pendingResultRef.current = { winner: 'tie' as any, timestamp: now, processed: true }; // Mark as processed
+            pendingResultRef.current = { winner: 'tie' as any, timestamp: now, processed: true };
           }
-           // Loop ends naturally or gamePhase change stops it
           return;
         }
 
         // Check if we need to resolve a pending result
         if (pending && !pending.processed) {
-           // If we have a pending win but now the other player also hit, it's a tie
            if (pending.winner === 'host' && opponentHitMe) {
-             // Tie!
              const resultMsg: GameMessage = { type: 'round_result', winner: 'tie' };
              LocalConnectionModule.sendData(JSON.stringify(resultMsg));
              setGamePhase('tie');
@@ -736,7 +758,6 @@ export default function Duels() {
              return;
            }
            if (pending.winner === 'guest' && iHitOpponent) {
-              // Tie!
              const resultMsg: GameMessage = { type: 'round_result', winner: 'tie' };
              LocalConnectionModule.sendData(JSON.stringify(resultMsg));
              setGamePhase('tie');
@@ -746,7 +767,6 @@ export default function Duels() {
 
            // Check if time window expired
            if (now - pending.timestamp > TIE_WINDOW) {
-             // Commit the pending result
              if (pending.winner === 'host') {
                const resultMsg: GameMessage = { type: 'round_result', winner: 'host' };
                LocalConnectionModule.sendData(JSON.stringify(resultMsg));
@@ -762,12 +782,9 @@ export default function Duels() {
              return;
            }
         } else if (!pending) {
-            // New hit detected, start pending result window
             if (iHitOpponent) {
-               // Host hit guest
                pendingResultRef.current = { winner: 'host', timestamp: now, processed: false };
             } else if (opponentHitMe) {
-               // Guest hit host
                pendingResultRef.current = { winner: 'guest', timestamp: now, processed: false };
             }
         }
@@ -778,13 +795,33 @@ export default function Duels() {
           return;
         }
       }
-      
+
+      // Trigger a single re-render per frame so JSX reads fresh ref values
+      setRenderTick(t => t + 1);
       animationId = requestAnimationFrame(loop);
     };
-    
+
     animationId = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(animationId);
   }, [gamePhase]);
+
+  // Cleanup reload timeouts on unmount (Step 8: memory leak fix)
+  useEffect(() => {
+    return () => {
+      reloadTimeoutsRef.current.forEach(clearTimeout);
+      reloadTimeoutsRef.current = [];
+    };
+  }, []);
+
+  // Guest waiting_result freeze recovery (Step 9)
+  useEffect(() => {
+    if (gamePhase !== 'waiting_result' || role !== 'guest') return;
+    const timeout = setTimeout(() => {
+      // No result received — resume game loop to re-detect collision
+      setGamePhase('playing');
+    }, 5000);
+    return () => clearTimeout(timeout);
+  }, [gamePhase, role]);
 
   // ======================
   // STATE SYNC
@@ -800,8 +837,9 @@ export default function Duels() {
         x: ship.x,
         y: ship.y,
         angle: ship.angle,
-        hostScore: role === 'host' ? myScore : undefined,
-        guestScore: role === 'host' ? opponentScore : undefined
+        hostScore: role === 'host' ? myScoreRef.current : undefined,
+        guestScore: role === 'host' ? opponentScoreRef.current : undefined,
+        obstaclePhase: role === 'host' ? obstacleRef.current.phase : undefined
       };
       LocalConnectionModule.sendData(JSON.stringify(msg));
     }, SYNC_INTERVAL);
@@ -893,18 +931,31 @@ export default function Duels() {
   // START GAME (HOST)
   // ======================
   
-  const initiateTutorial = useCallback(() => {
+  const initiateTutorial = useCallback(async () => {
     if (role !== 'host') return;
-    
-    // Send tutorial start to guest
-    const msg: GameMessage = { type: 'start_tutorial' };
+
+    // Register the duel with the backend
+    let newDuelId: string | null = null;
+    if (userId && guestUserId) {
+      try {
+        const response: any = await api.post('/duel', { hostId: userId, guestId: guestUserId });
+        newDuelId = response?.data?._id ?? null;
+        console.log('Created duel with id:', newDuelId);
+        setDuelId(newDuelId);
+      } catch (error) {
+        console.error('Failed to register duel:', error);
+      }
+    }
+
+    // Send tutorial start to guest (include duelId so guest can report results)
+    const msg: GameMessage = { type: 'start_tutorial', duelId: newDuelId ?? '' };
     LocalConnectionModule.sendData(JSON.stringify(msg));
-    
+
     resetGameState();
     setTutorialStep(0);
     setOpponentFinishedTutorial(false);
     setGamePhase('tutorial');
-  }, [role, resetGameState]);
+  }, [role, resetGameState, userId, guestUserId]);
 
   const startGame = useCallback(() => {
     if (role !== 'host' || !guestRatio) return;
@@ -1169,23 +1220,23 @@ export default function Duels() {
             style={[
               styles.ship,
               {
-                left: myShip.x * gameWidth - SHIP_DISPLAY_SIZE / 2,
-                top: myShip.y * gameHeight - SHIP_DISPLAY_SIZE / 2,
-                transform: [{ rotate: `${myShip.angle + Math.PI / 2}rad` }]
+                left: myShipRef.current.x * gameWidth - SHIP_DISPLAY_SIZE / 2,
+                top: myShipRef.current.y * gameHeight - SHIP_DISPLAY_SIZE / 2,
+                transform: [{ rotate: `${myShipRef.current.angle + Math.PI / 2}rad` }]
               }
             ]}
             resizeMode="contain"
           />
-          
+
           {/* Opponent ship */}
           <Image
             source={enemyShipImage}
             style={[
               styles.ship,
               {
-                left: opponentShip.x * gameWidth - SHIP_DISPLAY_SIZE / 2,
-                top: opponentShip.y * gameHeight - SHIP_DISPLAY_SIZE / 2,
-                transform: [{ rotate: `${opponentShip.angle + Math.PI / 2}rad` }]
+                left: opponentShipRef.current.x * gameWidth - SHIP_DISPLAY_SIZE / 2,
+                top: opponentShipRef.current.y * gameHeight - SHIP_DISPLAY_SIZE / 2,
+                transform: [{ rotate: `${opponentShipRef.current.angle + Math.PI / 2}rad` }]
               }
             ]}
             resizeMode="contain"
@@ -1198,15 +1249,15 @@ export default function Duels() {
               position: 'absolute',
               width: OBSTACLE_DISPLAY_SIZE,
               height: OBSTACLE_DISPLAY_SIZE,
-              left: obstacle.x * gameWidth - OBSTACLE_DISPLAY_SIZE / 2,
-              top: obstacle.y * gameHeight - OBSTACLE_DISPLAY_SIZE / 2,
-              transform: [{ rotate: `${obstacle.rotation}rad` }],
+              left: obstacleRef.current.x * gameWidth - OBSTACLE_DISPLAY_SIZE / 2,
+              top: obstacleRef.current.y * gameHeight - OBSTACLE_DISPLAY_SIZE / 2,
+              transform: [{ rotate: `${obstacleRef.current.rotation}rad` }],
             }}
             resizeMode="contain"
           />
 
           {/* My bullets */}
-          {myBullets.map(b => (
+          {myBulletsRef.current.map(b => (
             <Image
               key={b.id}
               source={bulletImage}
@@ -1221,9 +1272,9 @@ export default function Duels() {
               resizeMode="contain"
             />
           ))}
-          
+
           {/* Opponent bullets */}
-          {opponentBullets.map(b => (
+          {opponentBulletsRef.current.map(b => (
             <Image
               key={b.id}
               source={bulletImage}

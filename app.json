@@ -2,7 +2,8 @@
   "expo": {
     "scheme": "hackillinois",
     "name": "HackIllinois",
-    "slug": "mobile",
+    "slug": "hackillinois",
+    "owner": "hackillinois",
     "version": "2026.0.2",
     "orientation": "portrait",
     "icon": "./assets/logo.png",
@@ -51,7 +52,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "a4fc2e31-68df-44c8-aca8-0b64e256e974"
+        "projectId": "873c594c-d13f-48ba-8d72-a57354b3980b"
       }
     }
   }
