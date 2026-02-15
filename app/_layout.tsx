@@ -253,7 +253,7 @@ function RootLayoutContent() {
   }
 
   return (
-     <Stack screenOptions={{ headerShown: false }}>
+     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: 'transparent' } }}>
       {!isLoggedIn ? (
         <Stack.Screen name="AuthScreen" />
       ) : (

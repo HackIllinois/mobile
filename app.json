@@ -47,7 +47,8 @@
           "icon": "./assets/logo.png",
           "color": "#ffffff"
         }
-      ]
+      ],
+      "./plugins/withWindowBackgroundColor"
     ],
     "extra": {
       "router": {},
