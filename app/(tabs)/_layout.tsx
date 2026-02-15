@@ -17,6 +17,7 @@ const TITLE_MAP: Record<string, string> = {
   "/Shop": "POINT SHOP",
   "/Scan": "SCANNER",
   "/Profile": "PROFILE",
+
 };
 
 export default function Layout() {
