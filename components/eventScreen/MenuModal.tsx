@@ -27,7 +27,7 @@ export default function MenuModal({ visible, event, onClose }: MenuModalProps) {
             <View style={styles.backgroundCard} />
             <View style={styles.mainCard}>
                 
-                <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+                <TouchableOpacity onPress={onClose} style={styles.closeButton} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
                     <Text style={styles.closeText}>✕</Text>
                 </TouchableOpacity>
 
@@ -41,18 +41,17 @@ export default function MenuModal({ visible, event, onClose }: MenuModalProps) {
                         contentContainerStyle={styles.scrollContent}
                         showsVerticalScrollIndicator={false}
                     >
-                        <Text style={styles.placeholderText}>
-                            Menu details for this meal will appear here.
-                        </Text>
-                        {/* TODO: Map through actual menu items here */}
-                        <View style={styles.menuItemPlaceholder}>
-                            <Text style={styles.itemTitle}>• Main Course</Text>
-                            <Text style={styles.itemDesc}>TBA</Text>
-                        </View>
-                        <View style={styles.menuItemPlaceholder}>
-                            <Text style={styles.itemTitle}>• Vegetarian Option</Text>
-                            <Text style={styles.itemDesc}>TBA</Text>
-                        </View>
+                        {event.menu && event.menu.length > 0 ? (
+                            event.menu.map((item, index) => (
+                                <View key={index} style={styles.menuItemPlaceholder}>
+                                    <Text style={styles.itemTitle}>• {item}</Text>
+                                </View>
+                            ))
+                        ) : (
+                            <Text style={styles.placeholderText}>
+                                Menu details for this meal will appear here.
+                            </Text>
+                        )}
                     </ScrollView>
                 </View>
             </View>
@@ -99,14 +98,11 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   closeButton: {
-    position: 'absolute',
-    top: 15,
-    left: 20,
-    zIndex: 20,
-    padding: 5,
+    paddingBottom: 10,
+    alignSelf: 'flex-end',
   },
   closeText: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#000',
     opacity: 0.5
@@ -125,7 +121,6 @@ const styles = StyleSheet.create({
     opacity: 0.6
   },
   headerSection: {
-    marginTop: 20,
     marginBottom: 15,
     alignItems: 'center', 
   },
@@ -147,6 +142,7 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     marginTop: 5,
     overflow: 'hidden',
+    marginBottom: 10
   },
   scrollContent: {
     padding: 20,

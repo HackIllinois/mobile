@@ -11,10 +11,8 @@ import {
   TouchableOpacity
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { useFonts, TsukimiRounded_700Bold } from '@expo-google-fonts/tsukimi-rounded';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Ionicons } from '@expo/vector-icons';
 
 // --- Components ---
 import { EventHeader, EventDay } from '../../components/eventScreen/EventHeader';
@@ -51,7 +49,7 @@ type MentorshipSession = {
 
 // --- Constants ---
 const { width, height } = Dimensions.get('window');
-const HEADER_HEIGHT_EXPANDED = height * 0.19; 
+const HEADER_HEIGHT_EXPANDED = 145; 
 const TABS_HEIGHT = 40;
 const IS_TABLET = width > 768;
 
@@ -87,7 +85,6 @@ export default function EventScreen() {
   const [selectedMentorSession, setSelectedMentorSession] = useState<MentorshipSession | null>(null);
   const [mentorModalVisible, setMentorModalVisible] = useState(false);
 
-  const [fontsLoaded] = useFonts({ TsukimiRounded_700Bold });
 
   useEffect(() => {
     setSavedEventIds(new Set(savedEventIdsList));
@@ -482,11 +479,10 @@ const styles = StyleSheet.create({
     fontSize: 24,
     color: '#FFFFFF',
     textAlign: 'center',
-    marginTop: 30,
     fontWeight: '900',
     textTransform: 'uppercase',
     letterSpacing: 1,
-    fontFamily: 'TsukimiRounded_700Bold',
+    fontFamily: "Tsukimi-Rounded-Bold",
   },
   underlineContainer: {
     alignSelf: 'center',           // Wraps width to content
@@ -545,13 +541,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
-    marginTop: height / 3,
+    marginTop: height / 5,
   },
   emptyText: {
     color: '#FFF',
     fontSize: 18,
     textAlign: 'center',
-    fontFamily: 'TsukimiRounded_700Bold',
+    fontFamily: "Tsukimi-Rounded-Bold",
+    fontWeight: "700"
   },
   retryButton: {
     marginTop: 10,

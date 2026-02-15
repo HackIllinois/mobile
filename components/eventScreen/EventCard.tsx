@@ -190,6 +190,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     marginBottom: 12,
     lineHeight: 28, // Fixes clipping on some fonts
+    maxWidth: 250,
   },
   
   // -- Pills --
@@ -226,6 +227,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     opacity: 0.9,
     fontWeight: '500',
+    maxWidth: 300
   },
 
   // -- Hit Areas --

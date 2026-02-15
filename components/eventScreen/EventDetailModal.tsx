@@ -53,7 +53,7 @@ export default function EventDetailModal({ visible, event, onClose, handleSave, 
 
           {/* Main Content Card */}
           <View style={styles.mainCard}>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <TouchableOpacity onPress={onClose} style={styles.closeButton} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
                 <Text style={styles.closeText}>✕</Text>
             </TouchableOpacity>
             
