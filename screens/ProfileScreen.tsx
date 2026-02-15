@@ -1,8 +1,8 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   Text,
   TouchableOpacity,
-  ActivityIndicator,
+  Animated,
   View,
   useWindowDimensions,
   StyleSheet,
@@ -23,7 +23,13 @@ import QRCodeButtonSvg from '../assets/profile/profile-screen/qr-code-button.svg
 import EditButtonSvg from '../assets/profile/profile-screen/edit-button.svg';
 import BackgroundSvg from '../assets/profile/background.svg';
 import StarryBackground from '../components/eventScreen/StarryBackground';
-import { useProfile, UserProfile } from '../lib/fetchProfile';
+import {
+  useProfile,
+  UserProfile,
+  loadCachedRoles,
+  hasNonProfileRole,
+  getNonProfileRoleLabel,
+} from '../lib/fetchProfile';
 import { queryClient } from '../lib/queryClient';
 
 interface QrCodeResponse {
@@ -40,25 +46,44 @@ export default function ProfileScreen() {
   const scaleHeight = (size: number) => (height / figmaHeight) * size;
   const scaleFontSize = (size: number) => Math.min(scaleWidth(size), scaleHeight(size));
 
-  const { profile, loading: isLoading, refetch: refetchProfile } = useProfile();
+  const [rolesLoaded, setRolesLoaded] = useState(() => hasNonProfileRole());
+  const [isNonProfileRole, setIsNonProfileRole] = useState(() => hasNonProfileRole());
+  const [userRole, setUserRole] = useState<string | null>(() => getNonProfileRoleLabel());
+
+  useEffect(() => {
+    if (rolesLoaded) return;
+    loadCachedRoles().then(() => {
+      setIsNonProfileRole(hasNonProfileRole());
+      setUserRole(getNonProfileRoleLabel());
+      setRolesLoaded(true);
+    });
+  }, [rolesLoaded]);
+
+  const { profile, loading: isLoading, refetch: refetchProfile } = useProfile(!isNonProfileRole);
+
   const [qrCode, setQrInfo] = useState<string | null>(null);
   const [qrLoading, setQrLoading] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
-  const [userRole, setUserRole] = useState<string | null>(null);
+
+  const pulseAnim = useRef(new Animated.Value(0.3)).current;
+  useEffect(() => {
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, { toValue: 0.7, duration: 800, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 0.3, duration: 800, useNativeDriver: true }),
+      ])
+    );
+    pulse.start();
+    return () => pulse.stop();
+  }, [pulseAnim]);
 
   useFocusEffect(
     useCallback(() => {
-      refetchProfile();
-      SecureStore.getItemAsync('userRoles').then((rolesString) => {
-        if (rolesString) {
-          const roles: string[] = JSON.parse(rolesString);
-          if (roles.includes('STAFF')) setUserRole('STAFF');
-          else if (roles.includes('GUEST')) setUserRole('GUEST');
-          else setUserRole(null);
-        }
-      });
-    }, [refetchProfile])
+      if (!isNonProfileRole) {
+        refetchProfile();
+      }
+    }, [refetchProfile, isNonProfileRole])
   );
 
   const fetchQrCode = useCallback(async (showLoadingSpinner = false) => {
@@ -84,11 +109,11 @@ export default function ProfileScreen() {
       let intervalId: NodeJS.Timeout | null = null;
 
       if (profile) {
-        fetchQrCode(true); 
+        fetchQrCode(true);
 
         intervalId = setInterval(() => {
           fetchQrCode(false);
-        }, 15000); 
+        }, 15000);
       }
 
       return () => {
@@ -96,19 +121,66 @@ export default function ProfileScreen() {
           clearInterval(intervalId);
         }
       };
-    }, [profile, fetchQrCode]) 
+    }, [profile, fetchQrCode])
   );
 
+  if (isLoading && !isNonProfileRole) {
+    const SkeletonBox = ({ style }: { style?: any }) => (
+      <Animated.View style={[{ backgroundColor: '#D4D4D4', borderRadius: 8, opacity: pulseAnim }, style]} />
+    );
 
-  if (isLoading) {
     return (
-      <SafeAreaView style={{
-        flex: 1,
-        backgroundColor: '#F5F5F5',
-        justifyContent: 'center',
-        alignItems: 'center',
-      }}>
-        <ActivityIndicator size="large" color="#888" />
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#F5F5F5' }}>
+        <View style={{
+          position: 'absolute', top: 0, left: 0, width, height, zIndex: -1,
+        }}>
+          <BackgroundSvg width={width} height={height} preserveAspectRatio="xMidYMid slice" />
+        </View>
+        <View style={{ flex: 1, marginTop: scaleWidth(50) }}>
+          {/* Avatar skeleton */}
+          <SkeletonBox style={{
+            width: scaleWidth(140),
+            height: scaleWidth(300),
+            position: 'absolute',
+            top: scaleWidth(-1),
+            left: scaleWidth(45),
+            borderRadius: scaleWidth(12),
+          }} />
+          {/* Stats box skeleton */}
+          <View style={{
+            position: 'absolute',
+            top: scaleWidth(332),
+            left: scaleWidth(36),
+            width: scaleWidth(313),
+            height: scaleWidth(253),
+          }}>
+            <SkeletonBox style={{
+              width: scaleWidth(313),
+              height: scaleWidth(253),
+              borderRadius: scaleWidth(12),
+              backgroundColor: 'rgba(180, 160, 210, 0.3)',
+            }} />
+          </View>
+          {/* Button skeletons */}
+          <SkeletonBox style={{
+            position: 'absolute',
+            top: scaleWidth(332) + scaleWidth(-273),
+            left: scaleWidth(36) + scaleWidth(208),
+            width: scaleWidth(83),
+            height: scaleWidth(83),
+            borderRadius: scaleWidth(42),
+            backgroundColor: 'rgba(180, 160, 210, 0.3)',
+          }} />
+          <SkeletonBox style={{
+            position: 'absolute',
+            top: scaleWidth(332) + scaleWidth(-163),
+            left: scaleWidth(36) + scaleWidth(208),
+            width: scaleWidth(83),
+            height: scaleWidth(83),
+            borderRadius: scaleWidth(42),
+            backgroundColor: 'rgba(180, 160, 210, 0.3)',
+          }} />
+        </View>
       </SafeAreaView>
     );
   }

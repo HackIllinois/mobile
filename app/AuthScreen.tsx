@@ -23,7 +23,7 @@ import GuestButtonSvg from "../assets/login/guest-button.svg";
 
 import api from "../api";
 import { queryClient } from "../lib/queryClient";
-import { fetchProfile, prefetchAvatarImage } from "../lib/fetchProfile";
+import { fetchProfile, prefetchAvatarImage, setCachedRoles } from "../lib/fetchProfile";
 import { prefetchShopImages } from "../lib/fetchShopItems";
 import { fetchSavedEvents } from "../lib/fetchSavedEvents";
 import { registerForPushNotificationsAsync } from "../lib/notifications";
@@ -78,6 +78,7 @@ export default function AuthScreen({ navigation }: any) {
 
         const roles = roleResponse.data.roles;
         await SecureStore.setItemAsync("userRoles", JSON.stringify(roles));
+        setCachedRoles(roles);
 
         try {
           const pushToken = await registerForPushNotificationsAsync();
@@ -118,6 +119,7 @@ export default function AuthScreen({ navigation }: any) {
       setLoadingGuest(true);
       await SecureStore.setItemAsync("isGuest", "true");
       await SecureStore.setItemAsync("userRoles", JSON.stringify(["GUEST"]));
+      setCachedRoles(["GUEST"]);
       router.replace("/(tabs)/Home");
     } catch (err) {
       console.error(err);
