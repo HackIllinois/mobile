@@ -45,10 +45,19 @@ export default function ProfileScreen() {
   const [qrLoading, setQrLoading] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
       refetchProfile();
+      SecureStore.getItemAsync('userRoles').then((rolesString) => {
+        if (rolesString) {
+          const roles: string[] = JSON.parse(rolesString);
+          if (roles.includes('STAFF')) setUserRole('STAFF');
+          else if (roles.includes('GUEST')) setUserRole('GUEST');
+          else setUserRole(null);
+        }
+      });
     }, [refetchProfile])
   );
 
@@ -90,30 +99,6 @@ export default function ProfileScreen() {
     }, [profile, fetchQrCode]) 
   );
 
-  const handleLogout = () => {
-    Alert.alert(
-      "Log Out",
-      "Are you sure you want to log out?",
-      [
-        {
-          text: "Cancel",
-          style: "cancel"
-        },
-        {
-          text: "Log Out",
-          style: "destructive",
-          onPress: async () => {
-            await SecureStore.deleteItemAsync("jwt");
-            await SecureStore.deleteItemAsync("isGuest");
-            await SecureStore.deleteItemAsync("userRoles");
-            queryClient.clear();
-            setQrInfo(null);
-            router.replace("/AuthScreen");
-          }
-        }
-      ]
-    );
-  };
 
   if (isLoading) {
     return (
@@ -141,7 +126,10 @@ export default function ProfileScreen() {
           justifyContent: 'center',
           alignItems: 'center',
         }}>
-          <Text style={{
+          <Text
+            numberOfLines={1}
+            adjustsFontSizeToFit={true}
+            style={{
             color: '#FFE0B4',
             fontSize: scaleFontSize(28),
             fontFamily: 'Tsukimi Rounded',
@@ -158,7 +146,7 @@ export default function ProfileScreen() {
             textAlign: 'center',
             width: '80%',
             marginBottom: scaleHeight(5),
-          }}>Staff currently do not have profiles.</Text>
+          }}>{userRole === 'GUEST' ? 'Guests' : 'Staff'} currently do not have profiles.</Text>
           <Text style={{
             color: 'rgba(255, 255, 255, 0.9)',
             fontSize: scaleFontSize(14),
