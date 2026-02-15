@@ -33,7 +33,6 @@ interface OrbitItemProps {
   jiggle?: Animated.Value; // 0..1 loop
   jigglePx?: number; // how far to slide along the orbit
 
-  // ✅ optional: let HomeScreen react to taps (navigation/modal)
   onPress?: (eventKey: NonNullable<OrbitItemProps["eventKey"]>) => void;
 }
 
@@ -109,7 +108,7 @@ export default function OrbitItem({
       ? HackingPng
       : ClosingPng;
 
-  // ✅ tap jiggle: quick scale pop
+  
   const pressAnim = useRef(new Animated.Value(0)).current;
 
   const pressScale = pressAnim.interpolate({
@@ -119,7 +118,7 @@ export default function OrbitItem({
 
   const pressRotate = pressAnim.interpolate({
     inputRange: [0, 0.5, 1],
-    outputRange: ["0deg", "3deg", "-3deg"], // small wiggle
+    outputRange: ["0deg", "3deg", "-3deg"], 
   });
 
   const handlePress = () => {
