@@ -115,10 +115,10 @@ export default function PointShop() {
 
 
   const { shopItems: shopItemData, loading: shopLoading } = useShopItems();
-  const { profile, loading: profileLoading, refetch: refetchProfile } = useProfile();
+  const { profile, refetch: refetchProfile } = useProfile();
   const userPoints = profile?.points ?? 0;
 
-  const isLoading = shopLoading || profileLoading;
+  const isLoading = shopLoading && shopItemData.length === 0;
 
   const [cartIds, setCartIds] = useState<string[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);

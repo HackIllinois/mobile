@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { Image } from "react-native";
 import { ShopItem } from "../types";
 
 export async function fetchShopItems(): Promise<ShopItem[]> {
@@ -10,6 +11,14 @@ export async function fetchShopItems(): Promise<ShopItem[]> {
   if (Array.isArray(data)) return data;
   if (data && Array.isArray(data.data)) return data.data;
   return [];
+}
+
+export function prefetchShopImages(items: ShopItem[]) {
+  items.forEach((item) => {
+    if (item.imageURL) {
+      Image.prefetch(item.imageURL);
+    }
+  });
 }
 
 export function useShopItems() {

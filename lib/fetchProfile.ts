@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { Image } from "react-native";
 import api from "../api";
 
 export interface UserProfile {
@@ -27,7 +28,7 @@ interface AdmissionRsvpResponse {
   reimbursementValue: number;
 }
 
-async function fetchProfile(): Promise<UserProfile> {
+export async function fetchProfile(): Promise<UserProfile> {
   const [profileRes, rankingRes, rsvpRes] = await Promise.allSettled([
     api.get<UserProfile>("profile"),
     api.get<RankingResponse>("profile/ranking"),
@@ -50,6 +51,12 @@ async function fetchProfile(): Promise<UserProfile> {
   }
 
   return profile;
+}
+
+export function prefetchAvatarImage(avatarUrl: string | null) {
+  if (avatarUrl) {
+    Image.prefetch(avatarUrl);
+  }
 }
 
 export function useProfile() {
