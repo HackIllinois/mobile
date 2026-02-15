@@ -10,6 +10,7 @@ const bulletImage = require('../../assets/duels/duels-bullet.png');
 const tutorialImage1 = require('../../assets/duels/duels-controls-1.png');
 const tutorialImage2 = require('../../assets/duels/duels-controls-2.png');
 const tutorialImage3 = require('../../assets/duels/duels-controls-3.png');
+const sawbladeImage = require('../../assets/duels/duels-sawblade.png');
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../../api';
@@ -98,6 +99,9 @@ const MAX_AMMO = 3;             // Maximum bullets player can have
 const RELOAD_TIME = 1500;       // ms to reload one bullet
 const TIE_WINDOW = 50;         // ms window to consider simultaneous hits as a tie
 const BORDER_MARGIN_PX = 5;    // Keep ships away from screen edges (in pixels)
+const OBSTACLE_SIZE = 0.05;        // normalized (same as SHIP_SIZE)
+const OBSTACLE_SPEED = 0.3;        // normalized units per second
+const OBSTACLE_DISPLAY_SIZE = 40;  // pixels
 
 export default function Duels() {
   // ======================
@@ -127,6 +131,8 @@ export default function Duels() {
   const [myBullets, setMyBullets] = useState<Bullet[]>([]);
   const [opponentBullets, setOpponentBullets] = useState<Bullet[]>([]);
   
+  const [obstacle, setObstacle] = useState({ x: 0.5, y: 0.0, phase: 0, rotation: 0 });
+
   const [isRotating, setIsRotating] = useState(false);
   const [ammo, setAmmo] = useState(MAX_AMMO);
   const [reloading, setReloading] = useState(0); // Number of bullets currently reloading
@@ -147,6 +153,7 @@ export default function Duels() {
   const opponentShipRef = useRef(opponentShip);
   const opponentTargetRef = useRef(opponentTarget);
   const opponentBulletsRef = useRef(opponentBullets);
+  const obstacleRef = useRef(obstacle);
   const isRotatingRef = useRef(isRotating);
   const gamePhaseRef = useRef(gamePhase);
 
@@ -170,6 +177,7 @@ export default function Duels() {
     opponentShipRef.current = opponentShip;
     opponentTargetRef.current = opponentTarget;
     opponentBulletsRef.current = opponentBullets;
+    obstacleRef.current = obstacle;
     isRotatingRef.current = isRotating;
     gamePhaseRef.current = gamePhase;
 
@@ -278,7 +286,8 @@ export default function Duels() {
     setOpponentBullets([]);
     setAmmo(MAX_AMMO);
     setReloading(0);
-    
+    setObstacle({ x: 0.5, y: 0.0, phase: 0, rotation: 0 });
+
 
   }, [role]);
 
@@ -635,7 +644,15 @@ export default function Duels() {
       
       // 4. Update opponent bullets (simulate locally based on initial angle)
       setOpponentBullets(updateBullets);
-      
+
+      // 4.5. Update obstacle position (bounces top<->bottom with ease in/out)
+      setObstacle(prev => {
+        const newPhase = prev.phase + OBSTACLE_SPEED * Math.PI * dt;
+        const y = (1 - Math.cos(newPhase)) / 2;
+        const rotation = prev.rotation + Math.PI * 2 * dt;
+        return { x: 0.5, y, phase: newPhase, rotation };
+      });
+
       // 5. Interpolate opponent ship towards target position (smoothing)
       const target = opponentTargetRef.current;
       setOpponentShip(prev => {
@@ -680,7 +697,17 @@ export default function Duels() {
           break;
         }
       }
-      
+
+      // Check if ships hit the obstacle (hitting it = you lose)
+      const obs = obstacleRef.current;
+      const checkObstacleHit = (ship: Ship): boolean => {
+        const dx = Math.abs(obs.x - ship.x);
+        const dy = Math.abs(obs.y - ship.y);
+        return dx < (OBSTACLE_SIZE + SHIP_SIZE) / 2 && dy < (OBSTACLE_SIZE + SHIP_SIZE) / 2;
+      };
+      if (checkObstacleHit(myShipCurrent)) opponentHitMe = true;
+      if (checkObstacleHit(opponent)) iHitOpponent = true;
+
       // Only host determines collision outcomes (authoritative)
       if (role === 'host') {
         const pending = pendingResultRef.current;
@@ -1163,9 +1190,21 @@ export default function Duels() {
             ]}
             resizeMode="contain"
           />
-          
 
-          
+          {/* Sawblade obstacle */}
+          <Image
+            source={sawbladeImage}
+            style={{
+              position: 'absolute',
+              width: OBSTACLE_DISPLAY_SIZE,
+              height: OBSTACLE_DISPLAY_SIZE,
+              left: obstacle.x * gameWidth - OBSTACLE_DISPLAY_SIZE / 2,
+              top: obstacle.y * gameHeight - OBSTACLE_DISPLAY_SIZE / 2,
+              transform: [{ rotate: `${obstacle.rotation}rad` }],
+            }}
+            resizeMode="contain"
+          />
+
           {/* My bullets */}
           {myBullets.map(b => (
             <Image
