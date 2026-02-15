@@ -46,7 +46,7 @@ type MentorshipSession = {
 
 // --- Constants ---
 const { width, height } = Dimensions.get('window');
-const HEADER_HEIGHT_EXPANDED = 150; 
+const HEADER_HEIGHT_EXPANDED = 145; 
 const TABS_HEIGHT = 40;
 const IS_TABLET = width > 768;
 
@@ -476,7 +476,6 @@ const styles = StyleSheet.create({
     fontSize: 24,
     color: '#FFFFFF',
     textAlign: 'center',
-    marginTop: 30,
     fontWeight: '900',
     textTransform: 'uppercase',
     letterSpacing: 1,
@@ -539,7 +538,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
-    marginTop: height / 3,
+    marginTop: height / 5,
   },
   emptyText: {
     color: '#FFF',

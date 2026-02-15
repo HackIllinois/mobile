@@ -27,7 +27,7 @@ export default function MenuModal({ visible, event, onClose }: MenuModalProps) {
             <View style={styles.backgroundCard} />
             <View style={styles.mainCard}>
                 
-                <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+                <TouchableOpacity onPress={onClose} style={styles.closeButton} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
                     <Text style={styles.closeText}>✕</Text>
                 </TouchableOpacity>
 
@@ -98,14 +98,11 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   closeButton: {
-    position: 'absolute',
-    top: 15,
-    left: 20,
-    zIndex: 20,
-    padding: 5,
+    paddingBottom: 10,
+    alignSelf: 'flex-end',
   },
   closeText: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#000',
     opacity: 0.5
@@ -124,7 +121,6 @@ const styles = StyleSheet.create({
     opacity: 0.6
   },
   headerSection: {
-    marginTop: 20,
     marginBottom: 15,
     alignItems: 'center', 
   },
@@ -146,6 +142,7 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     marginTop: 5,
     overflow: 'hidden',
+    marginBottom: 10
   },
   scrollContent: {
     padding: 20,

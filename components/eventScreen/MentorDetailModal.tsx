@@ -51,7 +51,7 @@ export default function MentorDetailModal({ visible, session, onClose }: MentorD
         <View style={styles.cardWrapper}>
           <View style={styles.backgroundCard} />
           <View style={styles.mainCard}>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <TouchableOpacity onPress={onClose} style={styles.closeButton} hitSlop={{top: 30, bottom: 30, right: 30, left: 30}}>
               <Text style={styles.closeText}>✕</Text>
             </TouchableOpacity>
 
@@ -132,8 +132,11 @@ const styles = StyleSheet.create({
     shadowRadius: 4.65,
     elevation: 8,
   },
-  closeButton: { paddingBottom: 10 },
-  closeText: { fontSize: 20, fontWeight: 'bold', color: '#000', opacity: 0.5 },
+  closeButton: {
+    paddingBottom: 10,
+    alignSelf: 'flex-end',
+  },
+  closeText: { fontSize: 24, fontWeight: 'bold', color: '#000', opacity: 0.5 },
 
   title: { fontSize: 28, fontWeight: '800', color: '#000', marginBottom: 8 },
   pillRow: { flexDirection: 'row', marginBottom: 12, marginTop: 4 },
