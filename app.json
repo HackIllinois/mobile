@@ -30,7 +30,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.anonymous.mobile"
+      "package": "org.hackillinois.android.release"
     },
     "web": {
       "favicon": "./assets/favicon.png"
