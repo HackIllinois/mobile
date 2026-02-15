@@ -346,21 +346,25 @@ export default function AuthScreen({ navigation }: any) {
         style={{
           position: "absolute",
           top: scaleHeight(780),
-          left: scaleWidth(115),
-          width: scaleWidth(209),
+          left: scaleWidth(114),
+          width: scaleWidth(212),
           height: scaleHeight(45),
-          justifyContent: "center",
-          alignItems: "center",
         }}
         onPress={handleGuestLogin}
         disabled={isLoading}
         activeOpacity={0.7}
       >
-        <GuestButtonSvg
-          width={scaleWidth(209)}
-          height={scaleHeight(42)}
-          preserveAspectRatio="xMidYMid meet"
-        />
+        {loadingGuest ? (
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator color="#fff" />
+          </View>
+        ) : (
+          <GuestButtonSvg
+            width={scaleWidth(212)}
+            height={scaleHeight(45)}
+            preserveAspectRatio="xMidYMid meet"
+          />
+        )}
       </TouchableOpacity>
     </View>
   );
