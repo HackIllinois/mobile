@@ -17,6 +17,7 @@ const TITLE_MAP: Record<string, string> = {
   "/Shop": "POINT SHOP",
   "/Scan": "SCANNER",
   "/Profile": "PROFILE",
+
 };
 
 export default function Layout() {
@@ -119,6 +120,7 @@ export default function Layout() {
           {isProfileScreen ? (
             <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
               <LogoutButtonSvg width={70} height={28} />
+              <Text style={styles.logoutLabel}>LOGOUT</Text>
             </TouchableOpacity>
           ) : (
             <Link href="/Profile" asChild>
@@ -174,5 +176,14 @@ const styles = StyleSheet.create({
   },
   logoutButton: {
     marginRight: -7,
+    alignItems: 'center',
+  },
+  logoutLabel: {
+    color: '#FFFFFF',
+    fontFamily: 'Tsukimi-Rounded-Bold',
+    fontSize: 9,
+    textAlign: 'center',
+    width: 70,
+    marginTop: 2,
   },
 });

@@ -5,13 +5,10 @@ import {
   ActivityIndicator,
   StyleSheet,
   Alert,
-  Platform,
   useWindowDimensions,
 } from "react-native";
 import * as WebBrowser from "expo-web-browser";
 import * as SecureStore from "expo-secure-store";
-import * as Notifications from "expo-notifications";
-import * as Device from "expo-device";
 import { useRouter } from "expo-router";
 import { AxiosResponse } from "axios";
 
@@ -29,57 +26,13 @@ import { queryClient } from "../lib/queryClient";
 import { fetchProfile, prefetchAvatarImage } from "../lib/fetchProfile";
 import { prefetchShopImages } from "../lib/fetchShopItems";
 import { fetchSavedEvents } from "../lib/fetchSavedEvents";
+import { registerForPushNotificationsAsync } from "../lib/notifications";
 
 WebBrowser.maybeCompleteAuthSession();
 
 // Figma design dimensions
 const FIGMA_WIDTH = 440;
 const FIGMA_HEIGHT = 956;
-
-// Configure notification handler
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
-
-async function registerForPushNotificationsAsync(): Promise<string | null> {
-  if (!Device.isDevice) {
-    console.log("Push notifications require a physical device");
-    return null;
-  }
-
-  const { status: existingStatus } = await Notifications.getPermissionsAsync();
-  let finalStatus = existingStatus;
-
-  if (existingStatus !== "granted") {
-    const { status } = await Notifications.requestPermissionsAsync();
-    finalStatus = status;
-  }
-
-  if (finalStatus !== "granted") {
-    console.log("Failed to get push token: permission not granted");
-    return null;
-  }
-
-  const tokenData = await Notifications.getExpoPushTokenAsync();
-  const token = tokenData.data;
-
-  if (Platform.OS === "android") {
-    await Notifications.setNotificationChannelAsync("default", {
-      name: "default",
-      importance: Notifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: "#FF231F7C",
-    });
-  }
-
-  return token;
-}
 
 interface AuthRolesResponse {
   id: string;
@@ -129,8 +82,9 @@ export default function AuthScreen({ navigation }: any) {
         try {
           const pushToken = await registerForPushNotificationsAsync();
           if (pushToken) {
-            await api.post("/notification", { token: pushToken });
-            console.log("Push token registered:", pushToken);
+            console.log("Sending push token to backend:", pushToken);
+            await api.post("/notification", { deviceToken: pushToken });
+            console.log("Push token registered successfully");
           }
         } catch (notifError) {
           console.error("Failed to register push notifications:", notifError);

@@ -4,6 +4,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Stack } from "expo-router";
 import { useFonts } from "expo-font";
 import { QueryClientProvider } from "@tanstack/react-query";
+import * as Notifications from "expo-notifications";
 import StartupAnimation from "../components/hackrocket/StartupAnimation";
 import OnboardingScreens from "../components/onboarding/OnboardingScreen";
 import LoadingScreen from "../src/components/loading/LoadingScreen";
@@ -12,8 +13,18 @@ import * as SecureStore from "expo-secure-store";
 import { AnimationProvider, useAnimations } from "../contexts/OnboardingAnimationContext";
 import { queryClient } from "../lib/queryClient";
 import { fetchEvents } from "../lib/fetchEvents";
-import { fetchShopItems, prefetchShopImages } from "../lib/fetchShopItems";
-import { fetchProfile, prefetchAvatarImage } from "../lib/fetchProfile";
+import { fetchShopItems } from "../lib/fetchShopItems";
+import { setupNotificationListeners } from "../lib/notifications";
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
 
 // Onboarding testing:
 // true = show onboarding every reload
@@ -37,6 +48,11 @@ function RootLayoutContent() {
   const [fontsLoaded] = useFonts({
     'Tsukimi-Rounded-Bold': require('../assets/fonts/TsukimiRounded-Bold.ttf'),
   });
+
+  useEffect(() => {
+    const cleanup = setupNotificationListeners();
+    return cleanup;
+  }, []);
 
   useEffect(() => {
     const loadAppData = async () => {
