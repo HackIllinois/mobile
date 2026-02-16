@@ -111,7 +111,6 @@ function RootLayoutContent() {
       } catch (e) {
         console.error("Error during app initialization:", e);
         setShowOnboarding(true);
-        setLoadingProgress(1);
       }
 
       // Ensure minimum 0.75s loading time for smooth animation
