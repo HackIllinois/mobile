@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     paddingBottom: 10,
-    alignSelf: 'flex-end',
+    alignSelf: 'flex-start',
   },
   closeText: {
     fontSize: 24,
