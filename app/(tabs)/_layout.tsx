@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Tabs, Link, usePathname, useRouter } from "expo-router";
 import { TouchableOpacity, View, StyleSheet, Alert, Text } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -6,6 +7,7 @@ import ProfileSvg from "../../assets/profile.svg";
 import LogoutButtonSvg from "../../assets/profile/profile-screen/logout-button.svg";
 import { CurvedTabBar } from "../../components/CurvedTabBar";
 import { queryClient } from "../../lib/queryClient";
+import { fetchProfile, prefetchAvatarImage, loadCachedRoles, clearCachedRoles, hasNonProfileRole } from "../../lib/fetchProfile";
 import HomeSvg from "../../assets/navbar/Home.svg";
 import CalendarSvg from "../../assets/navbar/Calendar.svg";
 import QrCodeSvg from "../../assets/navbar/Camera.svg";
@@ -27,6 +29,23 @@ export default function Layout() {
   const isProfileScreen = pathname === "/Profile";
   const title = TITLE_MAP[pathname] || null;
 
+  useEffect(() => {
+    loadCachedRoles().then(() => {
+      if (!hasNonProfileRole()) {
+        queryClient.prefetchQuery({
+          queryKey: ["profile"],
+          queryFn: fetchProfile,
+          staleTime: 5 * 60 * 1000,
+        }).then(() => {
+          const profile = queryClient.getQueryData<any>(["profile"]);
+          if (profile?.avatarUrl) {
+            prefetchAvatarImage(profile.avatarUrl);
+          }
+        }).catch(() => {});
+      }
+    });
+  }, []);
+
   const handleLogout = () => {
     Alert.alert(
       "Log Out",
@@ -40,6 +59,7 @@ export default function Layout() {
             await SecureStore.deleteItemAsync("jwt");
             await SecureStore.deleteItemAsync("isGuest");
             await SecureStore.deleteItemAsync("userRoles");
+            clearCachedRoles();
             queryClient.clear();
             router.replace("/AuthScreen");
           },

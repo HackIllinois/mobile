@@ -1,6 +1,38 @@
 import { useQuery } from "@tanstack/react-query";
 import { Image } from "react-native";
+import * as SecureStore from "expo-secure-store";
 import api from "../api";
+
+let cachedRoles: string[] | null = null;
+
+export function setCachedRoles(roles: string[]) {
+  cachedRoles = roles;
+}
+
+export function clearCachedRoles() {
+  cachedRoles = null;
+}
+
+export async function loadCachedRoles(): Promise<string[] | null> {
+  if (cachedRoles) return cachedRoles;
+  const rolesString = await SecureStore.getItemAsync("userRoles");
+  if (rolesString) {
+    cachedRoles = JSON.parse(rolesString);
+  }
+  return cachedRoles;
+}
+
+export function hasNonProfileRole(): boolean {
+  if (!cachedRoles) return false;
+  return cachedRoles.includes("STAFF") || cachedRoles.includes("GUEST");
+}
+
+export function getNonProfileRoleLabel(): string | null {
+  if (!cachedRoles) return null;
+  if (cachedRoles.includes("GUEST")) return "GUEST";
+  if (cachedRoles.includes("STAFF")) return "STAFF";
+  return null;
+}
 
 export interface UserProfile {
   userId: string;
@@ -59,12 +91,13 @@ export function prefetchAvatarImage(avatarUrl: string | null) {
   }
 }
 
-export function useProfile() {
+export function useProfile(enabled = true) {
   const { data, isLoading, error, refetch } = useQuery<UserProfile>({
     queryKey: ["profile"],
     queryFn: fetchProfile,
     staleTime: 5 * 60 * 1000,
     retry: 2,
+    enabled,
   });
 
   return {
