@@ -49,7 +49,7 @@ export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({ avatarUrl, avatarI
         source={
           avatarUrl
             ? { uri: avatarUrl }
-            : require('../../assets/profile.png')
+            : require('../../assets/profile/avatar-screen/avatars/character1.svg')
         }
         onError={() => console.log('Failed to load avatar image')}
       />
