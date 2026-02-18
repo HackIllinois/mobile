@@ -210,14 +210,17 @@ export default function ProfileScreen() {
             width: '80%',
             marginBottom: scaleHeight(20),
           }}>Could not load profile.</Text>
-          <Text style={{
+          <Text
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            style={{
             color: 'rgba(255, 255, 255, 0.85)',
             fontSize: scaleFontSize(16),
             fontFamily: 'Tsukimi Rounded',
             fontWeight: '700',
             textAlign: 'center',
             width: '80%',
-            marginBottom: scaleHeight(5),
+            marginBottom: scaleHeight(15),
           }}>{userRole === 'GUEST' ? 'Guests' : 'Staff'} currently do not have profiles.</Text>
           <Text style={{
             color: 'rgba(255, 255, 255, 0.9)',

@@ -129,7 +129,7 @@ export default function Layout() {
         {/* Header */}
         <View style={[styles.headerRow, { top: insets.top }]}>
           {title ? (
-            <View>
+            <View style={{ marginTop: -6 }}>
               <Text style={[styles.headerTitle, styles.glowWide]}>{title}</Text>
               <Text style={[styles.headerTitle, styles.glowMid]}>{title}</Text>
               <Text style={[styles.headerTitle, styles.titleFront]}>{title}</Text>
@@ -170,9 +170,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: 25,
     fontFamily: 'Tsukimi-Rounded-Bold',
-    letterSpacing: 2,
   },
   glowWide: {
     position: 'absolute',
