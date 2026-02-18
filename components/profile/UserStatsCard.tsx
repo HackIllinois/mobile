@@ -25,20 +25,22 @@ export const UserStatsCard: React.FC<UserStatsCardProps> = ({
   return (
     <View style={{ flex: 1 }}>
       <Text style={{
-        fontSize: scaleFontSize(18),
+        fontSize: scaleFontSize(17),
         fontWeight: '500',
         color: '#FFFFFF',
+        opacity: 0.9,
         letterSpacing: 0,
         marginBottom: 0,
         textAlign: 'left',
-        marginLeft: scaleWidth(-8),
-        marginTop: scaleWidth(-7.5),
+        marginLeft: scaleWidth(-14),
+        marginTop: scaleWidth(-14),
         lineHeight: scaleHeight(22),
       }}>USER STATS</Text>
 
       <View style={{
         gap: scaleHeight(18),
-        marginTop: scaleWidth(19),
+        marginTop: scaleWidth(20),
+        marginLeft: scaleWidth(-7),
       }}>
         <View style={{ marginBottom: 0 }}>
           <Text style={{

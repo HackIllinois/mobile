@@ -1,20 +1,17 @@
-import React from 'react';
-import { Image, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import React, { useRef } from 'react';
+import { Animated, Image, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { getAvatarById, getCharacterIdFromUrl } from './avatarConfig';
 
 interface ProfileAvatarProps {
   avatarUrl: string | null;
   avatarId?: string | null;
-  onPress?: () => void;
 }
 
-export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({ avatarUrl, avatarId, onPress }) => {
-  const { width, height } = useWindowDimensions();
+export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({ avatarUrl, avatarId }) => {
+  const { width } = useWindowDimensions();
 
   const figmaWidth = 393;
-  const figmaHeight = 852;
   const scaleWidth = (size: number) => (width / figmaWidth) * size;
-  const scaleHeight = (size: number) => (height / figmaHeight) * size;
 
   const characterId = avatarId || getCharacterIdFromUrl(avatarUrl);
   const avatarConfig = getAvatarById(characterId);
@@ -22,28 +19,67 @@ export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({ avatarUrl, avatarI
   const DEFAULT_WIDTH = 140;
   const baseAvatarWidth = avatarConfig?.profileDimensions.width || DEFAULT_WIDTH;
   const baseAvatarHeight = avatarConfig?.profileDimensions.height || 300;
-
-  const widthDifference = baseAvatarWidth - DEFAULT_WIDTH;
-  const leftOffset = -(widthDifference / 2);
+  const resolvedLeft = avatarConfig?.profileLeft ?? 45;
+  const glowColor = avatarConfig?.profileGlowColor ?? '#FFFFFF';
 
   const AVATAR_CONTAINER_WIDTH = scaleWidth(baseAvatarWidth + 55);
   const AVATAR_WIDTH = scaleWidth(baseAvatarWidth);
   const AVATAR_HEIGHT = scaleWidth(baseAvatarHeight);
 
-  const Wrapper = onPress ? TouchableOpacity : View;
+  // Single animated value drives both scale and opacity
+  const glowAnim = useRef(new Animated.Value(0)).current;
+
+  const glowScale = glowAnim.interpolate({
+    inputRange: [0, 1, 2],
+    outputRange: [0.3, 1.2, 1.5],
+  });
+
+  const glowOpacity = glowAnim.interpolate({
+    inputRange: [0, 1, 2],
+    outputRange: [0, 0.5, 0],
+  });
+
+  const triggerGlow = () => {
+    glowAnim.setValue(0);
+    Animated.sequence([
+      Animated.timing(glowAnim, { toValue: 1, duration: 1500, useNativeDriver: true }),
+      Animated.timing(glowAnim, { toValue: 2, duration: 500, useNativeDriver: true }),
+    ]).start(() => glowAnim.setValue(0));
+  };
+
+  const CIRCLE_SIZE = scaleWidth(140);
 
   return (
-    <Wrapper
-      {...(onPress ? { onPress, activeOpacity: 0.7 } : {})}
+    <TouchableOpacity
+      activeOpacity={1}
+      onPress={triggerGlow}
       style={{
         position: 'absolute',
         top: scaleWidth(-11),
-        left: scaleWidth(45 + leftOffset),
+        left: scaleWidth(resolvedLeft),
         width: AVATAR_CONTAINER_WIDTH,
         height: AVATAR_HEIGHT,
         overflow: 'visible',
       }}
     >
+      {/* Glow: circle with large shadow to soften the edge */}
+      <Animated.View
+        style={{
+          position: 'absolute',
+          width: CIRCLE_SIZE,
+          height: CIRCLE_SIZE,
+          borderRadius: CIRCLE_SIZE / 2,
+          left: (AVATAR_WIDTH - CIRCLE_SIZE) / 2,
+          top: AVATAR_HEIGHT / 2 - CIRCLE_SIZE / 2,
+          backgroundColor: glowColor,
+          shadowColor: glowColor,
+          shadowRadius: scaleWidth(30),
+          shadowOpacity: 1,
+          shadowOffset: { width: 0, height: 0 },
+          opacity: glowOpacity,
+          transform: [{ scale: glowScale }],
+        }}
+      />
       <Image
         style={{
           width: AVATAR_WIDTH,
@@ -59,6 +95,6 @@ export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({ avatarUrl, avatarI
         }
         onError={() => console.log('Failed to load avatar image')}
       />
-    </Wrapper>
+    </TouchableOpacity>
   );
 };

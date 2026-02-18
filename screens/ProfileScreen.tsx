@@ -17,7 +17,6 @@ import { UserStatsCard } from '../components/profile/UserStatsCard';
 import { QRCodeModal } from '../components/profile/QRCodeModal';
 import { AvatarSelectionModal } from '../components/profile/AvatarSelectionModal';
 import FrontBoxSvg from '../assets/profile/profile-screen/front-box.svg';
-import BackBoxSvg from '../assets/profile/profile-screen/back-box.svg';
 import ButtonSvg from '../assets/profile/profile-screen/button.svg';
 import QRCodeButtonSvg from '../assets/profile/profile-screen/qr-code-button.svg';
 import TeamBadgeSvg from '../assets/profile/profile-screen/team-badge.svg';
@@ -306,7 +305,6 @@ export default function ProfileScreen() {
         <ProfileAvatar
           avatarUrl={profile.avatarUrl}
           avatarId={profile.avatarId}
-          onPress={() => setShowAvatarModal(true)}
         />
 
         {/* Edit Avatar Button */}
@@ -314,8 +312,8 @@ export default function ProfileScreen() {
           onPress={() => setShowAvatarModal(true)}
           style={{
             position: 'absolute',
-            top: scaleWidth(310),
-            left: scaleWidth(47),
+            top: scaleWidth(322),
+            left: scaleWidth(210),
             flexDirection: 'row',
             alignItems: 'center',
             gap: scaleWidth(5),
@@ -354,10 +352,6 @@ export default function ProfileScreen() {
             top: 0,
             left: width * 0.053,
           }}>
-            <BackBoxSvg
-              width={scaleWidth(313)}
-              height={scaleWidth(253)}
-            />
           </View>
 
           {/* Front Box */}
@@ -396,7 +390,7 @@ export default function ProfileScreen() {
             style={{
               position: 'absolute',
               top: scaleWidth(-313),
-              left: scaleWidth(208),
+              left: scaleWidth(20),
               alignItems: 'center',
             }}
           >
@@ -463,7 +457,7 @@ export default function ProfileScreen() {
             style={{
               position: 'absolute',
               top: scaleWidth(-183),
-              left: scaleWidth(208),
+              left: scaleWidth(20),
               justifyContent: 'center',
               alignItems: 'center',
             }}
