@@ -121,7 +121,7 @@ export default function Layout() {
           <Tabs.Screen
             name="Profile"
             options={{
-              href: null, // Exclude from tab bar, accessed via Link
+              tabBarButton: () => null // Exclude from tab bar, accessed via Link
             }}
           />
         </Tabs>

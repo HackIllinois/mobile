@@ -44,7 +44,7 @@ export const CurvedTabBar = ({
         <NavbarBackground
           width={width}
           height={BAR_HEIGHT}
-          preserveAspectRatio="none"
+          preserveAspectRatio='none '
         />
       </View>
 
@@ -190,7 +190,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
-    shadowOpacity: 0.4,
+    shadowOpacity: 10,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
     elevation: 8,

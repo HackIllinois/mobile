@@ -59,6 +59,7 @@ export default function EventScreen() {
   
   // Animation Values
   const scrollY = useRef(new Animated.Value(0)).current;
+  const flatListRef = useRef<any>(null);
 
   // --- Data Hooks ---
   const { events = [], loading: eventsLoading, error: eventsError, refetch: refetchEvents } = useEvents();
@@ -89,6 +90,14 @@ export default function EventScreen() {
   useEffect(() => {
     setSavedEventIds(new Set(savedEventIdsList));
   }, [savedEventIdsList]);
+
+  // Reset scroll position when filters change
+  useEffect(() => {
+    if (flatListRef.current) {
+      flatListRef.current.scrollToOffset({ offset: 0, animated: false });
+      scrollY.setValue(0);
+    }
+  }, [selectedDay, selectedSave, scheduleMode]);
 
   // --- Handlers ---
   const handleEventPress = (event: Event) => {
@@ -374,6 +383,7 @@ export default function EventScreen() {
              </View>
         ) : (
             <Animated.FlatList
+                ref={flatListRef}
                 data={filteredItems}
                 renderItem={renderEvent}
                 keyExtractor={(item: any) => item.eventId || item.id || item.name + item.startTime}

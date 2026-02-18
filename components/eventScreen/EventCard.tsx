@@ -10,7 +10,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // 1. Define the width based on device screen (with margins)
 const CARD_MARGIN = 20;
-const CARD_WIDTH = Math.min(SCREEN_WIDTH - (CARD_MARGIN * 2), 450); // Cap at 350px for readability
+const CARD_WIDTH = Math.min(SCREEN_WIDTH - (CARD_MARGIN * 2), 450); // Cap at 450px for readability
 
 // 2. Define a fixed height so ALL cards are exactly the same size.
 //    200px is usually a good "ticket" height for Title + Pills + Time + Loc
@@ -44,6 +44,15 @@ export function EventCard({ event, index, onPress, handleSave, saved, showTime, 
     CardBackground = SavedEvent;
   }
 
+  // Estimate if title needs 2 lines (rough calculation based on character count)
+  // Average character width at fontSize 20 is ~12px, maxWidth is 250px
+  // So roughly 20-21 chars per line
+  const estimatedCharsPerLine = 20;
+  
+  // Hardcode specific title to always use 1 line
+  const isJohnDeereTitle = event.name === "John Deere Track Introduction";
+  const needsTwoLines = !isJohnDeereTitle && event.name.length > estimatedCharsPerLine;
+
   return (
     <View style={styles.outerContainer}>
       
@@ -74,9 +83,9 @@ export function EventCard({ event, index, onPress, handleSave, saved, showTime, 
         {/* B. Content Overlay (Absolute positioning over SVG) */}
         <View style={styles.contentOverlay}>
           
-          {/* Title: Max 2 lines, then ... */}
+          {/* Title: Dynamic lines based on content length, with hardcoded exception */}
           <Text 
-            numberOfLines={2} 
+            numberOfLines={needsTwoLines ? 2 : 1} 
             ellipsizeMode="tail" 
             style={styles.title}
           >
@@ -184,13 +193,13 @@ const styles = StyleSheet.create({
 
   // -- Typography --
   title: {
-    fontSize: 24,
-    fontFamily: 'TsukimiRounded_700Bold',
-    fontWeight: '800',
+    fontFamily: "Monteserrat",
+    fontSize: 26,
+    fontWeight: '700',
     color: '#FFFFFF',
     marginBottom: 12,
-    lineHeight: 28, // Fixes clipping on some fonts
-    maxWidth: 250,
+    lineHeight: 32, // Consistent line height
+    maxWidth: 230,
   },
   
   // -- Pills --

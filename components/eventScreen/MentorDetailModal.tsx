@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     paddingBottom: 10,
-    alignSelf: 'flex-end',
+    alignSelf: 'flex-start',
   },
   closeText: { fontSize: 24, fontWeight: 'bold', color: '#000', opacity: 0.5 },
 

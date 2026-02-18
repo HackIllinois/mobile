@@ -11,7 +11,9 @@ import {
   Dimensions 
 } from 'react-native';
 import { Event } from '../../types';
-import { PillButton } from './PillButton';
+import Saved from "../../assets/event/Saved.svg";
+import Unsaved from "../../assets/event/Unsaved.svg";
+
 
 interface FullScreenModalProps {
   visible: boolean;
@@ -53,20 +55,27 @@ export default function EventDetailModal({ visible, event, onClose, handleSave, 
 
           {/* Main Content Card */}
           <View style={styles.mainCard}>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
-                <Text style={styles.closeText}>✕</Text>
-            </TouchableOpacity>
             
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}> 
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 10 }}> 
+              <View style={styles.buttonsContainer}>
+              <TouchableOpacity onPress={onClose} style={styles.closeButton} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
+                  <Text style={styles.closeText}>✕</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => handleSave(event.eventId)} style={styles.saveButton} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
+                  {saved ? <Saved /> : <Unsaved />}
+              </TouchableOpacity>
+            </View>
               <View style={styles.headerSection}>
                   <Text style={styles.title}>{event.name}</Text>
                   
-                  <View style={styles.pillWrapper}>
-                    <PillButton
-                      toggleSave={() => handleSave(event.eventId)}
-                      points={event.points || 0} 
-                      isSaved={saved}
-                    />
+                  <View style={styles.pillRow}>
+                    <View style={styles.pillPoints}>
+                      <Text style={styles.pillTextBlack}>+ {event.points || 0}Pt</Text>
+                    </View>
+            
+                    <View style={styles.pillTrack}>
+                      <Text style={styles.pillTextWhite}>{event.eventType || 'General'}</Text>
+                    </View>
                   </View>
 
                   <Text style={styles.infoText}>
@@ -173,9 +182,19 @@ const styles = StyleSheet.create({
   },
 
   // -- Content Styles --
-  closeButton: {
-    paddingBottom: 10,
+  buttonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+  },
+  saveButton: {
+    padding: 8,
     alignSelf: 'flex-end',
+  },
+  closeButton: {
+    padding: 10,
+    alignSelf: 'flex-start',
   },
   closeText: {
     fontSize: 24,
@@ -198,6 +217,27 @@ const styles = StyleSheet.create({
     marginTop: 4,         
     alignSelf: 'flex-start', 
   },
+  // -- Pills --
+  pillRow: {
+    flexDirection: 'row',
+    marginBottom: 12,
+  },
+  pillPoints: {
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 5,
+    paddingHorizontal: 12,
+    borderTopLeftRadius: 10,
+    borderBottomLeftRadius: 10,
+  },
+  pillTrack: {
+    backgroundColor: '#56269F',
+    paddingVertical: 5,
+    paddingHorizontal: 12,
+    borderTopRightRadius: 10,
+    borderBottomRightRadius: 10,
+  },
+  pillTextBlack: { color: '#000', fontWeight: '800', fontSize: 13 },
+  pillTextWhite: { color: '#FFF', fontWeight: '800', fontSize: 13, textTransform: 'uppercase' },
   infoText: {
     fontSize: 20,
     fontWeight: '600',
