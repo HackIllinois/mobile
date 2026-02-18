@@ -229,7 +229,7 @@ export default function AuthScreen({ navigation }: any) {
       <View
         style={{
           position: "absolute",
-          top: scaleHeight(588),
+          top: scaleHeight(583),
           left: scaleWidth(171),
           width: scaleWidth(96),
           height: scaleHeight(34),
