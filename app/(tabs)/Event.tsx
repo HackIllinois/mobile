@@ -53,6 +53,7 @@ const HEADER_HEIGHT_EXPANDED = 145;
 const TABS_HEIGHT = 40;
 const IS_TABLET = width > 768;
 
+
 export default function EventScreen() {
   const insets = useSafeAreaInsets();
   const [scheduleMode, setScheduleMode] = useState<ScheduleMode>('events');
@@ -101,16 +102,19 @@ export default function EventScreen() {
 
   // --- Handlers ---
   const handleEventPress = (event: Event) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSelectedEvent(event);
     setModalVisible(true);
   };
 
   const handleShowMenu = (event: Event) => {
+    Haptics.selectionAsync();
     setSelectedEventForMenu(event);
     setMenuModalVisible(true);
   };
 
   const handleMentorPress = (session: MentorshipSession) => {
+    Haptics.selectionAsync();
     setSelectedMentorSession(session);
     setMentorModalVisible(true);
   };
@@ -143,9 +147,8 @@ export default function EventScreen() {
     });
   };
 
-  // --- Data Processing ---
   const isToday = (d: Date) => {
-    const today = new Date();
+    const today = new Date(); 
     return (
       d.getFullYear() === today.getFullYear() &&
       d.getMonth() === today.getMonth() &&
@@ -217,6 +220,69 @@ export default function EventScreen() {
     return data.sort((a, b) => a.startTime - b.startTime);
   }, [activeItems, selectedDay, selectedSave, scheduleMode, savedEventIds]);
 
+
+  const hasAutoScrolled = useRef(false);
+
+  useEffect(() => {
+    if (hasAutoScrolled.current || filteredItems.length === 0 || !flatListRef.current) return;
+
+    // Only scroll if we're currently viewing today's events
+    const now = Date.now() / 1000; 
+    const todayString = new Date(now * 1000).toDateString();
+    if (selectedDay !== todayString) return;
+
+    const LOOKBACK_SECONDS = 30 * 60; // 30 minutes
+
+    let targetIndex = filteredItems.findIndex((item: any) => {
+      const endTime = item.endTime
+        ? (item.endTime > 9999999999 ? item.endTime / 1000 : item.endTime)
+        : item.startTime + 3600;
+      const startedRecently = item.startTime >= now - LOOKBACK_SECONDS;
+      return startedRecently && endTime > now;
+    });
+
+    // Fallback: next event that hasn't started yet
+    if (targetIndex === -1) {
+      targetIndex = filteredItems.findIndex((item: any) => item.startTime > now);
+    }
+
+    // Last fallback: just go to the closest event to now
+    if (targetIndex === -1) {
+      let closestDiff = Infinity;
+      filteredItems.forEach((item: any, i: number) => {
+        const diff = Math.abs(item.startTime - now);
+        if (diff < closestDiff) { closestDiff = diff; targetIndex = i; }
+      });
+    }
+
+
+    if (targetIndex > 0) {
+      const expectedLength = filteredItems.length;
+      setTimeout(() => {
+        if (!flatListRef.current) return;
+
+        if (targetIndex >= expectedLength) return;
+        flatListRef.current.scrollToIndex({
+          index: targetIndex,
+          animated: true,
+          viewPosition: 0.15,
+        });
+      }, 400);
+    }
+
+    hasAutoScrolled.current = true;
+  }, [filteredItems]);
+
+
+  const handleScrollToIndexFailed = useCallback(
+    (info: { index: number; highestMeasuredFrameIndex: number; averageItemLength: number }) => {
+      const offset = info.averageItemLength * info.index;
+      setTimeout(() => {
+        flatListRef.current?.scrollToOffset({ offset, animated: true });
+      }, 200);
+    },
+    [],
+  );
 
   // --- Render Functions ---
 
@@ -386,6 +452,7 @@ export default function EventScreen() {
                 data={filteredItems}
                 renderItem={renderEvent}
                 keyExtractor={(item: any) => item.eventId || item.id || item.name + item.startTime}
+                onScrollToIndexFailed={handleScrollToIndexFailed}
                 contentContainerStyle={[
                     styles.listContent,
                     { paddingTop: HEADER_HEIGHT_EXPANDED }

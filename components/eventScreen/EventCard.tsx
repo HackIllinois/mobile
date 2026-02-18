@@ -43,25 +43,16 @@ export function EventCard({ event, index, onPress, handleSave, saved, showTime, 
   } else if (saved) {
     CardBackground = SavedEvent;
   }
-
-  // Estimate if title needs 2 lines (rough calculation based on character count)
-  // Average character width at fontSize 20 is ~12px, maxWidth is 250px
-  // So roughly 20-21 chars per line
+  
   const estimatedCharsPerLine = 20;
   
   // Hardcode specific title to always use 1 line
   const isJohnDeereTitle = event.name === "John Deere Track Introduction";
-  const needsTwoLines = !isJohnDeereTitle && event.name.length > estimatedCharsPerLine;
+  const isStripeTitle = event.name === "Stripe Track Introduction";
+  const needsTwoLines = !isStripeTitle && !isJohnDeereTitle && event.name.length > estimatedCharsPerLine;
 
   return (
     <View style={styles.outerContainer}>
-      
-      {/* Time Header */}
-      {showTime && (
-        <Text style={styles.timeHeader}>
-          {formatTime(event.startTime)}
-        </Text>
-      )}
 
       {/* Main Card Wrapper (Fixed Size) */}
       <Pressable
@@ -95,7 +86,7 @@ export function EventCard({ event, index, onPress, handleSave, saved, showTime, 
           {/* Pill Row */}
           <View style={styles.pillRow}>
              <View style={styles.pillPoints}>
-               <Text style={styles.pillTextBlack}>+ {event.points || 0}Pt</Text>
+               <Text style={styles.pillTextBlack}>{event.points || 0}Pt</Text>
              </View>
              {event.eventType === 'MEAL' ? (
                // If MEAL: Render a Button
