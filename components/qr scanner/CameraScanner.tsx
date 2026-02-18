@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Dimensions, Modal, Alert, PanResponder } from 'react-native';
 import { CameraView, BarcodeScanningResult, scanFromURLAsync } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
@@ -22,7 +22,7 @@ interface CameraScannerViewProps {
   onResultClose?: () => void;
 }
 
-export default function CameraScannerView({
+function CameraScannerView({
   visible,
   onScanned,
   onClose,
@@ -35,21 +35,25 @@ export default function CameraScannerView({
   const [imageLibraryPermission, requestImageLibraryPermission] = ImagePicker.useMediaLibraryPermissions();
   const [isProcessingImage, setIsProcessingImage] = useState(false);
 
-  const panResponder = useRef(
-    PanResponder.create({
+  // Use a ref to avoid stale closure in PanResponder
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
+  const panResponder = useMemo(
+    () => PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
       onPanResponderRelease: (_, gestureState) => {
         if (gestureState.dy > 80 && Math.abs(gestureState.dx) < 50) {
-          onClose();
+          onCloseRef.current();
         }
       },
-    })
-  ).current;
+    }),
+    []
+  );
 
-  const handleChooseImage = async () => {
+  const handleChooseImage = useCallback(async () => {
     try {
-      // Check permissions 
       if (!imageLibraryPermission?.granted) {
         if (imageLibraryPermission?.canAskAgain) {
           const { granted } = await requestImageLibraryPermission();
@@ -101,7 +105,15 @@ export default function CameraScannerView({
         "Failed to process the image. Please try again."
       );
     }
-  };
+  }, [imageLibraryPermission, onScanned]);
+
+  // Stable reference for onBarcodeScanned to avoid CameraView reconfiguring
+  const onScannedRef = useRef(onScanned);
+  onScannedRef.current = onScanned;
+
+  const stableBarcodeHandler = useCallback((result: BarcodeScanningResult) => {
+    onScannedRef.current(result);
+  }, []);
 
   return (
     <Modal
@@ -120,10 +132,8 @@ export default function CameraScannerView({
         {/* Modal overlay with camera inside */}
         <View style={styles.modalContainer} {...panResponder.panHandlers}>
           <CameraView
-            onBarcodeScanned={isScanned ? undefined : onScanned}
-            barcodeScannerSettings={{
-              barcodeTypes: ["qr"],
-            }}
+            onBarcodeScanned={isScanned ? undefined : stableBarcodeHandler}
+            barcodeScannerSettings={barcodeScannerSettings}
             style={StyleSheet.absoluteFillObject}
           />
 
@@ -136,7 +146,7 @@ export default function CameraScannerView({
             <View style={styles.titleContainer}>
               <Text style={styles.scanTitleText}>Scan QR Code</Text>
               {scanModeLabel && (
-                <Text style={styles.scanReasonText}>for {scanModeLabel}</Text>
+                <Text style={styles.scanReasonText}>{scanModeLabel}</Text>
               )}
               <Text style={styles.instructionText}>Place QR inside the frame to scan</Text>
             </View>
@@ -169,7 +179,7 @@ export default function CameraScannerView({
             <View style={styles.loadingOverlay}>
               <ActivityIndicator size="large" color="#ffffff" />
               <Text style={styles.loadingText}>
-                {isProcessingImage ? 'Processing Image...' : 'Verifying Permissions...'}
+                {isProcessingImage ? 'Processing Image...' : 'Verifying...'}
               </Text>
             </View>
           )}
@@ -182,6 +192,13 @@ export default function CameraScannerView({
     </Modal>
   );
 }
+
+// Stable barcode scanner settings object (avoids re-creating on every render)
+const barcodeScannerSettings = {
+  barcodeTypes: ["qr" as const] as import('expo-camera').BarcodeType[],
+};
+
+export default React.memo(CameraScannerView);
 
 const styles = StyleSheet.create({
   container: {
@@ -210,13 +227,13 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     position: 'absolute',
-    top: height * 0.12, 
+    top: height * 0.12,
     width: width,
-    height: height * 0.88, 
+    height: height * 0.88,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     overflow: 'hidden',
-    backgroundColor: 'black', 
+    backgroundColor: 'black',
   },
   topSection: {
     height: 220,
@@ -245,17 +262,17 @@ const styles = StyleSheet.create({
   },
   titleContainer: {
     alignItems: 'center',
-    marginTop: 50,
+    marginTop: 28,
   },
   scanTitleText: {
-    fontSize: 40,
-    fontWeight: 'bold',
+    fontSize: 32,
+    fontWeight: '600',
     color: '#FFF',
     fontFamily: 'Montserrat',
     textAlign: 'center',
   },
   scanReasonText: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '600',
     color: '#FFF',
     fontFamily: 'Montserrat',
@@ -263,24 +280,24 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   instructionText: {
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: '400',
     color: '#E9E9E9',
     fontFamily: 'Montserrat',
     textAlign: 'center',
-    marginTop: 10,
+    marginTop: 18,
   },
   middleSection: {
-    height: width * 0.7, 
+    height: width * 0.7,
     flexDirection: 'row',
   },
   maskSide: {
     flex: 1,
-    backgroundColor: 'rgba(64, 26, 121, 0.7)', 
+    backgroundColor: 'rgba(64, 26, 121, 0.7)',
   },
   qrBox: {
-    width: width * 0.7, 
-    height: width * 0.7, 
+    width: width * 0.7,
+    height: width * 0.7,
     backgroundColor: 'transparent',
     position: 'relative',
     overflow: 'visible',
@@ -319,7 +336,7 @@ const styles = StyleSheet.create({
   },
   bottomSection: {
     flex: 1,
-    backgroundColor: 'rgba(64, 26, 121, 0.7)', 
+    backgroundColor: 'rgba(64, 26, 121, 0.7)',
     alignItems: 'center',
     paddingTop: 60,
   },

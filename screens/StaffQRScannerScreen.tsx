@@ -1,17 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { Text, View, StyleSheet, TouchableOpacity, Dimensions, ImageBackground } from 'react-native';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Text, View, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
 import axios, { AxiosResponse } from 'axios';
 import api from '../api';
-import { Svg, SvgUri } from 'react-native-svg';
 import ButtonSvg from '../assets/qr-scanner/button.svg';
-
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-
-// TODO:
-  // Test Attendee Check-in
-  // Test Points Shop
+import BackgroundSvg from '../assets/qr-scanner/background.svg';
 
 import CameraScannerView from '../components/qr scanner/CameraScanner';
 import {
@@ -111,9 +105,12 @@ interface ShopRedeemSuccessData {
   items: ShopItem[];
 }
 
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+
 export default function StaffQRScannerScreen() {
     const [permission, requestPermission] = useCameraPermissions();
     const [scanned, setScanned] = useState(false);
+    const scannedRef = useRef(false); // synchronous lock to prevent double-fires before state updates
     const [isLoading, setIsLoading] = useState(false);
     const [scanResult, setScanResult] = useState<ScanResult | null>(null);
     const [isScanning, setIsScanning] = useState(false);
@@ -121,7 +118,7 @@ export default function StaffQRScannerScreen() {
     const [selectedEventName, setSelectedEventName] = useState<string | null>(null);
     const [isEventModalVisible, setIsEventModalVisible] = useState(false);
     const [scanMode, setScanMode] = useState<'attendance' | 'attendeeCheckin' | 'shopRedeem' | null>(null);
-    const [mealEvents, setMealEvents] = useState<{ label: string, id: string }[]>([]);
+    const [checkInEvents, setCheckInEvents] = useState<{ label: string, id: string, startTime: number }[]>([]);
     const [isFetchingEvents, setIsFetchingEvents] = useState(false);
     const [fetchError, setFetchError] = useState<string | null>(null);
   
@@ -132,45 +129,36 @@ export default function StaffQRScannerScreen() {
     }, []);
 
     useEffect(() => {
-      const fetchMealEvents = async () => {
+      const fetchCheckInEvents = async () => {
         setIsFetchingEvents(true);
         setFetchError(null);
         try {
           const response = await api.get<AxiosResponse<GetEventsSuccessData>>('/event/');
-          
+
           if (response.data && response.data.events) {
             const filteredEvents = response.data.events.filter(
-              (event) => event.eventType === 'MEAL'
+              (event) => event.displayOnStaffCheckIn
             );
 
-            const formattedEvents = filteredEvents.map((event) => {
-              const date = new Date(event.startTime * 1000); 
+            const formattedEvents = filteredEvents.map((event) => ({
+              label: event.name,
+              id: event.eventId,
+              startTime: event.startTime,
+            }));
 
-              const dateString = date.toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                timeZone: 'America/Chicago' // Hardcoding to CT
-              });
-              
-              return {
-                label: `${event.name} (${dateString})`,
-                id: event.eventId,
-              };
-            });
-          
-            setMealEvents(formattedEvents);
+            setCheckInEvents(formattedEvents);
           } else {
             throw new Error('Invalid API response structure');
           }
-  
+
         } catch (error) {
-          setFetchError('Failed to load meal events. Please try again.');
+          setFetchError('Failed to load events. Please try again.');
         } finally {
           setIsFetchingEvents(false);
         }
       };
-  
-      fetchMealEvents();
+
+      fetchCheckInEvents();
     }, []); 
   
     // API Logic
@@ -251,11 +239,12 @@ export default function StaffQRScannerScreen() {
         }
     
       } catch (error) {
-        if (axios.isAxiosError(error) && error.response) {
+        if (axios.isAxiosError(error)) {
+          if (error.response) {
             const { status, data } = error.response;
             const errorType = data?.error;
             const message = data?.message;
-    
+
             if (status === 400 && errorType === "QRExpired") {
               setScanResult({ status: 'error', message: message || "QR Code has expired." });
             } else if (status === 400 && errorType === "QRInvalid") {
@@ -267,6 +256,11 @@ export default function StaffQRScannerScreen() {
             } else {
               setScanResult({ status: 'error', message: message || 'An unknown error occurred.' });
             }
+          } else if (error.request) {
+            setScanResult({ status: 'error', message: 'Network request failed. Please check your connection.' });
+          } else {
+            setScanResult({ status: 'error', message: 'An unexpected error occurred.' });
+          }
         } else {
           const msg = error instanceof Error ? error.message : 'An unexpected error occurred.';
           setScanResult({ status: 'error', message: msg });
@@ -302,11 +296,12 @@ export default function StaffQRScannerScreen() {
         }
     
       } catch (error) {
-        if (axios.isAxiosError(error) && error.response) {
+        if (axios.isAxiosError(error)) {
+          if (error.response) {
             const { status, data } = error.response;
             const errorType = data?.error;
             const message = data?.message;
-    
+
             if (status === 400) {
               if (errorType === "InsufficientQuantity") {
                 setScanResult({ status: 'error', message: message || "Not enough of that item in the shop." });
@@ -324,6 +319,11 @@ export default function StaffQRScannerScreen() {
             } else {
               setScanResult({ status: 'error', message: message || 'An unknown error occurred.' });
             }
+          } else if (error.request) {
+            setScanResult({ status: 'error', message: 'Network request failed. Please check your connection.' });
+          } else {
+            setScanResult({ status: 'error', message: 'An unexpected error occurred.' });
+          }
         } else {
           const msg = error instanceof Error ? error.message : 'An unexpected error occurred.';
           setScanResult({ status: 'error', message: msg });
@@ -334,8 +334,9 @@ export default function StaffQRScannerScreen() {
     };
 
     // Handler Logic
-    const handleQRCodeScanned = ({ data }: BarcodeScanningResult) => {
-      if (scanned || isLoading) return;
+    const handleQRCodeScanned = useCallback(({ data }: BarcodeScanningResult) => {
+      if (scannedRef.current || isLoading) return;
+      scannedRef.current = true;
       setScanned(true);
 
       if (scanMode === 'attendance') {
@@ -347,24 +348,22 @@ export default function StaffQRScannerScreen() {
       } else {
         setScanResult({ status: 'error', message: 'Unknown scan mode. Please try again.' });
       }
-    };
-  
-    const closeModalAndReset = () => {
-      setScanResult(null);
-      
-      // Cooldown before allowing another scan
-      setTimeout(() => {
-        setScanned(false); 
-      }, 2000);
-    };
+    }, [isLoading, scanMode]);
 
-    const handleCloseScanner = () => {
+    const closeModalAndReset = useCallback(() => {
+      setScanResult(null);
+      scannedRef.current = false;
+      setScanned(false);
+    }, []);
+
+    const handleCloseScanner = useCallback(() => {
         setIsScanning(false);
         setScanMode(null);
         setSelectedEventId(null);
         setSelectedEventName(null);
+        scannedRef.current = false;
         setScanned(false);
-    }
+    }, []);
     
     const handleScanPress = () => {
       if (permission?.granted) {
@@ -378,7 +377,7 @@ export default function StaffQRScannerScreen() {
     
     const handleEventSelected = (eventId: string) => {
       setSelectedEventId(eventId);
-      const selectedEvent = mealEvents.find(event => event.id === eventId);
+      const selectedEvent = checkInEvents.find(event => event.id === eventId);
       setSelectedEventName(selectedEvent?.label || null);
       setIsEventModalVisible(false);
       handleScanPress(); // Now, open the camera
@@ -391,11 +390,13 @@ export default function StaffQRScannerScreen() {
 
   return (
     <>
-      <ImageBackground
-        source={require('../assets/qr-scanner/background.png')}
-        style={styles.menuContainer}
-        resizeMode="cover"
-      >
+      <View style={styles.menuContainer}>
+        <BackgroundSvg
+          width={SCREEN_WIDTH}
+          height={SCREEN_HEIGHT}
+          style={[StyleSheet.absoluteFillObject, { transform: [{ scale: 1.1 }] }]}
+          preserveAspectRatio="xMidYMid slice"
+        />
         <SafeAreaView style={styles.safeArea}>
           <TouchableOpacity
             style={styles.menuButtonFirst}
@@ -450,12 +451,12 @@ export default function StaffQRScannerScreen() {
             visible={isEventModalVisible}
             onClose={() => setIsEventModalVisible(false)}
             onEventSelect={handleEventSelected}
-            events={mealEvents}
+            events={checkInEvents}
             isLoading={isFetchingEvents}
             error={fetchError}
           />
         </SafeAreaView>
-      </ImageBackground>
+      </View>
 
       {/* Camera Scanner Modal */}
       <CameraScannerView
@@ -464,11 +465,18 @@ export default function StaffQRScannerScreen() {
         onClose={handleCloseScanner}
         isLoading={isLoading}
         isScanned={scanned}
-        scanModeLabel={
-          scanMode === 'attendance' ? 'Meeting Attendance' :
-          scanMode === 'attendeeCheckin' ? (selectedEventName ? `${selectedEventName}` : 'Attendee Check-in') :
-          scanMode === 'shopRedeem' ? 'Points Shop' : undefined
-        }
+        scanModeLabel={(() => {
+          if (scanMode === 'attendance') return 'Meeting Attendance';
+          if (scanMode === 'shopRedeem') return 'Points Shop';
+          if (scanMode === 'attendeeCheckin' && selectedEventName) {
+            const ev = checkInEvents.find(e => e.id === selectedEventId);
+            const date = ev
+              ? new Date(ev.startTime * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/Chicago' })
+              : '';
+            return date ? `${selectedEventName} (${date})` : selectedEventName;
+          }
+          return 'Attendee Check-in';
+        })()}
         scanResult={scanResult}
         onResultClose={closeModalAndReset}
       />
