@@ -1,13 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { Text, View, StyleSheet, TouchableOpacity, Dimensions, ActivityIndicator } from 'react-native';
-import { useCameraPermissions, CameraView, BarcodeScanningResult, scanFromURLAsync } from 'expo-camera';
-import * as ImagePicker from 'expo-image-picker';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Text, View, StyleSheet, ActivityIndicator } from 'react-native';
+import { useCameraPermissions, CameraView, BarcodeScanningResult } from 'expo-camera';
 import axios from 'axios';
 import api from '../api';
-import ChooseImageButton from '../assets/qr-scanner/choose-image-button.svg';
 import { ScanResultModal, ScanResult } from '../components/qr scanner/ScanModals';
+import { getConstrainedWidth } from '../lib/layout';
 
-const { width } = Dimensions.get('window');
+const width = getConstrainedWidth();
 
 interface ScanSuccessData {
   points: number;
@@ -17,10 +16,9 @@ interface ScanSuccessData {
 
 export default function UserQRScannerScreen() {
   const [permission, requestPermission] = useCameraPermissions();
-  const [imageLibraryPermission, requestImageLibraryPermission] = ImagePicker.useMediaLibraryPermissions();
   const [scanned, setScanned] = useState(false);
+  const scannedRef = useRef(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isProcessingImage, setIsProcessingImage] = useState(false);
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
 
   useEffect(() => {
@@ -48,9 +46,7 @@ export default function UserQRScannerScreen() {
         pointsEarned: points,
       });
     } catch (error) {
-      console.log('Error caught:', error);
       if (axios.isAxiosError(error)) {
-        console.log('Axios error response:', error.response);
         if (error.response) {
           const status = error.response.status;
           const data = error.response.data as any;
@@ -68,6 +64,8 @@ export default function UserQRScannerScreen() {
           }
         } else if (error.request) {
           setScanResult({ status: 'error', message: 'Network request failed. Please check your connection.' });
+        } else {
+          setScanResult({ status: 'error', message: 'An unexpected error occurred.' });
         }
       } else {
         setScanResult({ status: 'error', message: 'An unexpected error occurred.' });
@@ -78,54 +76,25 @@ export default function UserQRScannerScreen() {
   };
 
   // Handlers
-  const handleQRCodeScanned = ({ data }: BarcodeScanningResult) => {
-    if (scanned || isLoading) return;
+  const handleQRCodeScanned = useCallback(({ data }: BarcodeScanningResult) => {
+    if (scannedRef.current || isLoading) return;
+    scannedRef.current = true;
     setScanned(true);
     submitScanData(data);
-  };
+  }, [isLoading]);
 
-  const closeModalAndReset = () => {
+  const closeModalAndReset = useCallback(() => {
     setScanResult(null);
-    setTimeout(() => {
-      setScanned(false);
-    }, 2000);
-  };
+    scannedRef.current = false;
+    setScanned(false);
+  }, []);
 
-  const handleChooseImage = async () => {
-    try {
-      if (!imageLibraryPermission?.granted) {
-        if (imageLibraryPermission?.canAskAgain) {
-          const { granted } = await requestImageLibraryPermission();
-          if (!granted) {
-            return;
-          }
-        } else {
-          return;
-        }
-      }
-
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
-        allowsEditing: false,
-        quality: 1,
-      });
-
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        setIsProcessingImage(true);
-        const imageUri = result.assets[0].uri;
-        const scanResults = await scanFromURLAsync(imageUri, ['qr']);
-        setIsProcessingImage(false);
-
-        if (scanResults && scanResults.length > 0) {
-          const qrData = scanResults[0].data;
-          handleQRCodeScanned({ data: qrData, type: 'qr' } as BarcodeScanningResult);
-        }
-      }
-    } catch (error) {
-      setIsProcessingImage(false);
-      console.error("Error choosing image:", error);
-    }
-  };
+  // Stable handler reference so CameraView never reconfigures mid-session
+  const onScannedRef = useRef(handleQRCodeScanned);
+  onScannedRef.current = handleQRCodeScanned;
+  const stableBarcodeHandler = useCallback((result: BarcodeScanningResult) => {
+    onScannedRef.current(result);
+  }, []);
 
   if (!permission) {
     return <View style={styles.container} />;
@@ -134,10 +103,8 @@ export default function UserQRScannerScreen() {
   return (
     <View style={styles.container}>
       <CameraView
-        onBarcodeScanned={scanned ? undefined : handleQRCodeScanned}
-        barcodeScannerSettings={{
-          barcodeTypes: ["qr"],
-        }}
+        onBarcodeScanned={scanned ? undefined : stableBarcodeHandler}
+        barcodeScannerSettings={barcodeScannerSettings}
         style={StyleSheet.absoluteFillObject}
       />
 
@@ -145,7 +112,7 @@ export default function UserQRScannerScreen() {
         <View style={styles.topSection}>
           <View style={styles.titleContainer}>
             <Text style={styles.scanTitleText}>Scan QR Code</Text>
-            <Text style={styles.scanReasonText}>for Event Check-in</Text>
+            <Text style={styles.scanReasonText}>Event Check-in</Text>
             <Text style={styles.instructionText}>Place QR inside the frame to scan</Text>
           </View>
         </View>
@@ -161,24 +128,13 @@ export default function UserQRScannerScreen() {
           <View style={styles.maskSide} />
         </View>
 
-        <View style={styles.bottomSection}>
-          <Text style={styles.orText}>OR</Text>
-          <TouchableOpacity
-            style={styles.chooseImageButton}
-            onPress={handleChooseImage}
-            disabled={isLoading || isProcessingImage}
-          >
-            <ChooseImageButton width={width * 0.501} height={48} />
-          </TouchableOpacity>
-        </View>
+        <View style={styles.bottomSection} />
       </View>
 
-      {(isLoading || isProcessingImage) && (
+      {isLoading && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color="#ffffff" />
-          <Text style={styles.loadingText}>
-            {isProcessingImage ? 'Processing Image...' : 'Verifying...'}
-          </Text>
+          <Text style={styles.loadingText}>Verifying...</Text>
         </View>
       )}
 
@@ -191,6 +147,10 @@ export default function UserQRScannerScreen() {
   );
 }
 
+const barcodeScannerSettings = {
+  barcodeTypes: ["qr" as const] as import('expo-camera').BarcodeType[],
+};
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -200,26 +160,25 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   topSection: {
-    height: 280,
+    height: 270,
     backgroundColor: 'rgba(64, 26, 121, 0.7)',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: 60,
     paddingBottom: 20,
   },
   titleContainer: {
     alignItems: 'center',
-    marginTop: 50,
+    marginTop: 100,
   },
   scanTitleText: {
-    fontSize: 40,
-    fontWeight: 'bold',
+    fontSize: 32,
+    fontWeight: '600',
     color: '#FFF',
     fontFamily: 'Montserrat',
     textAlign: 'center',
   },
   scanReasonText: {
-    fontSize: 40,
+    fontSize: 20,
     fontWeight: '600',
     color: '#FFF',
     fontFamily: 'Montserrat',
@@ -227,12 +186,12 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   instructionText: {
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: '400',
     color: '#E9E9E9',
     fontFamily: 'Montserrat',
     textAlign: 'center',
-    marginTop: 10,
+    marginTop: 18,
   },
   middleSection: {
     height: width * 0.7,
@@ -284,21 +243,6 @@ const styles = StyleSheet.create({
   bottomSection: {
     flex: 1,
     backgroundColor: 'rgba(64, 26, 121, 0.7)',
-    alignItems: 'center',
-    paddingTop: 60,
-  },
-  orText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#FFF',
-    fontFamily: 'Montserrat',
-    marginBottom: 25,
-  },
-  chooseImageButton: {
-    width: width * 0.501,
-    height: 48,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, Modal, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import CheckMark from '../../assets/qr-scanner/check-mark.svg';
 import OkButton from '../../assets/qr-scanner/ok-button.svg';
@@ -105,9 +105,10 @@ export function ScanResultOverlay({ result, onClose }: { result: ScanResult | nu
 
 // Staff Meal Event Selection Modal 
 
-interface EventItem {
+export interface EventItem {
   label: string;
   id: string;
+  startTime: number;
 }
 
 interface EventSelectModalProps {
@@ -127,6 +128,39 @@ export function EventSelectModal({
   isLoading,
   error,
 }: EventSelectModalProps) {
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+
+  const eventDates = useMemo(() => {
+    const dateSet = new Map<string, string>();
+    events.forEach((event) => {
+      const date = new Date(event.startTime * 1000);
+      const dateKey = date.toLocaleDateString('en-US', {
+        timeZone: 'America/Chicago',
+      });
+      if (!dateSet.has(dateKey)) {
+        const label = date.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          timeZone: 'America/Chicago',
+        });
+        dateSet.set(dateKey, label);
+      }
+    });
+    return Array.from(dateSet.entries()).map(([key, label]) => ({ key, label }));
+  }, [events]);
+
+  const filteredEvents = useMemo(() => {
+    let filtered = selectedDate
+      ? events.filter((event) => {
+          const dateKey = new Date(event.startTime * 1000).toLocaleDateString('en-US', {
+            timeZone: 'America/Chicago',
+          });
+          return dateKey === selectedDate;
+        })
+      : [...events];
+    return filtered.sort((a, b) => a.startTime - b.startTime);
+  }, [events, selectedDate]);
+
   return (
     <Modal
       transparent={true}
@@ -136,24 +170,66 @@ export function EventSelectModal({
     >
       <View style={modalStyles.modalContainer}>
         <View style={[modalStyles.modalContent, { maxHeight: '70%' }]}>
-          <Text style={modalStyles.modalTitle}>Select Event</Text>
+          <Text style={modalStyles.eventSelectTitle}>SELECT EVENT</Text>
+
+          {/* Date filter pills */}
+          {eventDates.length > 1 && (
+            <View style={modalStyles.datePillRow}>
+              {eventDates.map((date) => (
+                <TouchableOpacity
+                  key={date.key}
+                  style={[
+                    modalStyles.datePill,
+                    selectedDate === date.key && modalStyles.datePillSelected,
+                  ]}
+                  onPress={() =>
+                    setSelectedDate(selectedDate === date.key ? null : date.key)
+                  }
+                >
+                  <Text
+                    style={[
+                      modalStyles.datePillText,
+                      selectedDate === date.key && modalStyles.datePillTextSelected,
+                    ]}
+                  >
+                    {date.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+
           <ScrollView style={modalStyles.eventListContainer}>
             {isLoading ? (
               <ActivityIndicator size="large" color="#000" style={{ marginVertical: 20 }} />
             ) : error ? (
               <Text style={modalStyles.modalMessage}>{error}</Text>
-            ) : events.length === 0 ? (
-              <Text style={modalStyles.modalMessage}>No meal events found.</Text>
+            ) : filteredEvents.length === 0 ? (
+              <Text style={modalStyles.modalMessage}>No events found.</Text>
             ) : (
-              events.map((event) => (
-                <TouchableOpacity
-                  key={event.id}
-                  style={modalStyles.eventModalButton}
-                  onPress={() => onEventSelect(event.id)}
-                >
-                  <Text style={modalStyles.eventModalButtonText}>{event.label}</Text>
-                </TouchableOpacity>
-              ))
+              filteredEvents.map((event, index) => {
+                const currentDateKey = new Date(event.startTime * 1000).toLocaleDateString('en-US', {
+                  timeZone: 'America/Chicago',
+                });
+                const prevDateKey = index > 0
+                  ? new Date(filteredEvents[index - 1].startTime * 1000).toLocaleDateString('en-US', {
+                      timeZone: 'America/Chicago',
+                    })
+                  : null;
+                const showSeparator = !selectedDate && index > 0 && currentDateKey !== prevDateKey;
+
+                return (
+                  <React.Fragment key={event.id}>
+                    {showSeparator && <View style={modalStyles.dateSeparator} />}
+                    <TouchableOpacity
+                      style={modalStyles.eventModalButton}
+                      onPress={() => onEventSelect(event.id)}
+                    >
+                      <Text style={modalStyles.eventModalButtonText}>{event.label}</Text>
+                    </TouchableOpacity>
+                  </React.Fragment>
+                );
+              })
             )}
           </ScrollView>
           <TouchableOpacity style={modalStyles.cancelButton} onPress={onClose}>
@@ -218,6 +294,7 @@ const modalStyles = StyleSheet.create({
     marginBottom: 15,
     textAlign: 'center',
     color: '#333',
+    fontFamily: 'Tsukimi-Rounded-Bold',
   },
   pointsEarned: {
     fontSize: 18,
@@ -248,12 +325,48 @@ const modalStyles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     textAlign: 'center',
+    fontFamily: 'Tsukimi-Rounded-Bold',
+  },
+  eventSelectTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 15,
+    textAlign: 'center',
+    color: '#401A79',
+    fontFamily: 'Tsukimi-Rounded-Bold',
+  },
+  // Date Filter Pills
+  datePillRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
+    marginBottom: 0,
+    width: '100%',
+  },
+  datePill: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    backgroundColor: '#eddbff',
+  },
+  datePillSelected: {
+    backgroundColor: '#401A79',
+  },
+  datePillText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#401A79',
+    fontFamily: 'Montserrat',
+  },
+  datePillTextSelected: {
+    color: '#FFF',
   },
   // Event Modal Specific Styles
   eventListContainer: {
     width: '100%',
     maxHeight: 300,
-    marginVertical: 20,
+    marginTop: 10,
+    marginBottom: 8,
     borderTopWidth: 1,
     borderBottomWidth: 1,
     borderColor: '#eee',
@@ -267,12 +380,18 @@ const modalStyles = StyleSheet.create({
   },
   eventModalButtonText: {
     fontSize: 16,
-    color: '#007AFF',
+    color: '#401A79',
     textAlign: 'center',
     fontWeight: '500',
   },
+  dateSeparator: {
+    height: 1.5,
+    backgroundColor: '#401A79',
+    opacity: 0.15,
+    marginHorizontal: 10,
+  },
   cancelButton: {
-    backgroundColor: '#8E8E93',
+    backgroundColor: '#401A79',
     paddingVertical: 12,
     paddingHorizontal: 30,
     borderRadius: 25,

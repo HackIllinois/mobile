@@ -13,7 +13,8 @@ import * as SecureStore from "expo-secure-store";
 import { AnimationProvider, useAnimations } from "../contexts/OnboardingAnimationContext";
 import { queryClient } from "../lib/queryClient";
 import { fetchEvents } from "../lib/fetchEvents";
-import { fetchShopItems } from "../lib/fetchShopItems";
+import { fetchShopItems, prefetchShopImages } from "../lib/fetchShopItems";
+import { fetchProfile, prefetchAvatarImage } from "../lib/fetchProfile";
 import { setupNotificationListeners } from "../lib/notifications";
 
 Notifications.setNotificationHandler({
