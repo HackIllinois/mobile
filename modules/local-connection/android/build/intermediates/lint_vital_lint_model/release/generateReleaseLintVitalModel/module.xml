@@ -1,0 +1,18 @@
+<lint-module
+    format="1"
+    dir="/Users/yaseenhalabi/Desktop/mobile/modules/local-connection/android"
+    name=":local-connection"
+    type="LIBRARY"
+    maven="expo.modules.localconnection:local-connection:0.7.6"
+    agpVersion="8.11.0"
+    buildFolder="build"
+    bootClassPath="/Users/yaseenhalabi/Library/Android/sdk/platforms/android-36/android.jar:/Users/yaseenhalabi/Library/Android/sdk/build-tools/35.0.0/core-lambda-stubs.jar"
+    javaSourceLevel="17"
+    compileTarget="android-36"
+    neverShrinking="true">
+  <lintOptions
+      absolutePaths="true"
+      checkReleaseBuilds="true"
+      explainIssues="true"/>
+  <variant name="release"/>
+</lint-module>

@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#3d2f52",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    height: "60%",
+    height: "75%",
     padding: 20,
     justifyContent: "space-between",
     borderWidth: 1,

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "551805346380",
+    "project_id": "hackillinois-b375e",
+    "storage_bucket": "hackillinois-b375e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:551805346380:android:d34748e944d675db704ae9",
+        "android_client_info": {
+          "package_name": "org.hackillinois.android.release"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBbizjFYf88sjwQqZ4XyDYcvnPTB2ap458"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

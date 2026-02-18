@@ -340,6 +340,24 @@ export default function Duels() {
     reloadTimeoutsRef.current.push(timeoutId);
   }, []);
 
+  const reportRoundToBackend = useCallback((winner: 'host' | 'guest' | 'tie') => {
+    const currentDuelId = duelIdRef.current;
+    if (!currentDuelId) return;
+    const hostScore = winner === 'host' ? myScoreRef.current + 1 : myScoreRef.current;
+    const guestScore = winner === 'guest' ? opponentScoreRef.current + 1 : opponentScoreRef.current;
+    console.log(`HOST MADE PUT CALL TO DUEL WITH ID: ${currentDuelId}`);
+    api.put(`/duel/${currentDuelId}`, {
+      hostScore,
+      guestScore,
+      hostHasDisconnected: false,
+      guestHasDisconnected: false,
+      hasFinished: hostScore >= 3 || guestScore >= 3,
+    }).catch(error => { console.error('Failed to update duel:', error); });
+  }, []); // only uses refs, no deps needed
+
+  const reportRoundToBackendRef = useRef(reportRoundToBackend);
+  useEffect(() => { reportRoundToBackendRef.current = reportRoundToBackend; }, [reportRoundToBackend]);
+
   const checkBulletHit = (bullet: Bullet, ship: Ship): boolean => {
     const dx = Math.abs(bullet.x - ship.x);
     const dy = Math.abs(bullet.y - ship.y);
@@ -462,6 +480,7 @@ export default function Duels() {
                   setGamePhase('win');
                   const resultMsg: GameMessage = { type: 'round_result', winner: 'host' };
                   LocalConnectionModule.sendData(JSON.stringify(resultMsg));
+                  reportRoundToBackend('host');
                }
               break;
             case 'round_result':
@@ -742,6 +761,7 @@ export default function Duels() {
           if (!pending || !pending.processed) {
             const resultMsg: GameMessage = { type: 'round_result', winner: 'tie' };
             LocalConnectionModule.sendData(JSON.stringify(resultMsg));
+            reportRoundToBackendRef.current('tie');
             setGamePhase('tie');
             pendingResultRef.current = { winner: 'tie' as any, timestamp: now, processed: true };
           }
@@ -753,6 +773,7 @@ export default function Duels() {
            if (pending.winner === 'host' && opponentHitMe) {
              const resultMsg: GameMessage = { type: 'round_result', winner: 'tie' };
              LocalConnectionModule.sendData(JSON.stringify(resultMsg));
+             reportRoundToBackendRef.current('tie');
              setGamePhase('tie');
              pending.processed = true;
              return;
@@ -760,6 +781,7 @@ export default function Duels() {
            if (pending.winner === 'guest' && iHitOpponent) {
              const resultMsg: GameMessage = { type: 'round_result', winner: 'tie' };
              LocalConnectionModule.sendData(JSON.stringify(resultMsg));
+             reportRoundToBackendRef.current('tie');
              setGamePhase('tie');
              pending.processed = true;
              return;
@@ -770,11 +792,13 @@ export default function Duels() {
              if (pending.winner === 'host') {
                const resultMsg: GameMessage = { type: 'round_result', winner: 'host' };
                LocalConnectionModule.sendData(JSON.stringify(resultMsg));
+               reportRoundToBackendRef.current('host');
                roundWon();
                setGamePhase('win');
              } else {
                const resultMsg: GameMessage = { type: 'round_result', winner: 'guest' };
                LocalConnectionModule.sendData(JSON.stringify(resultMsg));
+               reportRoundToBackendRef.current('guest');
                roundLost();
                setGamePhase('lose');
              }
