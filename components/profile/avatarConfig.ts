@@ -14,6 +14,7 @@ export interface AvatarConfig {
   component: React.ComponentType<any>;
   profileDimensions: AvatarDimensions;  // Size on the main profile screen
   modalDimensions: AvatarDimensions;     // Size in the selection modal
+  modalOffsetX?: number;                 // Horizontal offset to center avatar in modal
 }
 
 export const AVATARS: AvatarConfig[] = [
@@ -22,6 +23,7 @@ export const AVATARS: AvatarConfig[] = [
     component: Character1AvatarSvg,
     profileDimensions: { width: 140, height: 310 },
     modalDimensions: { width: 156, height: 300 },
+    modalOffsetX: 5,
   },
   {
     id: 'character2',
@@ -34,6 +36,7 @@ export const AVATARS: AvatarConfig[] = [
     component: Character3AvatarSvg,
     profileDimensions: { width: 140, height: 310 },
     modalDimensions: { width: 156, height: 300 },
+    modalOffsetX: 5,
   },
   {
     id: 'character4',

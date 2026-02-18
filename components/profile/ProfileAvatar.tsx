@@ -1,13 +1,14 @@
 import React from 'react';
-import { Image, View, useWindowDimensions } from 'react-native';
+import { Image, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { getAvatarById, getCharacterIdFromUrl } from './avatarConfig';
 
 interface ProfileAvatarProps {
   avatarUrl: string | null;
-  avatarId?: string | null; 
+  avatarId?: string | null;
+  onPress?: () => void;
 }
 
-export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({ avatarUrl, avatarId }) => {
+export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({ avatarUrl, avatarId, onPress }) => {
   const { width, height } = useWindowDimensions();
 
   const figmaWidth = 393;
@@ -29,15 +30,20 @@ export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({ avatarUrl, avatarI
   const AVATAR_WIDTH = scaleWidth(baseAvatarWidth);
   const AVATAR_HEIGHT = scaleWidth(baseAvatarHeight);
 
+  const Wrapper = onPress ? TouchableOpacity : View;
+
   return (
-    <View style={{
-      position: 'absolute',
-      top: scaleWidth(-1),
-      left: scaleWidth(45 + leftOffset),
-      width: AVATAR_CONTAINER_WIDTH,
-      height: AVATAR_HEIGHT,
-      overflow: 'visible',
-    }}>
+    <Wrapper
+      {...(onPress ? { onPress, activeOpacity: 0.7 } : {})}
+      style={{
+        position: 'absolute',
+        top: scaleWidth(-11),
+        left: scaleWidth(45 + leftOffset),
+        width: AVATAR_CONTAINER_WIDTH,
+        height: AVATAR_HEIGHT,
+        overflow: 'visible',
+      }}
+    >
       <Image
         style={{
           width: AVATAR_WIDTH,
@@ -53,6 +59,6 @@ export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({ avatarUrl, avatarI
         }
         onError={() => console.log('Failed to load avatar image')}
       />
-    </View>
+    </Wrapper>
   );
 };

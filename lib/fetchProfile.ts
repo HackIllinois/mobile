@@ -44,11 +44,7 @@ export interface UserProfile {
   pointsAccumulated: number;
   foodWave: number;
   track?: string;
-  ranking?: number;
-}
-
-interface RankingResponse {
-  ranking: number;
+  team?: string;
 }
 
 interface AdmissionRsvpResponse {
@@ -61,9 +57,8 @@ interface AdmissionRsvpResponse {
 }
 
 export async function fetchProfile(): Promise<UserProfile> {
-  const [profileRes, rankingRes, rsvpRes] = await Promise.allSettled([
+  const [profileRes, rsvpRes] = await Promise.allSettled([
     api.get<UserProfile>("profile"),
-    api.get<RankingResponse>("profile/ranking"),
     api.get<AdmissionRsvpResponse>("admission/rsvp"),
   ]);
 
@@ -72,10 +67,6 @@ export async function fetchProfile(): Promise<UserProfile> {
   }
 
   const profile = (profileRes.value as any).data as UserProfile;
-
-  if (rankingRes.status === "fulfilled") {
-    profile.ranking = (rankingRes.value as any).data.ranking;
-  }
 
   if (rsvpRes.status === "fulfilled") {
     const rsvp = (rsvpRes.value as any).data as AdmissionRsvpResponse;

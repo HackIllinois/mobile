@@ -20,7 +20,8 @@ import FrontBoxSvg from '../assets/profile/profile-screen/front-box.svg';
 import BackBoxSvg from '../assets/profile/profile-screen/back-box.svg';
 import ButtonSvg from '../assets/profile/profile-screen/button.svg';
 import QRCodeButtonSvg from '../assets/profile/profile-screen/qr-code-button.svg';
-import EditButtonSvg from '../assets/profile/profile-screen/edit-button.svg';
+import TeamBadgeSvg from '../assets/profile/profile-screen/team-badge.svg';
+import EditProfileIconSvg from '../assets/profile/profile-screen/edit-profile-icon.svg';
 import BackgroundSvg from '../assets/profile/background.svg';
 import StarryBackground from '../components/eventScreen/StarryBackground';
 import {
@@ -36,6 +37,27 @@ interface QrCodeResponse {
   userId: string;
   qrInfo: string;
 }
+
+interface TeamStanding {
+  id: string;
+  name: string;
+  points: number;
+  members: number;
+}
+
+const RANK_COLORS: Record<number, string> = {
+  1: '#FFD700',   // Gold
+  2: '#C0C0C0',   // Silver
+  3: '#CD7F32',   // Bronze
+  4: '#B76E79',   // Rose gold
+};
+
+const getRankSuffix = (rank: number): string => {
+  if (rank === 1) return 'st';
+  if (rank === 2) return 'nd';
+  if (rank === 3) return 'rd';
+  return 'th';
+};
 
 export default function ProfileScreen() {
   const { width, height } = useWindowDimensions();
@@ -65,6 +87,26 @@ export default function ProfileScreen() {
   const [qrLoading, setQrLoading] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
+  const [teamRank, setTeamRank] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!profile?.team) return;
+    const fetchTeamRank = async () => {
+      try {
+        const res = await api.get<AxiosResponse<TeamStanding[]>>('attendee-team/');
+        const raw = res.data as unknown as TeamStanding[] | { data: TeamStanding[] };
+        const standings: TeamStanding[] = Array.isArray(raw) ? raw : raw.data;
+        standings.sort((a: TeamStanding, b: TeamStanding) => b.points - a.points);
+        const rank = standings.findIndex(
+          (t: TeamStanding) => t.name.toLowerCase() === profile.team!.toLowerCase()
+        );
+        setTeamRank(rank >= 0 ? rank + 1 : null);
+      } catch (error) {
+        console.error('Failed to fetch team standings:', error);
+      }
+    };
+    fetchTeamRank();
+  }, [profile?.team]);
 
   const pulseAnim = useRef(new Animated.Value(0.3)).current;
   useEffect(() => {
@@ -126,11 +168,11 @@ export default function ProfileScreen() {
 
   if (isLoading && !isNonProfileRole) {
     const SkeletonBox = ({ style }: { style?: any }) => (
-      <Animated.View style={[{ backgroundColor: '#D4D4D4', borderRadius: 8, opacity: pulseAnim }, style]} />
+      <Animated.View style={[{ backgroundColor: 'rgba(255, 255, 255, 0.15)', borderRadius: 8, opacity: pulseAnim }, style]} />
     );
 
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#F5F5F5' }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#1a0040' }}>
         <View style={{
           position: 'absolute', top: 0, left: 0, width, height, zIndex: -1,
         }}>
@@ -161,16 +203,7 @@ export default function ProfileScreen() {
               backgroundColor: 'rgba(180, 160, 210, 0.3)',
             }} />
           </View>
-          {/* Button skeletons */}
-          <SkeletonBox style={{
-            position: 'absolute',
-            top: scaleWidth(332) + scaleWidth(-273),
-            left: scaleWidth(36) + scaleWidth(208),
-            width: scaleWidth(83),
-            height: scaleWidth(83),
-            borderRadius: scaleWidth(42),
-            backgroundColor: 'rgba(180, 160, 210, 0.3)',
-          }} />
+          {/* Button skeleton */}
           <SkeletonBox style={{
             position: 'absolute',
             top: scaleWidth(332) + scaleWidth(-163),
@@ -251,7 +284,7 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView style={{
       flex: 1,
-      backgroundColor: '#F5F5F5',
+      backgroundColor: '#1a0040',
     }}>
       {/* Background */}
       <View style={{
@@ -269,18 +302,47 @@ export default function ProfileScreen() {
         />
       </View>
 
-      <View style={{ flex: 1, marginTop: scaleWidth(50) }}>
+      <View style={{ flex: 1, marginTop: scaleWidth(65) }}>
         <ProfileAvatar
           avatarUrl={profile.avatarUrl}
           avatarId={profile.avatarId}
+          onPress={() => setShowAvatarModal(true)}
         />
+
+        {/* Edit Avatar Button */}
+        <TouchableOpacity
+          onPress={() => setShowAvatarModal(true)}
+          style={{
+            position: 'absolute',
+            top: scaleWidth(310),
+            left: scaleWidth(47),
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: scaleWidth(5),
+            backgroundColor: 'rgba(255, 255, 255, 0.15)',
+            paddingVertical: scaleWidth(6),
+            paddingHorizontal: scaleWidth(12),
+            borderRadius: scaleWidth(20),
+          }}
+        >
+          <EditProfileIconSvg
+            width={scaleWidth(16)}
+            height={scaleWidth(16)}
+          />
+          <Text style={{
+            fontFamily: 'Tsukimi Rounded',
+            fontWeight: '700',
+            fontSize: scaleWidth(10),
+            color: '#FFFFFF',
+          }}>EDIT AVATAR</Text>
+        </TouchableOpacity>
 
         {/* Boxes */}
         <View style={{
           position: 'absolute',
           width: scaleWidth(313),
           height: scaleWidth(253),
-          top: scaleWidth(332),
+          top: scaleWidth(352),
           left: scaleWidth(36),
           borderRadius: scaleWidth(2),
           borderWidth: scaleWidth(4),
@@ -325,19 +387,82 @@ export default function ProfileScreen() {
                 displayName={profile.displayName}
                 foodWave={profile.foodWave}
                 track={profile.track || 'GENERAL'}
-                rank={profile.ranking || 0}
-                points={profile.points}
-                pointsToNextRank={Math.max(0, 100 - (profile.points % 100))}
               />
             </View>
           </View>
 
-          {/* Buttons */}
+          {/* Team Badge */}
+          <View
+            style={{
+              position: 'absolute',
+              top: scaleWidth(-313),
+              left: scaleWidth(208),
+              alignItems: 'center',
+            }}
+          >
+            <View style={{
+              width: scaleWidth(83.557),
+              height: scaleWidth(83.557),
+              overflow: 'visible',
+            }}>
+              <TeamBadgeSvg
+                width={scaleWidth(83.557)}
+                height={scaleWidth(83.557)}
+              />
+              <View style={{
+                position: 'absolute',
+                bottom: scaleWidth(-4),
+                right: scaleWidth(-4),
+                width: scaleWidth(28),
+                height: scaleWidth(28),
+                borderRadius: scaleWidth(14),
+                backgroundColor: teamRank !== null && teamRank <= 4 ? RANK_COLORS[teamRank] : '#888',
+                justifyContent: 'center',
+                alignItems: 'center',
+                borderWidth: scaleWidth(2),
+                borderColor: '#1a0040',
+                zIndex: 1,
+              }}>
+                {teamRank !== null ? (
+                  <Text style={{
+                    fontFamily: 'Tsukimi Rounded',
+                    fontWeight: '700',
+                    fontSize: scaleWidth(10),
+                    color: '#1a0040',
+                    lineHeight: scaleWidth(12),
+                  }}>{teamRank}<Text style={{ fontSize: scaleWidth(6) }}>{getRankSuffix(teamRank)}</Text></Text>
+                ) : (
+                  <Text style={{
+                    fontFamily: 'Tsukimi Rounded',
+                    fontWeight: '700',
+                    fontSize: scaleWidth(8),
+                    color: '#1a0040',
+                  }}>--</Text>
+                )}
+              </View>
+            </View>
+            <Text
+              style={{
+                marginTop: scaleWidth(8),
+                width: scaleWidth(83.557),
+                fontFamily: 'Tsukimi Rounded',
+                fontWeight: '700',
+                fontSize: scaleWidth(9),
+                lineHeight: scaleWidth(11),
+                textAlign: 'center',
+                color: '#FFFFFF',
+              }}
+              numberOfLines={2}
+              adjustsFontSizeToFit={true}
+              minimumFontScale={0.7}
+            >{profile.team ? profile.team.toUpperCase() : 'NO TEAM'}</Text>
+          </View>
+
           {/* QR Code Button */}
           <TouchableOpacity
             style={{
               position: 'absolute',
-              top: scaleWidth(-273),
+              top: scaleWidth(-183),
               left: scaleWidth(208),
               justifyContent: 'center',
               alignItems: 'center',
@@ -380,52 +505,6 @@ export default function ProfileScreen() {
             >QR CODE</Text>
           </TouchableOpacity>
 
-          {/* Avatar Button */}
-          <TouchableOpacity
-            style={{
-              position: 'absolute',
-              top: scaleWidth(-163),
-              left: scaleWidth(208),
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}
-            onPress={() => setShowAvatarModal(true)}
-          >
-            <ButtonSvg
-              width={scaleWidth(83.557)}
-              height={scaleWidth(83.557)}
-            />
-            <View style={{
-              position: 'absolute',
-              top: scaleWidth(7.24),
-              left: scaleWidth(16.71),
-              width: scaleWidth(50.134),
-              height: scaleWidth(50.134),
-            }}>
-              <EditButtonSvg
-                width={scaleWidth(50.134)}
-                height={scaleWidth(50.134)}
-              />
-            </View>
-            <Text
-              style={{
-                position: 'absolute',
-                top: scaleWidth(62),
-                left: scaleWidth(5),
-                width: scaleWidth(74),
-                fontFamily: 'Tsukimi Rounded',
-                fontWeight: '700',
-                fontSize: scaleWidth(9),
-                lineHeight: scaleWidth(11),
-                letterSpacing: 0,
-                textAlign: 'center',
-                color: '#FFFFFF',
-              }}
-              numberOfLines={2}
-              adjustsFontSizeToFit={true}
-              minimumFontScale={0.7}
-            >EDIT AVATAR</Text>
-          </TouchableOpacity>
         </View>
       </View>
 
