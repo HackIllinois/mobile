@@ -62,6 +62,27 @@ interface FixedEvent {
 
 type EventItem = OrbitEvent | FixedEvent;
 
+// rocket orbit specifics per planet
+const ROCKET_CFG: Partial<Record<StageKey, {
+  radiusMul?: number;
+  centerXMul?: number; // relative to planetSize
+  centerYMul?: number; // relative to planetSize
+  size?: number;
+}>> = {
+  checkin:   { radiusMul: 0.85, centerYMul: 0.1, size: 40 },
+  scavenger: { radiusMul: 0.8, centerYMul: 0.05, size: 40 },
+  opening:   { radiusMul: 0.95, centerYMul:  0, size: 40 },
+  hacking:   { radiusMul: 0.85, centerYMul:  0.08, size: 40 }, 
+  showcase:  { radiusMul: 0.85, centerYMul:  0.05, size: 42 },
+  closing:   { radiusMul: 0.75, centerYMul:  0.00, size: 40 },
+};
+
+// for debugging and testing different times
+const DEBUG_NOW: Date | null =
+  __DEV__ ? new Date("2026-03-01T15:30:00-06:00") : null;
+
+const now = () => DEBUG_NOW ?? new Date();
+
 export default function HomeScreen() {
   const targetDate = new Date("2026-02-27T18:00:00");
   const [timeLeft, setTimeLeft] = useState(getTimeRemaining(targetDate));
@@ -109,11 +130,17 @@ export default function HomeScreen() {
   
 
   const [currentStage, setCurrentStage] = useState<StageKey>(() => computeStage(new Date()));
+  // const [currentStage, setCurrentStage] = useState<StageKey>(() => computeStage(now())); // for debugging
 
   useEffect(() => {
     const id = setInterval(() => setCurrentStage(computeStage(new Date())), 1000);
     return () => clearInterval(id);
   }, [SCHEDULE]);
+
+  // useEffect(() => {
+  //   const id = setInterval(() => setCurrentStage(computeStage(now())), 1000);
+  //   return () => clearInterval(id);
+  // }, [SCHEDULE]); // for debugging
 
   const anchorX = width / 2;
   const anchorY = height * 0.25;
@@ -278,20 +305,27 @@ export default function HomeScreen() {
 
       {/* Rocket */}
       {rocketTarget && (
-        <RocketOrbit
-          centerX={rocketTarget.x}
-          centerY={rocketTarget.y + rocketTarget.planetSize * 0.15}
-          orbitRadius={
-            currentStage === "hacking"
-              ? rocketTarget.planetSize * 0.55
-              : rocketTarget.planetSize * 0.75
-          }
-          size={60}
-          periodMs={7800}
-          startAngleDeg={0}
-          clockwise={false}
-        />
+        (() => {
+          const cfg = ROCKET_CFG[currentStage] ?? {};
+          const radiusMul = cfg.radiusMul ?? 0.75;
+          const cx = rocketTarget.x + (cfg.centerXMul ?? 0) * rocketTarget.planetSize;
+          const cy = rocketTarget.y + (cfg.centerYMul ?? 0.08) * rocketTarget.planetSize;
+          const rocketSize = cfg.size ?? 40;
+
+          return (
+            <RocketOrbit
+              centerX={cx}
+              centerY={cy}
+              orbitRadius={rocketTarget.planetSize * radiusMul}
+              size={rocketSize}
+              periodMs={7800}
+              startAngleDeg={0}
+              clockwise={false}
+            />
+          );
+        })()
       )}
+
     </SafeAreaView>
   );
 }

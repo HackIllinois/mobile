@@ -182,7 +182,7 @@ export default function OrbitItem({
             style={{
               width: containerSize,
               height: containerSize,
-              opacity: variant === "finished" ? 0.65 : 1,
+              opacity: 1,
             }}
             resizeMode="contain"
           />
