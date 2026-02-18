@@ -46,7 +46,7 @@ async function fetchMentorOfficeHours(): Promise<MentorOfficeHourDto[]> {
 
 export function useMentorOfficeHours(enabled: boolean) {
   const { data, isLoading, error, refetch } = useQuery<MentorOfficeHourDto[]>({
-    queryKey: ["mentorOfficeHours"],
+    queryKey: ["mentorOfficeHours", enabled],
     queryFn: fetchMentorOfficeHours,
     enabled,
     staleTime: 5 * 60 * 1000,
