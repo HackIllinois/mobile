@@ -135,7 +135,7 @@ export default function ScreenThree({ onFinish, onStart, cloudX1, cloudX2, starO
                     alignSelf: 'center',
                     width: '90%',
                 }]}>
-                    View your QR code, food wave, and other personal information
+                    View your QR code, food wave, and other personal information.
                 </Text>
             </View>
 

@@ -135,7 +135,7 @@ export default function ScreenThree({ onFinish, onStart, cloudX1, cloudX2, starO
                     alignSelf: 'center',
                     width: '90%',
                 }]}>
-                    Scan QR codes to obtain points and redeem items from the point shop
+                    Scan QR codes to obtain points and redeem items from the point shop.
                 </Text>
             </View>
 

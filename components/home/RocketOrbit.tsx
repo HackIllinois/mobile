@@ -1,6 +1,9 @@
 import React, { useEffect, useMemo, useRef } from "react";
-import { Animated, Easing, View } from "react-native";
-import OrbitingRocket from "../../assets/home/orbiting_rocket.svg";
+import { Animated, Easing, View, Image } from "react-native";
+// import OrbitingRocket from "../../assets/home/orbiting_rocket.svg";
+// import OrbitingRocket from "../../assets/home/hack-rocket.svg"
+
+const OrbitingRocket = require("../../assets/home/hack-rocket-png.png");
 
 type Props = {
   centerX: number;
@@ -85,9 +88,15 @@ export default function RocketOrbit({
             transform: [{ translateX: orbitRadius }],
           }}
         >
-          <Animated.View style={{ transform: [{ rotate: rocketRotate }] }}>
-            <RocketComponent width={size} height={size} />
-          </Animated.View>
+          <Animated.Image
+            source={OrbitingRocket}
+            style={{
+              width: size,
+              height: size,
+              transform: [{ rotate: rocketRotate }],
+            }}
+            resizeMode="contain"
+          />
         </View>
       </Animated.View>
     </View>
