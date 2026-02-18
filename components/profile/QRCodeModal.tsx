@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, TouchableOpacity, Modal, ActivityIndicator, useWindowDimensions } from 'react-native';
+import { View, TouchableOpacity, Pressable, Modal, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import QRCode from 'react-native-qrcode-svg';
 import RefreshButtonSvg from '../../assets/profile/qr-screen/refresh-button.svg';
@@ -28,9 +28,9 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
   const scaleHeight = (size: number) => (height / figmaHeight) * size;
   const scaleFontSize = (size: number) => Math.min(scaleWidth(size), scaleHeight(size));
 
+  const QR_SIZE = scaleWidth(200);
   const MODAL_WIDTH = scaleWidth(300);
-  const MODAL_HEIGHT = scaleWidth(320);
-  const QR_SIZE = scaleWidth(160);
+  const MODAL_HEIGHT = scaleWidth(310);
 
   return (
     <Modal
@@ -39,14 +39,17 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
       animationType="fade"
       onRequestClose={onClose}
     >
-      <View style={{
-        flex: 1,
-        backgroundColor: 'rgba(255, 255, 255, 0.85)',
-        justifyContent: 'flex-start',
-        alignItems: 'center',
-        paddingTop: scaleHeight(130),
-      }}>
-        <View style={{
+      <Pressable
+        style={{
+          flex: 1,
+          backgroundColor: 'rgba(255, 255, 255, 0.85)',
+          justifyContent: 'flex-start',
+          alignItems: 'center',
+          paddingTop: scaleHeight(100),
+        }}
+        onPress={onClose}
+      >
+        <Pressable onPress={(e) => e.stopPropagation()} style={{
           backgroundColor: '#FFEAFE',
           borderRadius: scaleWidth(30),
           width: MODAL_WIDTH,
@@ -64,7 +67,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
           <TouchableOpacity
             style={{
               position: 'absolute',
-              top: scaleHeight(18),
+              top: scaleHeight(10),
               left: scaleWidth(9),
               zIndex: 1,
               width: scaleWidth(31.19),
@@ -79,10 +82,10 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
 
           <View style={{
             width: QR_SIZE,
-            height: scaleHeight(162),
+            height: QR_SIZE,
             justifyContent: 'center',
             alignItems: 'center',
-            marginTop: scaleHeight(35),
+            marginTop: scaleWidth(25),
           }}>
             {qrCode ? (
               <QRCode
@@ -94,7 +97,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
             ) : (
               <View style={{
                 width: QR_SIZE,
-                height: scaleHeight(162),
+                height: QR_SIZE,
                 justifyContent: 'center',
                 alignItems: 'center',
               }}>
@@ -106,19 +109,19 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
           {/* Refresh Button */}
           <TouchableOpacity
             style={{
-              marginTop: scaleHeight(15),
+              marginTop: scaleWidth(10),
             }}
             onPress={onRefresh}
             disabled={qrLoading}
           >
             <RefreshButtonSvg
-              width={scaleWidth(170)}
-              height={scaleWidth(55)}
+              width={scaleWidth(200)}
+              height={scaleWidth(50)}
               opacity={qrLoading ? 0.5 : 1}
             />
           </TouchableOpacity>
-        </View>
-      </View>
+        </Pressable>
+      </Pressable>
     </Modal>
   );
 };

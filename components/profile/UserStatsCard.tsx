@@ -1,22 +1,18 @@
 import React from 'react';
 import { View, Text, useWindowDimensions } from 'react-native';
+import WaveButtonSvg from '../../assets/profile/profile-screen/wave-button.svg';
+import TierButtonSvg from '../../assets/profile/profile-screen/tier-button.svg';
 
 interface UserStatsCardProps {
   displayName: string;
   foodWave: number;
   track: string;
-  rank: number;
-  points: number;
-  pointsToNextRank: number;
 }
 
 export const UserStatsCard: React.FC<UserStatsCardProps> = ({
   displayName,
   foodWave,
   track,
-  rank,
-  points,
-  pointsToNextRank,
 }) => {
   const { width, height } = useWindowDimensions();
 
@@ -29,20 +25,22 @@ export const UserStatsCard: React.FC<UserStatsCardProps> = ({
   return (
     <View style={{ flex: 1 }}>
       <Text style={{
-        fontSize: scaleFontSize(18),
+        fontSize: scaleFontSize(17),
         fontWeight: '500',
         color: '#FFFFFF',
+        opacity: 0.9,
         letterSpacing: 0,
         marginBottom: 0,
         textAlign: 'left',
-        marginLeft: scaleWidth(-4),
-        marginTop: scaleWidth(-7.5),
+        marginLeft: scaleWidth(-14),
+        marginTop: scaleWidth(-14),
         lineHeight: scaleHeight(22),
       }}>USER STATS</Text>
 
       <View style={{
         gap: scaleHeight(18),
-        marginTop: scaleWidth(19),
+        marginTop: scaleWidth(20),
+        marginLeft: scaleWidth(-7),
       }}>
         <View style={{ marginBottom: 0 }}>
           <Text style={{
@@ -63,7 +61,7 @@ export const UserStatsCard: React.FC<UserStatsCardProps> = ({
             letterSpacing: 0,
             lineHeight: scaleHeight(20),
             fontFamily: 'Tsukimi Rounded',
-            paddingTop: scaleHeight(5),
+            paddingTop: scaleHeight(8),
           }}>{displayName}</Text>
         </View>
 
@@ -85,132 +83,126 @@ export const UserStatsCard: React.FC<UserStatsCardProps> = ({
             lineHeight: scaleHeight(20),
             letterSpacing: 0,
             fontFamily: 'Tsukimi Rounded',
-            paddingTop: scaleHeight(5),
+            paddingTop: scaleHeight(8),
           }}>{track}</Text>
         </View>
 
         <View style={{
           flexDirection: 'row',
-          alignItems: 'flex-end',
-          gap: 0,
+          alignItems: 'flex-start',
+          gap: scaleWidth(20),
           marginTop: scaleHeight(5),
           width: '100%',
         }}>
-          <View style={{
-            flexDirection: 'row',
-            gap: scaleWidth(12.6),
-            alignItems: 'flex-end',
-          }}>
+          {/* Wave Button */}
+          <View style={{ zIndex: 2 }}>
+            <Text style={{
+              fontSize: scaleFontSize(12),
+              color: '#FFE0B4',
+              fontWeight: '400',
+              letterSpacing: 0,
+              marginBottom: 0,
+              marginTop: scaleHeight(-3),
+              fontStyle: 'italic',
+              lineHeight: scaleHeight(12),
+            }}>WAVE</Text>
             <View style={{
-              flex: 0,
-              minWidth: scaleWidth(39.3),
-              zIndex: 2,
+              marginTop: scaleHeight(6),
+              marginLeft: scaleWidth(2),
+              width: scaleWidth(39),
+              height: scaleWidth(38),
             }}>
-              <Text style={{
-                fontSize: scaleFontSize(12),
-                color: '#FFE0B4',
-                fontWeight: '400',
-                letterSpacing: 0,
-                marginBottom: 0,
-                marginTop: scaleHeight(-3),
-                fontStyle: 'italic',
-                lineHeight: scaleHeight(12),
-              }}>WAVE</Text>
+              <WaveButtonSvg
+                width={scaleWidth(39)}
+                height={scaleWidth(38)}
+              />
               <View style={{
-                backgroundColor: 'rgba(24, 1, 97, 0.8)',
-                borderRadius: scaleWidth(6),
-                paddingTop: scaleHeight(7),
-                paddingBottom: scaleHeight(6),
-                paddingHorizontal: scaleWidth(15),
-                alignItems: 'center',
-                marginTop: scaleHeight(3),
-                width: scaleWidth(39.3),
-                height: scaleWidth(39),
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
                 justifyContent: 'center',
-                zIndex: 2,
+                alignItems: 'center',
               }}>
                 <Text style={{
-                  fontSize: scaleFontSize(20),
+                  fontSize: scaleFontSize(18),
                   fontWeight: '700',
                   color: '#FFF',
-                  lineHeight: scaleHeight(20),
-                  letterSpacing: 0,
                   fontFamily: 'Montserrat',
+                  textAlign: 'center',
                 }}>{foodWave || 1}</Text>
-              </View>
-            </View>
-
-            <View style={{
-              flex: 0,
-              minWidth: scaleWidth(61.7),
-              zIndex: 2,
-            }}>
-              <Text style={{
-                fontSize: scaleFontSize(12),
-                color: '#FFE0B4',
-                fontWeight: '400',
-                letterSpacing: 0,
-                marginBottom: 0,
-                marginTop: scaleHeight(-3),
-                fontStyle: 'italic',
-                lineHeight: scaleHeight(12),
-              }}>RANK</Text>
-              <View style={{
-                backgroundColor: 'rgba(24, 1, 97, 0.8)',
-                borderRadius: scaleWidth(20),
-                paddingTop: scaleHeight(7),
-                paddingBottom: scaleHeight(6),
-                paddingHorizontal: scaleWidth(14),
-                alignItems: 'center',
-                marginTop: scaleHeight(3),
-                width: scaleWidth(61.7),
-                height: scaleWidth(39),
-                justifyContent: 'center',
-                zIndex: 2,
-              }}>
-                <Text style={{
-                  fontSize: scaleFontSize(20),
-                  fontWeight: '700',
-                  color: '#FFF',
-                  lineHeight: scaleHeight(20),
-                  letterSpacing: 0,
-                  fontFamily: 'Montserrat',
-                }}>{rank}</Text>
               </View>
             </View>
           </View>
 
-          <View style={{
-            backgroundColor: 'rgba(79, 23, 135, 0.5)',
-            borderRadius: scaleWidth(20),
-            flex: 1,
-            marginTop: scaleHeight(3),
-            marginLeft: scaleWidth(-60),
-            justifyContent: 'center',
-            minWidth: scaleWidth(217),
-            height: scaleWidth(39),
-            paddingLeft: scaleWidth(65),
-            paddingRight: scaleWidth(10),
-            paddingVertical: scaleWidth(5),
-            zIndex: 0,
-          }}>
-            <Text
-              style={{
-                fontSize: scaleWidth(11),
-                fontWeight: '400',
-                color: '#FFF',
-                fontStyle: 'italic',
-                textAlign: 'left',
-                lineHeight: scaleWidth(13),
-                letterSpacing: 0,
-                flexShrink: 1,
-              }}
-              numberOfLines={2}
-              adjustsFontSizeToFit={true}
-              minimumFontScale={0.7}
-            >
-              You're {pointsToNextRank} points away from the next rank!
-            </Text>
+          {/* Tier Button */}
+          <View style={{ flex: 1, zIndex: 2 }}>
+            <Text style={{
+              fontSize: scaleFontSize(12),
+              color: '#FFE0B4',
+              fontWeight: '400',
+              letterSpacing: 0,
+              marginBottom: 0,
+              marginTop: scaleHeight(-3),
+              fontStyle: 'italic',
+              lineHeight: scaleHeight(12),
+            }}>TIER</Text>
+            <View style={{
+              marginTop: scaleHeight(6),
+              marginLeft: scaleWidth(-4),
+              width: scaleWidth(200),
+              height: scaleWidth(200 * 42 / 219),
+            }}>
+              <TierButtonSvg
+                width={scaleWidth(200)}
+                height={scaleWidth(200 * 42 / 219)}
+                preserveAspectRatio="none"
+              />
+              {/* Tier number centered on the left pill */}
+              <View style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: scaleWidth(200 * 58.73 / 219),
+                height: scaleWidth(200 * 42 / 219),
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}>
+                <Text style={{
+                  fontSize: scaleFontSize(17),
+                  fontWeight: '700',
+                  color: '#FFF',
+                  fontFamily: 'Montserrat',
+                  textAlign: 'center',
+                }}>X</Text>
+              </View>
+              {/* Points away text on the right portion */}
+              <View style={{
+                position: 'absolute',
+                top: 0,
+                left: scaleWidth(200 * 58.73 / 219),
+                right: scaleWidth(4),
+                height: scaleWidth(200 * 42 / 219),
+                justifyContent: 'center',
+                paddingLeft: scaleWidth(6),
+              }}>
+                <Text
+                  style={{
+                    fontSize: scaleWidth(9.5),
+                    fontWeight: '400',
+                    color: '#FFF',
+                    fontStyle: 'italic',
+                    textAlign: 'left',
+                  }}
+                  numberOfLines={2}
+                  adjustsFontSizeToFit={true}
+                  minimumFontScale={0.7}
+                >
+                  You're <Text style={{ fontWeight: '700' }}>X points away</Text> from the next tier!
+                </Text>
+              </View>
+            </View>
           </View>
         </View>
       </View>

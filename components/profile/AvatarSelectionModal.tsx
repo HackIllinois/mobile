@@ -23,11 +23,7 @@ import QrCodeIcon from '../../assets/navbar/Camera.svg';
 import PointsIcon from '../../assets/navbar/Shop.svg';
 import DuelsIcon from '../../assets/navbar/Duels.svg';
 
-import Character1AvatarSvg from '../../assets/profile/avatar-screen/avatars/character1.svg';
-import Character2AvatarSvg from '../../assets/profile/avatar-screen/avatars/character2.svg';
-import Character3AvatarSvg from '../../assets/profile/avatar-screen/avatars/character3.svg';
-import Character4AvatarSvg from '../../assets/profile/avatar-screen/avatars/character4.svg';
-import Character5AvatarSvg from '../../assets/profile/avatar-screen/avatars/character5.svg';
+import { AVATARS } from './avatarConfig';
 
 interface AvatarSelectionModalProps {
   visible: boolean;
@@ -44,13 +40,6 @@ interface ProfileUpdateResponse {
   };
 }
 
-const AVATARS = [
-  { id: 'character1', component: Character1AvatarSvg },
-  { id: 'character2', component: Character2AvatarSvg },
-  { id: 'character3', component: Character3AvatarSvg },
-  { id: 'character4', component: Character4AvatarSvg },
-  { id: 'character5', component: Character5AvatarSvg },
-];
 
 export const AvatarSelectionModal: React.FC<AvatarSelectionModalProps> = ({
   visible,
@@ -293,7 +282,7 @@ export const AvatarSelectionModal: React.FC<AvatarSelectionModalProps> = ({
             style={{
               position: 'absolute',
               top: AVATAR_TOP,
-              left: AVATAR_LEFT,
+              left: AVATAR_LEFT + scaleWidth(AVATARS[currentIndex].modalOffsetX ?? 0),
               width: AVATAR_WIDTH,
               height: AVATAR_HEIGHT,
               justifyContent: 'center',

@@ -14,6 +14,9 @@ export interface AvatarConfig {
   component: React.ComponentType<any>;
   profileDimensions: AvatarDimensions;  // Size on the main profile screen
   modalDimensions: AvatarDimensions;     // Size in the selection modal
+  modalOffsetX?: number;                 // Horizontal offset to center avatar in modal
+  profileLeft?: number;                  // Left position override on the main profile screen
+  profileGlowColor?: string;             // Glow color when tapped on the main profile screen
 }
 
 export const AVATARS: AvatarConfig[] = [
@@ -22,30 +25,42 @@ export const AVATARS: AvatarConfig[] = [
     component: Character1AvatarSvg,
     profileDimensions: { width: 140, height: 310 },
     modalDimensions: { width: 156, height: 300 },
+    modalOffsetX: 5,
+    profileLeft: 208,
+    profileGlowColor: '#FF8C42',   // orange
   },
   {
     id: 'character2',
     component: Character2AvatarSvg,
     profileDimensions: { width: 192, height: 310 },  // Wider for hair
-    modalDimensions: { width: 156, height: 300 }, 
+    modalDimensions: { width: 156, height: 300 },
+    profileLeft: 175,
+    profileGlowColor: '#FF6EB4',   // pink
   },
   {
     id: 'character3',
     component: Character3AvatarSvg,
     profileDimensions: { width: 140, height: 310 },
     modalDimensions: { width: 156, height: 300 },
+    modalOffsetX: 5,
+    profileLeft: 210,
+    profileGlowColor: '#B39DDB',   // lavender
   },
   {
     id: 'character4',
     component: Character4AvatarSvg,
     profileDimensions: { width: 140, height: 310 },
     modalDimensions: { width: 156, height: 300 },
+    profileLeft: 202,
+    profileGlowColor: '#5B9BD5',   // blue
   },
   {
     id: 'character5',
     component: Character5AvatarSvg,
     profileDimensions: { width: 140, height: 310 },
     modalDimensions: { width: 156, height: 300 },
+    profileLeft: 202,
+    profileGlowColor: '#FF7F7F',   // reddish-peach
   },
 ];
 
