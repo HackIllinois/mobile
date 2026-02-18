@@ -7,6 +7,8 @@ import EventsIcon from '../assets/navbar/Calendar.svg';
 import QrCodeIcon from '../assets/navbar/Camera.svg';
 import PointsIcon from '../assets/navbar/Shop.svg';
 import DuelsIcon from '../assets/navbar/Duels.svg';
+import * as Haptics from 'expo-haptics';
+
 
 import { getConstrainedWidth } from '../lib/layout';
 
@@ -63,6 +65,7 @@ export const CurvedTabBar = ({
             });
 
             if (!isFocused && !event.defaultPrevented) {
+              Haptics.selectionAsync();
               navigation.navigate(route.name);
             }
           };

@@ -330,11 +330,12 @@ export default function EventScreen() {
                 zIndex: -1
             }}>
                 <EventTabs
-                    activeTab={scheduleMode}
-                    onTabPress={(mode) => {
-                        setScheduleMode(mode);
-                        setSaveValue(false);
-                    }}
+                  activeTab={scheduleMode}
+                  onTabPress={(mode) => {
+                    setScheduleMode(mode);
+                    setSaveValue(false);
+                    setSelectedDay(null);
+                  }}
                 />
             </Animated.View>
 

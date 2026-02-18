@@ -120,11 +120,11 @@ export default function OrbitItem({
 
   const pressRotate = pressAnim.interpolate({
     inputRange: [0, 0.5, 1],
-    outputRange: ["0deg", "3deg", "-3deg"], 
+    outputRange: ["0deg", "6deg", "-6deg"], 
   });
 
   const handlePress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
     pressAnim.stopAnimation();
     pressAnim.setValue(0);
