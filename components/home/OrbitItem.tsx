@@ -3,11 +3,11 @@ import { Dimensions, Animated, View, Image, Pressable } from "react-native";
 import * as Haptics from "expo-haptics";
 
 import CheckInPng from "../../assets/home/check_in-png.png";
-import ScavengerPng from "../../assets/home/scavenger-png.png";
+import ScavengerPng from "../../assets/home/scavenger_hunt-png.png";
 import OpeningPng from "../../assets/home/opening-png.png";
 import HackingPng from "../../assets/home/hacking-png.png";
 import ShowcasePng from "../../assets/home/project-png.png";
-import ClosingPng from "../../assets/home/closing-png.png";
+import ClosingPng from "../../assets/home/closing_ceremony_png.png";
 
 import CheckInFinishedPng from "../../assets/home/check_in_finished-png.png";
 import ScavengerFinishedPng from "../../assets/home/scavenger_finished-png.png";
