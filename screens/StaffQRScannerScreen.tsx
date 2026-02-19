@@ -348,8 +348,8 @@ export default function StaffQRScannerScreen() {
       } else {
         setScanResult({ status: 'error', message: 'Unknown scan mode. Please try again.' });
       }
-    }, [isLoading, scanMode]);
-
+    }, [isLoading, scanMode, selectedEventId]);
+    
     const closeModalAndReset = useCallback(() => {
       setScanResult(null);
       scannedRef.current = false;
