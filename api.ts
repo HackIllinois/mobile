@@ -1,28 +1,30 @@
+// api.ts
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from "axios";
-
 import * as SecureStore from "expo-secure-store";
+import { logoutAndRedirect } from "./lib/auth"; // <-- adjust path if auth.ts is elsewhere
 
 enum AuthenticationErrorType {
   NoToken = "NoToken",
   TokenInvalid = "TokenInvalid",
   TokenExpired = "TokenExpired",
 }
+
 class API {
   public axiosInstance: AxiosInstance;
 
   constructor() {
     this.axiosInstance = axios.create({
-      baseURL: "https://adonix.hackillinois.org", // TODO: change to env after we decide env naming
+      baseURL: "https://adonix.hackillinois.org", // TODO: move to env
       timeout: 10000, // 10s
       headers: { "Content-Type": "application/json" },
     });
+
     this.axiosInstance.interceptors.request.use(
       async (config) => {
-        // inject jwt into headers before request is made
         const jwt = await SecureStore.getItemAsync("jwt");
         if (jwt) {
-          const cleaned = jwt.replace(/#$/, '');
-          // API expects a Bearer token; add prefix if it is missing
+          const cleaned = jwt.replace(/#$/, "");
+          config.headers = config.headers ?? {};
           config.headers.Authorization = /^Bearer\s/i.test(cleaned)
             ? cleaned
             : `Bearer ${cleaned}`;
@@ -32,31 +34,36 @@ class API {
       (error) => Promise.reject(error),
       { synchronous: false, runWhen: () => true }
     );
+
     this.axiosInstance.interceptors.response.use(
       (response) => response,
-      (error: AxiosError) => {
-        // this runs if response status not in 200s
-        if (error.response) {
-          const data = error.response.data as any;
-          // it is an authentication error, redirect to sign in
-          if (
-            (data.error && data.error === AuthenticationErrorType.NoToken) ||
-            data.error === AuthenticationErrorType.TokenInvalid ||
-            data.error === AuthenticationErrorType.TokenExpired
-          ) {
-            this.redirectToSignIn();
-          } else {
-            this.handleError(error.response.status, data?.error, data?.message);
-          }
-          // else just handle error normally
+      async (error: AxiosError) => {
+        // Network error / timeout: no response object
+        if (!error.response) return Promise.reject(error);
+
+        const status = error.response.status;
+        const data = error.response.data as any;
+
+        const isAuthError =
+          status === 401 ||
+          data?.error === AuthenticationErrorType.NoToken ||
+          data?.error === AuthenticationErrorType.TokenInvalid ||
+          data?.error === AuthenticationErrorType.TokenExpired;
+
+        if (isAuthError) {
+          await logoutAndRedirect();
+          return Promise.reject(error);
         }
+
+        this.handleError(status, data?.error, data?.message);
         return Promise.reject(error);
       }
     );
   }
 
   async get<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
-    return this.axiosInstance.get(url, config);
+    // keeps your existing calling style; returns AxiosResponse like before
+    return this.axiosInstance.get(url, config) as unknown as Promise<T>;
   }
 
   async post<T>(
@@ -64,7 +71,7 @@ class API {
     data?: any,
     config?: AxiosRequestConfig
   ): Promise<T> {
-    return this.axiosInstance.post(url, data, config);
+    return this.axiosInstance.post(url, data, config) as unknown as Promise<T>;
   }
 
   async put<T>(
@@ -72,29 +79,20 @@ class API {
     data?: any,
     config?: AxiosRequestConfig
   ): Promise<T> {
-    return this.axiosInstance.put(url, data, config);
+    return this.axiosInstance.put(url, data, config) as unknown as Promise<T>;
   }
 
   async delete<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
-    return this.axiosInstance.delete(url, config);
+    return this.axiosInstance.delete(url, config) as unknown as Promise<T>;
   }
 
-  private redirectToSignIn(): void {
-    // TODO: redirect to sign in page
-    console.log("REDIRECT TO SIGN IN PAGE");
-  }
-
-  private handleError(
-    status: number,
-    errorType?: string,
-    message?: string
-  ): void {
+  private handleError(status: number, errorType?: string, message?: string): void {
     if (message && errorType) {
-      // if endpoint already returns a message, use that message instead
-      console.error(`${errorType}: ${message}`); // TODO: change console.error to toast
+      console.error(`${errorType}: ${message}`); // TODO: toast
       return;
     }
-    var error_message: string;
+
+    let error_message: string;
     switch (status) {
       case 400:
         error_message = "Bad Request: The request was invalid or malformed";
@@ -135,7 +133,7 @@ class API {
         error_message = `HTTP Error: Received status code ${status}`;
         break;
     }
-    console.error(error_message); // TODO: change console.error to toast
+    console.error(error_message); // TODO: toast
   }
 }
 

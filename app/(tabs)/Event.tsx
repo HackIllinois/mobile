@@ -32,6 +32,8 @@ import { useSavedEvents } from '../../lib/fetchSavedEvents';
 import { useMentorOfficeHours } from '../../lib/fetchMentorOfficeHours';
 import { Event } from '../../types';
 
+import * as SecureStore from "expo-secure-store";
+
 // --- Types ---
 type ScheduleMode = 'events' | 'mentorship';
 
@@ -110,13 +112,14 @@ export default function EventScreen() {
     setMenuModalVisible(true);
   };
 
-  const handleMentorPress = (session: MentorshipSession) => {
+  const handleMentorPress = async (session: MentorshipSession) => {
     setSelectedMentorSession(session);
     setMentorModalVisible(true);
   };
 
   // Unified Refresh Logic
   const onRefresh = useCallback(async () => {
+    
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setIsRefreshing(true);
 
