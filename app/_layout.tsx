@@ -30,7 +30,7 @@ Notifications.setNotificationHandler({
 // Onboarding testing:
 // true = show onboarding every reload
 // false = normal behavior
-const TESTING_MODE = true;
+const TESTING_MODE = false;
 
 function RootLayoutContent() {
   const [showLoading, setShowLoading] = useState(true);
