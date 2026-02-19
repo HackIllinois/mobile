@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { View, Text, TextInput, Button, FlatList, Alert, Pressable, StyleSheet, Dimensions, PermissionsAndroid, Platform, Image, ImageBackground, GestureResponderEvent } from 'react-native';
+import { View, Text, TextInput, Button, FlatList, Alert, Pressable, StyleSheet, Dimensions, PermissionsAndroid, Platform, Image, ImageBackground, GestureResponderEvent, Modal } from 'react-native';
 
 // Asset imports
 const backgroundImage = require('../../assets/duels/duels-background.png');
@@ -11,6 +11,7 @@ const tutorialImage1 = require('../../assets/duels/duels-controls-1.png');
 const tutorialImage2 = require('../../assets/duels/duels-controls-2.png');
 const tutorialImage3 = require('../../assets/duels/duels-controls-3.png');
 const sawbladeImage = require('../../assets/duels/duels-sawblade.png');
+import LogoutButtonSvg from '../../assets/profile/profile-screen/logout-button.svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../../api';
@@ -1017,7 +1018,7 @@ export default function Duels() {
           <Text style={[styles.title, styles.titleFront]}>DUELS</Text>
         </View>
         <Text style={styles.subtitle}>
-          {profileLoading ? 'Loading profile...' : displayName ? `Playing as: ${displayName}` : 'Failed to load profile'}
+          {profileLoading ? 'Loading profile...' : displayName ? `Playing as: ${displayName}` : 'You must login to play duels'}
         </Text>
         <Pressable
           style={[styles.menuButton, buttonsDisabled && styles.menuButtonDisabled]}
@@ -1195,6 +1196,7 @@ export default function Duels() {
 
     // Playing phase (or win/lose)
     return (
+      <Modal visible={true} animationType="slide" statusBarTranslucent>
       <ImageBackground source={backgroundImage} style={[styles.gameContainer, { paddingTop: insets.top }]} resizeMode="cover">
         {/* Win/Lose/Tie overlay */}
         {(gamePhase === 'win' || gamePhase === 'lose' || gamePhase === 'tie') && (
@@ -1360,7 +1362,16 @@ export default function Duels() {
             <Image source={buttonImage} style={[styles.buttonImage, styles.buttonImageFlipped]} resizeMode="stretch" />
           </View>
         </View>
+
+        {/* Dismiss button */}
+        <Pressable
+          style={[styles.dismissButton, { top: insets.top + 10 }]}
+          onPress={disconnect}
+        >
+          <LogoutButtonSvg width={22} height={26} />
+        </Pressable>
       </ImageBackground>
+      </Modal>
     );
   }
 
@@ -1371,6 +1382,13 @@ export default function Duels() {
 // STYLES
 // ======================
 const styles = StyleSheet.create({
+  dismissButton: {
+    position: 'absolute',
+    left: 16,
+    zIndex: 300,
+    padding: 8,
+    opacity: 0.8,
+  },
   container: {
     flex: 1,
     justifyContent: 'center',
