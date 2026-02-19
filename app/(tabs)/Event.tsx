@@ -114,6 +114,7 @@ export default function EventScreen() {
   };
 
   const handleMentorPress = (session: MentorshipSession) => {
+    //
     Haptics.selectionAsync();
     setSelectedMentorSession(session);
     setMentorModalVisible(true);

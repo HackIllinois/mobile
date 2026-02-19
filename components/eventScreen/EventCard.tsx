@@ -43,10 +43,11 @@ export function EventCard({ event, index, onPress, handleSave, saved, showTime, 
   } else if (saved) {
     CardBackground = SavedEvent;
   }
-  
+
   const estimatedCharsPerLine = 20;
   
   // Hardcode specific title to always use 1 line
+  // hello yaseen
   const isJohnDeereTitle = event.name === "John Deere Track Introduction";
   const isStripeTitle = event.name === "Stripe Track Introduction";
   const needsTwoLines = !isStripeTitle && !isJohnDeereTitle && event.name.length > estimatedCharsPerLine;
