@@ -143,7 +143,7 @@ export default function HomeScreen() {
   // }, [SCHEDULE]); // for debugging
 
   const anchorX = width / 2;
-  const anchorY = height * 0.25;
+  const anchorY = height * 0.27;
   const orbitGap = width * 0.17;
   const orbitScale = 1.2;
   const orbitMultipliers = [1.7, 1.2, 1.2, 1.2, 1.15];
@@ -155,12 +155,12 @@ export default function HomeScreen() {
   }));
 
   const items: EventItem[] = [
-    { eventKey: "closing", x: anchorX, y: anchorY, size: 150, fixed: true },
+    { eventKey: "closing", x: anchorX, y: anchorY, size: 180, fixed: true },
 
     { eventKey: "showcase", orbit: orbits[0], angle: 140, size: 80, offsetY: -6, jigglePx: 14, jigglePeriodMs: 5200 },
     { eventKey: "hacking", orbit: orbits[1], angle: 60, size: 80, jigglePx: 12, jigglePeriodMs: 6100 },
     { eventKey: "opening", orbit: orbits[2], angle: 105, size: 70, jigglePx: 10, jigglePeriodMs: 6900 },
-    { eventKey: "scavenger", orbit: orbits[3], angle: 70, size: 80, jigglePx: 12, jigglePeriodMs: 7600 },
+    { eventKey: "scavenger", orbit: orbits[3], angle: 70, size: 100, jigglePx: 12, jigglePeriodMs: 7600 },
     { eventKey: "checkin", orbit: orbits[4], angle: 100, size: 80, offsetY: -8, jigglePx: 9, jigglePeriodMs: 8400 },
   ];
 
