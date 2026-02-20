@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { Animated, Image, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { getAvatarById, getCharacterIdFromUrl } from './avatarConfig';
+import * as Haptics from 'expo-haptics';
 
 interface ProfileAvatarProps {
   avatarUrl: string | null;
@@ -28,6 +29,10 @@ export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({ avatarUrl, avatarI
 
   // Single animated value drives both scale and opacity
   const glowAnim = useRef(new Animated.Value(0)).current;
+  const handlePress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    triggerGlow();
+  }
 
   const glowScale = glowAnim.interpolate({
     inputRange: [0, 1, 2],
@@ -52,7 +57,7 @@ export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({ avatarUrl, avatarI
   return (
     <TouchableOpacity
       activeOpacity={1}
-      onPress={triggerGlow}
+      onPress={handlePress}
       style={{
         position: 'absolute',
         top: scaleWidth(-11),

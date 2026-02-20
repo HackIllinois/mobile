@@ -30,6 +30,7 @@ import {
   hasNonProfileRole,
   getNonProfileRoleLabel,
 } from '../lib/fetchProfile';
+import * as Haptics from 'expo-haptics';
 import { queryClient } from '../lib/queryClient';
 
 interface QrCodeResponse {
@@ -165,6 +166,21 @@ export default function ProfileScreen() {
     }, [profile, fetchQrCode])
   );
 
+  const handleRefetchProfile = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    refetchProfile();
+  }
+
+  const handlePressQrCode = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setShowQrModal(true);
+  }
+
+  const handleEditAvatar = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setShowAvatarModal(true);
+  }
+
   if (isLoading && !isNonProfileRole) {
     const SkeletonBox = ({ style }: { style?: any }) => (
       <Animated.View style={[{ backgroundColor: 'rgba(255, 255, 255, 0.15)', borderRadius: 8, opacity: pulseAnim }, style]} />
@@ -270,7 +286,7 @@ export default function ProfileScreen() {
             alignItems: 'center',
             borderWidth: 1,
             borderColor: 'rgba(255, 224, 180, 0.3)',
-          }} onPress={() => refetchProfile()}>
+          }} onPress={() => handleRefetchProfile()}>
             <Text style={{
               color: '#FFFFFF',
               fontSize: scaleFontSize(14),
@@ -312,7 +328,7 @@ export default function ProfileScreen() {
 
         {/* Edit Avatar Button */}
         <TouchableOpacity
-          onPress={() => setShowAvatarModal(true)}
+          onPress={handleEditAvatar}
           style={{
             position: 'absolute',
             top: scaleWidth(322),
@@ -360,7 +376,7 @@ export default function ProfileScreen() {
           {/* Front Box */}
           <View style={{
             position: 'absolute',
-            top: 0,
+            top: -10,
             left: 0,
           }}>
             <FrontBoxSvg
@@ -464,7 +480,7 @@ export default function ProfileScreen() {
               justifyContent: 'center',
               alignItems: 'center',
             }}
-            onPress={() => setShowQrModal(true)}
+            onPress={handlePressQrCode}
           >
             <ButtonSvg
               width={scaleWidth(83.557)}

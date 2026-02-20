@@ -5,7 +5,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import ChooseImageButton from '../../assets/qr-scanner/choose-image-button.svg';
 import { ScanResult, ScanResultOverlay } from './ScanModals';
-
+import * as Haptics from 'expo-haptics';
 import { getConstrainedWidth } from '../../lib/layout';
 
 const { height } = Dimensions.get('window');
@@ -53,6 +53,7 @@ function CameraScannerView({
   );
 
   const handleChooseImage = useCallback(async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     try {
       if (!imageLibraryPermission?.granted) {
         if (imageLibraryPermission?.canAskAgain) {
@@ -268,7 +269,7 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: '600',
     color: '#FFF',
-    fontFamily: 'Montserrat',
+    fontFamily: 'Montserrat-Bold',
     textAlign: 'center',
   },
   scanReasonText: {

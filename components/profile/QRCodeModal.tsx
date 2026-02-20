@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, TouchableOpacity, Pressable, Modal, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import QRCode from 'react-native-qrcode-svg';
 import RefreshButtonSvg from '../../assets/profile/qr-screen/refresh-button.svg';
 
@@ -32,12 +33,22 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
   const MODAL_WIDTH = scaleWidth(300);
   const MODAL_HEIGHT = scaleWidth(310);
 
+  const handleClose = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    onClose();
+  }
+
+  const handleRefresh = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    onRefresh();
+  }
+
   return (
     <Modal
       visible={visible}
       transparent={true}
       animationType="fade"
-      onRequestClose={onClose}
+      onRequestClose={handleClose}
     >
       <Pressable
         style={{
@@ -47,7 +58,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
           alignItems: 'center',
           paddingTop: scaleHeight(100),
         }}
-        onPress={onClose}
+        onPress={handleClose}
       >
         <Pressable onPress={(e) => e.stopPropagation()} style={{
           backgroundColor: '#FFEAFE',
@@ -75,7 +86,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
               justifyContent: 'center',
               alignItems: 'center',
             }}
-            onPress={onClose}
+            onPress={handleClose}
           >
             <Ionicons name="close" size={scaleFontSize(28)} color="#333" />
           </TouchableOpacity>
@@ -111,7 +122,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
             style={{
               marginTop: scaleWidth(10),
             }}
-            onPress={onRefresh}
+            onPress={handleRefresh}
             disabled={qrLoading}
           >
             <RefreshButtonSvg
