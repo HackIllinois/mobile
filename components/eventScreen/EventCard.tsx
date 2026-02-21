@@ -185,7 +185,7 @@ const styles = StyleSheet.create({
 
   // -- Typography --
   title: {
-    fontFamily: "Monteserrat",
+    fontFamily: "Montserrat-Bold-700",
     fontSize: 26,
     fontWeight: '700',
     color: '#FFFFFF',

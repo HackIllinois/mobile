@@ -22,6 +22,7 @@ import EventsIcon from '../../assets/navbar/Calendar.svg';
 import QrCodeIcon from '../../assets/navbar/Camera.svg';
 import PointsIcon from '../../assets/navbar/Shop.svg';
 import DuelsIcon from '../../assets/navbar/Duels.svg';
+import * as Haptics from 'expo-haptics';
 
 import { AVATARS } from './avatarConfig';
 
@@ -134,18 +135,21 @@ export const AvatarSelectionModal: React.FC<AvatarSelectionModalProps> = ({
   }, [visible, floatAnim]);
 
   const handlePreviousAvatar = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setCurrentIndex((prevIndex) =>
       prevIndex === 0 ? AVATARS.length - 1 : prevIndex - 1
     );
   };
 
   const handleNextAvatar = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setCurrentIndex((prevIndex) =>
       (prevIndex + 1) % AVATARS.length
     );
   };
 
   const handleSelect = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setIsUpdating(true);
     setError(null);
 

@@ -70,7 +70,7 @@ export default function EventDetailModal({ visible, event, onClose, handleSave, 
                   
                   <View style={styles.pillRow}>
                     <View style={styles.pillPoints}>
-                      <Text style={styles.pillTextBlack}>+ {event.points || 0}Pt</Text>
+                      <Text style={styles.pillTextBlack}>{event.points || 0}Pt</Text>
                     </View>
             
                     <View style={styles.pillTrack}>

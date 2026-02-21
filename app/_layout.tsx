@@ -49,6 +49,8 @@ function RootLayoutContent() {
   const [fontsLoaded] = useFonts({
     'Tsukimi-Rounded-Bold': require('../assets/fonts/TsukimiRounded-Bold.ttf'),
     'Jedi-Font': require('../assets/fonts/StarJedi-DRGW.ttf'),
+    'Montserrat-Bold': require('../assets/fonts/Montserrat.ttf'),
+    'Montserrat-Bold-700': require('../assets/fonts/Montserrat-Bold-700.ttf'),
   });
 
   useEffect(() => {

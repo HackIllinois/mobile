@@ -6,6 +6,7 @@ import axios, { AxiosResponse } from 'axios';
 import api from '../api';
 import ButtonSvg from '../assets/qr-scanner/button.svg';
 import BackgroundSvg from '../assets/qr-scanner/background.svg';
+import * as Haptics from 'expo-haptics';
 
 import CameraScannerView from '../components/qr scanner/CameraScanner';
 import {
@@ -335,6 +336,7 @@ export default function StaffQRScannerScreen() {
 
     // Handler Logic
     const handleQRCodeScanned = useCallback(({ data }: BarcodeScanningResult) => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
       if (scannedRef.current || isLoading) return;
       scannedRef.current = true;
       setScanned(true);
@@ -354,9 +356,14 @@ export default function StaffQRScannerScreen() {
       setScanResult(null);
       scannedRef.current = false;
       setScanned(false);
+
+      setTimeout(() => {
+        scannedRef.current = false;
+      }, 5000);
     }, []);
 
     const handleCloseScanner = useCallback(() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         setIsScanning(false);
         setScanMode(null);
         setSelectedEventId(null);
@@ -366,6 +373,7 @@ export default function StaffQRScannerScreen() {
     }, []);
     
     const handleScanPress = () => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       if (permission?.granted) {
         setIsScanning(true);
       } else if (permission?.canAskAgain) {
@@ -401,12 +409,13 @@ export default function StaffQRScannerScreen() {
           <TouchableOpacity
             style={styles.menuButtonFirst}
             onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
               setScanMode('attendance');
               handleScanPress();
             }}
           >
             <View style={styles.buttonContainer}>
-              <ButtonSvg width={300} height={70} style={styles.buttonSvg} />
+              <ButtonSvg width={300} height={70} style={styles.buttonSvg} onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)}/>
               <View style={styles.buttonTextContainer}>
                 <Text style={styles.menuButtonText}>Meeting Attendance</Text>
                 <Text style={styles.menuButtonArrow}>{">"}</Text>
@@ -417,6 +426,7 @@ export default function StaffQRScannerScreen() {
           <TouchableOpacity
             style={styles.menuButton}
             onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                 setScanMode('attendeeCheckin');
                 setIsEventModalVisible(true);
             }}
@@ -433,6 +443,7 @@ export default function StaffQRScannerScreen() {
           <TouchableOpacity
             style={styles.menuButton}
             onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
               setScanMode('shopRedeem');
               handleScanPress();
             }}
