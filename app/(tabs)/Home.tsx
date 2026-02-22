@@ -77,14 +77,11 @@ const DEBUG_NOW: Date | null =
 
 const now = () => DEBUG_NOW ?? new Date();
 
-// Must match CurvedTabBar's BAR_HEIGHT
 const NAVBAR_HEIGHT = 85;
 
-// Space between timer bottom and top of closing planet
 const CLOSING_PLANET_GAP = 16;
 const CLOSING_PLANET_SIZE = 180;
 
-// Bottom padding so the outermost planet/rocket clears the navbar
 const BOTTOM_CLEARANCE = 20;
 
 export default function HomeScreen() {
@@ -103,21 +100,10 @@ export default function HomeScreen() {
   // anchorY = center of closing planet = timerBottom + gap + half planet height
   const anchorY = timerBottom + CLOSING_PLANET_GAP + CLOSING_PLANET_SIZE / 2;
 
-  // The hard bottom boundary planets/rocket must not cross:
-  // screen height minus the navbar, minus bottom safe area inset, minus clearance
-  const bottomBoundary = height - NAVBAR_HEIGHT - insets.bottom - BOTTOM_CLEARANCE;
 
-  // Available vertical space from anchorY to the bottom boundary.
-  // The outermost orbit center is anchorY; at angle ~100° (checkin),
-  // the planet Y = anchorY + outerRadius * sin(100°) + planetHalfSize.
-  // sin(100°) ≈ 0.985. We solve for maxOuterRadius:
-  //   anchorY + maxOuterRadius * 0.985 + 40 <= bottomBoundary
-  //   maxOuterRadius <= (bottomBoundary - anchorY - 40) / 0.985
+  const bottomBoundary = height - NAVBAR_HEIGHT - insets.bottom - BOTTOM_CLEARANCE;
   const maxOuterRadius = (bottomBoundary - anchorY - 40) / 0.985;
 
-  // The outermost orbit (index 4, checkin) has radius:
-  //   orbitScale * 5 * orbitGap * orbitMultipliers[4]  =  1.2 * 5 * orbitGap * 1.15  =  6.9 * orbitGap
-  // Solve for orbitGap:
   const derivedOrbitGap = maxOuterRadius / 6.9;
 
   // Clamp so it never looks weird on huge screens or tiny ones
@@ -173,8 +159,7 @@ export default function HomeScreen() {
   const orbitScale = 1.2;
   const orbitMultipliers = [1.7, 1.2, 1.2, 1.2, 1.15];
 
-  // Memoize orbits so they only recompute when anchorY/orbitGap actually change,
-  // not on every render (e.g. timer tick)
+  
   const orbits: Orbit[] = useMemo(() => Array.from({ length: 6 }, (_, i) => ({
     radius: orbitScale * (i + 1) * orbitGap * orbitMultipliers[Math.min(i, orbitMultipliers.length - 1)],
     centerX: anchorX,
@@ -190,15 +175,11 @@ export default function HomeScreen() {
     { eventKey: "checkin",   orbit: orbits[4], angle: 100, size: 80,  offsetY: -8, jigglePx: 9,  jigglePeriodMs: 8400 } as OrbitEvent,
   ], [anchorY, orbits]);
 
-  // Periods are static — pull them out so jiggle animations never need to restart
   const JIGGLE_PERIODS = useRef([5200, 6100, 6900, 7600, 8400, 9100]).current;
 
-  // One Animated.Value per planet, created once
   const jiggleAnims = useRef(JIGGLE_PERIODS.map(() => new Animated.Value(0))).current;
 
-  // Empty dep array: start once on mount, never restart.
-  // anchorY/orbitGap changes move the planet's *position* (via items/orbits above)
-  // but the animation value itself keeps running smoothly without interruption.
+
   useEffect(() => {
     const animations = jiggleAnims.map((anim, i) => {
       anim.setValue(0);
@@ -211,7 +192,7 @@ export default function HomeScreen() {
     });
     animations.forEach(a => a.start());
     return () => animations.forEach(a => a.stop());
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); 
 
   const currentIdx = stageIndex(currentStage);
 
@@ -258,9 +239,7 @@ export default function HomeScreen() {
         preserveAspectRatio="xMidYMid slice"
       />
 
-      {/* Timer header — NOT absolute, lives in normal flow.
-          onLayout fires with its actual y + height so we know exactly
-          where it ends and can place the closing planet flush below it. */}
+      {/* Timer */}
       <View style={styles.headerOverlay} onLayout={onTimerLayout} pointerEvents="none">
         <Text style={styles.timerLabel}>T-minus Liftoff</Text>
         <View style={styles.timerPill}>
@@ -343,11 +322,9 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "transparent" },
   headerOverlay: {
-    // In normal document flow — NOT absolute position.
-    // This lets onLayout report the true bottom coordinate.
     alignSelf: "center",
     alignItems: "center",
-    marginTop: 12,
+    marginTop: height * 0.02, 
     zIndex: 50,
   },
   timerLabel: {
