@@ -551,7 +551,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 18,
     textAlign: "left",
-    fontWeight: "500",
+    fontFamily: "Tsukimi-Rounded-Bold",
   },
   errorContainer: {
     position: "absolute",

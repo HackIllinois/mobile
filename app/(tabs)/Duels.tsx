@@ -196,6 +196,8 @@ export default function Duels() {
   const [isRotating, setIsRotating] = useState(false);
   const [ammo, setAmmo] = useState(MAX_AMMO);
   const [reloading, setReloading] = useState(0); // Number of bullets currently reloading
+  const [showYouIndicator, setShowYouIndicator] = useState(false);
+  const youIndicatorOpacity = useRef(new Animated.Value(0)).current;
   
   // Tutorial State
   const [tutorialStep, setTutorialStep] = useState(0); // 0, 1, 2 = showing images, 3 = finished
@@ -1063,6 +1065,21 @@ export default function Duels() {
     }
   }, [role, gamePhase, tutorialStep, opponentFinishedTutorial, startGame]);
 
+  useEffect(() => {
+    if (gamePhase === 'playing' && myScore === 0 && opponentScore === 0) {
+      setShowYouIndicator(true);
+      youIndicatorOpacity.setValue(1);
+      const timeout = setTimeout(() => {
+        Animated.timing(youIndicatorOpacity, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }).start(() => setShowYouIndicator(false));
+      }, 1200); // 1.2s solid + 0.3s fade = 1.5s total
+      return () => clearTimeout(timeout);
+    }
+  }, [gamePhase]); // intentionally only on gamePhase change; scores are 0 at this transition
+
   // ======================
   // RENDER SCREENS
   // ======================
@@ -1378,6 +1395,35 @@ export default function Duels() {
               resizeMode="contain"
             />
           ))}
+
+          {/* "You" indicator on first round start */}
+          {showYouIndicator && (
+            <Animated.View
+              pointerEvents="none"
+              style={{
+                position: 'absolute',
+                left: myShipRef.current.x * gameWidth - 35,
+                top: myShipRef.current.y * gameHeight - 35,
+                alignItems: 'center',
+                opacity: youIndicatorOpacity,
+              }}
+            >
+              <View style={{
+                width: 70,
+                height: 70,
+                borderRadius: 35,
+                borderWidth: 2,
+                borderColor: 'rgba(255, 255, 255, 0.6)',
+                backgroundColor: 'rgba(255, 255, 255, 0.08)',
+              }} />
+              <Text style={{
+                color: 'rgba(255, 255, 255, 0.9)',
+                fontSize: 12,
+                fontFamily: 'Tsukimi-Rounded-Bold',
+                marginTop: 4,
+              }}>You</Text>
+            </Animated.View>
+          )}
         </View>
         
         {/* Multitouch Controls Container */}
