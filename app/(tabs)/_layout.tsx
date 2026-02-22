@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Tabs, Link, usePathname, useRouter } from "expo-router";
-import { TouchableOpacity, View, StyleSheet, Alert, Text } from "react-native";
+import { TouchableOpacity, View, StyleSheet, Alert, Text, Dimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as SecureStore from "expo-secure-store";
 import ProfileSvg from "../../assets/profile.svg";
@@ -14,6 +14,8 @@ import QrCodeSvg from "../../assets/navbar/Camera.svg";
 import ShopSvg from "../../assets/navbar/Shop.svg";
 import DuelsSvg from "../../assets/navbar/Duels.svg";
 
+import { getConstrainedWidth } from "../../lib/layout";
+
 const TITLE_MAP: Record<string, string> = {
   "/Event": "SCHEDULE",
   "/Shop": "POINT SHOP",
@@ -21,6 +23,10 @@ const TITLE_MAP: Record<string, string> = {
   "/Profile": "PROFILE",
 
 };
+
+const window = Dimensions.get("window");
+const width = getConstrainedWidth();
+const height = window.height;
 
 export default function Layout() {
   const pathname = usePathname();
@@ -127,7 +133,7 @@ export default function Layout() {
         </Tabs>
 
         {/* Header */}
-        <View style={[styles.headerRow, { top: insets.top }]}>
+        <View style={[styles.headerRow, { top: insets.top + (height * 0.02) + 26}]}>
           {title ? (
             <View style={{ marginTop: -6 }}>
               <Text style={[styles.headerTitle, styles.glowWide]}>{title}</Text>
@@ -163,10 +169,10 @@ const styles = StyleSheet.create({
   headerRow: {
     position: 'absolute',
     left: 20,
-    right: 10,
+    right: 20, 
     zIndex: 100,
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
   },
   headerTitle: {
