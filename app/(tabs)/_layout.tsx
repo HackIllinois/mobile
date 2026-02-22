@@ -133,7 +133,7 @@ export default function Layout() {
         </Tabs>
 
         {/* Header */}
-        <View style={[styles.headerRow, { top: insets.top + (height * 0.02) + 26}]}>
+        <View style={[styles.headerRow, { top: insets.top + (height * 0.04) + 26}]}>
           {title ? (
             <View style={{ marginTop: -6 }}>
               <Text style={[styles.headerTitle, styles.glowWide]}>{title}</Text>
