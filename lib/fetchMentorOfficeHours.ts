@@ -10,23 +10,19 @@ export type MentorOfficeHourDto = {
   mentorId: string;
 };
 
-async function fetchMentorOfficeHours(): Promise<MentorOfficeHourDto[]> {
+
+async function fetchMentorOfficeHours(): Promise<MentorOfficeHourDto[] | null> {
   const token = await SecureStore.getItemAsync("jwt");
 
   if (!token) {
-    console.log("[mentor] No jwt found in SecureStore (key: 'jwt')");
-    throw new Error("Not logged in (missing token)");
+    console.log("[mentor] Guest (no jwt) — returning null");
+    return null;
   }
 
   try {
-    const response: any = await api.get<MentorOfficeHourDto[]>("/mentor/", {
-      headers: {
-        Authorization: token.startsWith("Bearer ") ? token : `Bearer ${token}`,
-      },
-    });
-
+    const response: any = await api.get<MentorOfficeHourDto[]>("/mentor/");
     const data = response?.data;
-    
+
     if (Array.isArray(data)) return data as MentorOfficeHourDto[];
     if (data && Array.isArray(data.data)) return data.data as MentorOfficeHourDto[];
     if (data && Array.isArray(data.mentors)) return data.mentors as MentorOfficeHourDto[];
@@ -39,13 +35,15 @@ async function fetchMentorOfficeHours(): Promise<MentorOfficeHourDto[]> {
     console.log("[mentor] api.get failed", { status, body, message: err?.message });
 
     throw new Error(
-      status ? `HTTP ${status}: ${typeof body === "string" ? body : JSON.stringify(body)}` : String(err?.message ?? err)
+      status
+        ? `HTTP ${status}: ${typeof body === "string" ? body : JSON.stringify(body)}`
+        : String(err?.message ?? err),
     );
   }
 }
 
 export function useMentorOfficeHours(enabled: boolean) {
-  const { data, isLoading, error, refetch } = useQuery<MentorOfficeHourDto[]>({
+  const { data, isLoading, error, refetch } = useQuery<MentorOfficeHourDto[] | null>({
     queryKey: ["mentorOfficeHours", enabled],
     queryFn: fetchMentorOfficeHours,
     enabled,
@@ -53,10 +51,13 @@ export function useMentorOfficeHours(enabled: boolean) {
     retry: 0,
   });
 
+  const guest = data === null;
+
   return {
-    mentorOfficeHours: data ?? [],
+    mentorOfficeHours: guest ? [] : (data ?? []),
+    guest, 
     loading: isLoading,
-    error: error ? (error as Error).message : null,
+    error: guest ? null : (error ? (error as Error).message : null),
     refetch,
   };
 }

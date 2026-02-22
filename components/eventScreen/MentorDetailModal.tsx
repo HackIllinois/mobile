@@ -1,11 +1,19 @@
-import { View, Text, StyleSheet, TouchableOpacity, Modal, Pressable, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Modal,
+  Pressable,
+  ScrollView,
+} from "react-native";
 
 export type MentorshipSession = {
   id: string;
   mentorName: string;
   location: string;
   startTime: number; // unix seconds
-  endTime: number;   // unix seconds
+  endTime: number; // unix seconds
 
   // optional (backend doesn't provide these yet)
   track?: string;
@@ -18,29 +26,56 @@ interface MentorDetailModalProps {
   visible: boolean;
   session: MentorshipSession | null;
   onClose: () => void;
+
+  /**
+   * ✅ NEW: pass true when user is a guest (no jwt)
+   * In your screen: const { guest } = useMentorOfficeHours(...)
+   * then: <MentorDetailModal guest={guest} ... />
+   */
+  guest?: boolean;
+
+  /**
+   * ✅ NEW: called when user taps "Log in to see mentors"
+   * Hook this up to your login screen navigation.
+   */
+  onLoginPress?: () => void;
 }
 
 const formatTime = (timestamp: number): string => {
   const date = new Date(timestamp * 1000);
-  return date.toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
+  return date.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
     hour12: true,
   });
 };
 
-export default function MentorDetailModal({ visible, session, onClose }: MentorDetailModalProps) {
-  if (!session) return null;
+export default function MentorDetailModal({
+  visible,
+  session,
+  onClose,
+  guest = false,
+  onLoginPress,
+}: MentorDetailModalProps) {
+  const showGuestPrompt = visible && guest;
 
-  const topics = session.topics ?? [];
-  const track = session.track?.trim() ? session.track : 'Mentor';
-  const bio = session.bio?.trim() ? session.bio : 'No bio provided yet.';
-  const contact = session.contact?.trim() ? session.contact : 'No contact provided yet.';
+  const topics = session?.topics ?? [];
+  const track = session?.track?.trim() ? session.track : "Mentor";
+  const bio = session?.bio?.trim() ? session.bio : "No bio provided yet.";
+  const contact = session?.contact?.trim()
+    ? session.contact
+    : "No contact provided yet.";
+
+  const handleLogin = () => {
+    // close modal first so navigation feels clean
+    onClose();
+    onLoginPress?.();
+  };
 
   return (
     <Modal
       visible={visible}
-      transparent={true}
+      transparent
       animationType="fade"
       statusBarTranslucent
       onRequestClose={onClose}
@@ -51,43 +86,65 @@ export default function MentorDetailModal({ visible, session, onClose }: MentorD
         <View style={styles.cardWrapper}>
           <View style={styles.backgroundCard} />
           <View style={styles.mainCard}>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton} hitSlop={{top: 30, bottom: 30, right: 30, left: 30}}>
+            <TouchableOpacity
+              onPress={onClose}
+              style={styles.closeButton}
+              hitSlop={{ top: 30, bottom: 30, right: 30, left: 30 }}
+            >
               <Text style={styles.closeText}>✕</Text>
             </TouchableOpacity>
 
-            <ScrollView showsVerticalScrollIndicator={false}>
-              <Text style={styles.title}>{session.mentorName}</Text>
+            {/* ✅ Guest prompt (instead of "no mentors found") */}
+            {showGuestPrompt ? (
+              <View style={styles.guestContainer}>
+                <Text style={styles.title}>Mentorship</Text>
+                <Text style={styles.bodyText}>
+                  Log in to view mentors and mentorship sessions.
+                </Text>
 
-              <View style={styles.pillRow}>
-                <View style={styles.trackPill}>
-                  <Text style={styles.trackText}>{track}</Text>
-                </View>
+                <TouchableOpacity
+                  style={styles.loginButton}
+                  activeOpacity={0.85}
+                  onPress={handleLogin}
+                >
+                  <Text style={styles.loginButtonText}>Log in to see mentors</Text>
+                </TouchableOpacity>
               </View>
+            ) : session ? (
+              <ScrollView showsVerticalScrollIndicator={false}>
+                <Text style={styles.title}>{session.mentorName}</Text>
 
-              <Text style={styles.infoText}>
-                {formatTime(session.startTime)} - {formatTime(session.endTime)}
-              </Text>
-              <Text style={styles.infoText}>{session.location}</Text>
-
-              <Text style={styles.sectionHeader}>About</Text>
-              <Text style={styles.bodyText}>{bio}</Text>
-
-              <Text style={styles.sectionHeader}>Topics</Text>
-              {topics.length > 0 ? (
-                <View style={styles.topicsWrap}>
-                  {topics.map((t) => (
-                    <View key={t} style={styles.topicChip}>
-                      <Text style={styles.topicChipText}>{t}</Text>
-                    </View>
-                  ))}
+                <View style={styles.pillRow}>
+                  <View style={styles.trackPill}>
+                    <Text style={styles.trackText}>{track}</Text>
+                  </View>
                 </View>
-              ) : (
-                <Text style={styles.bodyText}>No topics listed yet.</Text>
-              )}
 
-              <Text style={styles.sectionHeader}>Contact</Text>
-              <Text style={styles.bodyText}>{contact}</Text>
-            </ScrollView>
+                <Text style={styles.infoText}>
+                  {formatTime(session.startTime)} - {formatTime(session.endTime)}
+                </Text>
+                <Text style={styles.infoText}>{session.location}</Text>
+
+                <Text style={styles.sectionHeader}>About</Text>
+                <Text style={styles.bodyText}>{bio}</Text>
+
+                <Text style={styles.sectionHeader}>Topics</Text>
+                {topics.length > 0 ? (
+                  <View style={styles.topicsWrap}>
+                    {topics.map((t) => (
+                      <View key={t} style={styles.topicChip}>
+                        <Text style={styles.topicChipText}>{t}</Text>
+                      </View>
+                    ))}
+                  </View>
+                ) : (
+                  <Text style={styles.bodyText}>No topics listed yet.</Text>
+                )}
+
+                <Text style={styles.sectionHeader}>Contact</Text>
+                <Text style={styles.bodyText}>{contact}</Text>
+              </ScrollView>
+            ) : null}
           </View>
         </View>
       </View>
@@ -98,35 +155,35 @@ export default function MentorDetailModal({ visible, session, onClose }: MentorD
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   backdropPressable: {
     ...StyleSheet.absoluteFillObject,
   },
   cardWrapper: {
-    width: '85%',
-    height: '70%',
-    position: 'relative',
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: "85%",
+    height: "70%",
+    position: "relative",
+    justifyContent: "center",
+    alignItems: "center",
   },
   backgroundCard: {
-    position: 'absolute',
-    width: '100%',
-    height: '90%',
-    backgroundColor: '#F5C6FF',
+    position: "absolute",
+    width: "100%",
+    height: "90%",
+    backgroundColor: "#F5C6FF",
     borderRadius: 20,
-    transform: [{ rotate: '173deg' }],
+    transform: [{ rotate: "173deg" }],
   },
   mainCard: {
-    width: '100%',
-    height: '80%',
-    backgroundColor: '#D9D9D9',
+    width: "100%",
+    height: "80%",
+    backgroundColor: "#D9D9D9",
     borderRadius: 20,
     padding: 24,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 4.65,
@@ -134,34 +191,46 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     paddingBottom: 10,
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
   },
-  closeText: { fontSize: 24, fontWeight: 'bold', color: '#000', opacity: 0.5 },
+  closeText: { fontSize: 24, fontWeight: "bold", color: "#000", opacity: 0.5 },
 
-  title: { fontSize: 28, fontWeight: '800', color: '#000', marginBottom: 8 },
-  pillRow: { flexDirection: 'row', marginBottom: 12, marginTop: 4 },
+  guestContainer: { marginTop: 36 },
+
+  loginButton: {
+    marginTop: 18,
+    alignSelf: "flex-start",
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    backgroundColor: "#eddbff",
+  },
+  loginButtonText: { fontSize: 14, fontWeight: "900", color: "#222" },
+
+  title: { fontSize: 28, fontWeight: "800", color: "#000", marginBottom: 8 },
+  pillRow: { flexDirection: "row", marginBottom: 12, marginTop: 4 },
   trackPill: {
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 999,
-    backgroundColor: '#eddbff',
+    backgroundColor: "#eddbff",
   },
-  trackText: { fontSize: 12, fontWeight: '900', color: '#222' },
+  trackText: { fontSize: 12, fontWeight: "900", color: "#222" },
 
-  infoText: { fontSize: 20, fontWeight: '600', color: '#000', marginBottom: 2 },
+  infoText: { fontSize: 20, fontWeight: "600", color: "#000", marginBottom: 2 },
 
-  sectionHeader: { marginTop: 14, fontSize: 16, fontWeight: '900', color: '#333' },
-  bodyText: { marginTop: 6, fontSize: 14, color: '#333', lineHeight: 20 },
+  sectionHeader: { marginTop: 14, fontSize: 16, fontWeight: "900", color: "#333" },
+  bodyText: { marginTop: 6, fontSize: 14, color: "#333", lineHeight: 20 },
 
-  topicsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
+  topicsWrap: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 8 },
   topicChip: {
     paddingVertical: 6,
     paddingHorizontal: 10,
     borderRadius: 999,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: "#ddd",
   },
-  topicChipText: { fontSize: 12, fontWeight: '800', color: '#333' },
+  topicChipText: { fontSize: 12, fontWeight: "800", color: "#333" },
 });
