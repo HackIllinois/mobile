@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
   mainCard: {
     width: '100%',
     height: '100%',
-    backgroundColor: '#D9D9D9',
+    backgroundColor: 'blue',
     borderRadius: 20,
     padding: 24,
     shadowColor: "#000",

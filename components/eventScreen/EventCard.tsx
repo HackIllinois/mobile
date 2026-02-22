@@ -174,23 +174,24 @@ const styles = StyleSheet.create({
 
   contentOverlay: {
     position: 'absolute',
-    top: 20,
+    top: 8,
     left: 0,
     right: 0,
     bottom: 0,
-    paddingHorizontal: 24, // Inner padding
-    paddingVertical: 20,
-    justifyContent: 'center', // Vertically center the text block
+    paddingHorizontal: 24,
+    paddingTop: 30,
+    paddingBottom: 20,
+    justifyContent: 'flex-start',
   },
 
   // -- Typography --
   title: {
     fontFamily: "Montserrat-Bold-700",
-    fontSize: 26,
+    fontSize: 20,
     fontWeight: '700',
     color: '#FFFFFF',
-    marginBottom: 12,
-    lineHeight: 32, // Consistent line height
+    marginBottom: 6,
+    lineHeight: 26, // Consistent line height
     maxWidth: 230,
   },
   

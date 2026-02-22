@@ -61,7 +61,7 @@ export default function EventDetailModal({ visible, event, onClose, handleSave, 
               <TouchableOpacity onPress={onClose} style={styles.closeButton} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
                   <Text style={styles.closeText}>✕</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleSave(event.eventId)} style={styles.saveButton} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
+              <TouchableOpacity onPress={() => handleSave(event.eventId)} style={styles.saveButton} hitSlop={15}>
                   {saved ? <Saved /> : <Unsaved />}
               </TouchableOpacity>
             </View>
@@ -133,7 +133,6 @@ const styles = StyleSheet.create({
   cardWrapper: {
     width: '85%',
     height: '70%',
-    // IPAD FIX: Limit max width so it stays phone-shaped and keeps design ratios
     maxWidth: 400, 
     position: 'relative',
     justifyContent: 'center',
@@ -157,7 +156,7 @@ const styles = StyleSheet.create({
   mainCard: {
     width: '100%',
     height: '100%', 
-    backgroundColor: '#D9D9D9',
+    backgroundColor: '#e3e3e3',
     borderRadius: 20,
     padding: 24,
     shadowColor: "#000",
@@ -193,7 +192,6 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end',
   },
   closeButton: {
-    padding: 10,
     alignSelf: 'flex-start',
   },
   closeText: {
@@ -203,8 +201,7 @@ const styles = StyleSheet.create({
     opacity: 0.5
   },
   headerSection: {
-    marginBottom: 15,
-    marginTop: 0,
+    marginTop: -20,
   },
   title: {
     fontSize: 28,

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { View, Text, TextInput, Button, FlatList, Alert, Pressable, StyleSheet, Dimensions, PermissionsAndroid, Platform, Image, ImageBackground, GestureResponderEvent, Modal } from 'react-native';
+import { View, Text, TextInput, Button, FlatList, Alert, Pressable, StyleSheet, Dimensions, PermissionsAndroid, Platform, Image, ImageBackground, GestureResponderEvent, Modal, Animated } from 'react-native';
 
 // Asset imports
 const backgroundImage = require('../../assets/duels/duels-background.png');
@@ -13,8 +13,69 @@ const tutorialImage3 = require('../../assets/duels/duels-controls-3.png');
 const sawbladeImage = require('../../assets/duels/duels-sawblade.png');
 import LogoutButtonSvg from '../../assets/profile/profile-screen/logout-button.svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../../api';
+
+// ======================
+// LOBBY BUTTON COMPONENT
+// ======================
+function LobbyButton({ label, onPress, disabled, accentColor }: {
+  label: string;
+  onPress: () => void;
+  disabled?: boolean;
+  accentColor: string;
+}) {
+  const glowAnim = useRef(new Animated.Value(0.3)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(glowAnim, { toValue: 0.8, duration: 1000, useNativeDriver: false }),
+        Animated.timing(glowAnim, { toValue: 0.3, duration: 1000, useNativeDriver: false }),
+      ])
+    ).start();
+  }, []);
+
+  return (
+    <Animated.View style={[lobbyButtonStyles.glow, { shadowOpacity: glowAnim }, disabled && { opacity: 0.5 }]}>
+      <Pressable
+        style={[lobbyButtonStyles.button, { backgroundColor: accentColor }]}
+        onPress={onPress}
+        disabled={disabled}
+      >
+        <Text style={lobbyButtonStyles.text}>{label}</Text>
+      </Pressable>
+    </Animated.View>
+  );
+}
+
+const lobbyButtonStyles = StyleSheet.create({
+  glow: {
+    width: '80%',
+    borderRadius: 999,
+    shadowColor: '#b464ff',
+    shadowOffset: { width: 0, height: 0 },
+    shadowRadius: 14,
+    elevation: 10,
+  },
+  button: {
+    paddingVertical: 18,
+    alignItems: 'center',
+    borderRadius: 999,
+    borderWidth: 1.5,
+    borderColor: 'rgba(180, 100, 255, 0.9)',
+    overflow: 'hidden',
+  },
+  text: {
+    color: '#ffffff',
+    fontSize: 18,
+    fontFamily: 'Tsukimi Rounded',
+    fontWeight: '700',
+    letterSpacing: 3,
+    zIndex: 2,
+  },
+});
 
 // Lazy import to prevent blocking route discovery
 let LocalConnectionModule: any;
@@ -1020,8 +1081,10 @@ export default function Duels() {
         <Text style={styles.subtitle}>
           {profileLoading ? 'Loading profile...' : displayName ? `Playing as: ${displayName}` : 'You must login to play duels'}
         </Text>
-        <Pressable
-          style={[styles.menuButton, buttonsDisabled && styles.menuButtonDisabled]}
+        <LobbyButton
+          label="HOST LOBBY"
+          accentColor="rgba(74, 26, 107, 0.6)"
+          disabled={buttonsDisabled}
           onPress={() => {
             if (!displayName) return;
             LocalConnectionModule.InitPeerName(displayName);
@@ -1029,13 +1092,12 @@ export default function Duels() {
             setRole('host');
             setScreen('hosting');
           }}
-          disabled={buttonsDisabled}
-        >
-          <Text style={[styles.menuButtonText, buttonsDisabled && styles.menuButtonTextDisabled]}>HOST LOBBY</Text>
-        </Pressable>
+        />
         <View style={{ height: 15 }} />
-        <Pressable
-          style={[styles.menuButton, buttonsDisabled && styles.menuButtonDisabled]}
+        <LobbyButton
+          label="JOIN LOBBY"
+          accentColor="rgba(107, 26, 74, 0.6)"
+          disabled={buttonsDisabled}
           onPress={() => {
             if (!displayName) return;
             LocalConnectionModule.InitPeerName(displayName);
@@ -1043,10 +1105,7 @@ export default function Duels() {
             setRole('guest');
             setScreen('browsing');
           }}
-          disabled={buttonsDisabled}
-        >
-          <Text style={[styles.menuButtonText, buttonsDisabled && styles.menuButtonTextDisabled]}>JOIN LOBBY</Text>
-        </Pressable>
+        />
       </ImageBackground>
     );
   }
@@ -1438,63 +1497,65 @@ const styles = StyleSheet.create({
     color: '#888888',
   },
   cancelButton: {
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: 30,
-    borderWidth: 2,
-    borderColor: '#6b2d9e',
-    backgroundColor: '#4a1a6b',
-    borderRadius: 4,
-    shadowColor: '#8b3dc7',
+    borderWidth: 1.5,
+    borderColor: 'rgba(180, 100, 255, 0.9)',
+    backgroundColor: 'rgba(74, 26, 107, 0.5)',
+    borderRadius: 999,
+    shadowColor: '#b464ff',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 8,
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
   },
   cancelButtonText: {
     color: '#ffffff',
     fontSize: 14,
+    fontFamily: 'Tsukimi Rounded',
     fontWeight: '700',
-    letterSpacing: 1,
+    letterSpacing: 2,
   },
   startButton: {
-    backgroundColor: '#4a1a6b',
+    backgroundColor: 'rgba(74, 26, 107, 0.6)',
     paddingVertical: 20,
     paddingHorizontal: 50,
-    borderRadius: 4,
-    borderWidth: 2,
-    borderColor: '#6b2d9e',
-    shadowColor: '#8b3dc7',
+    borderRadius: 999,
+    borderWidth: 1.5,
+    borderColor: 'rgba(180, 100, 255, 0.9)',
+    shadowColor: '#b464ff',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 8,
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
   },
   startButtonText: {
     color: '#ffffff',
     fontSize: 20,
-    fontWeight: '900',
+    fontFamily: 'Tsukimi Rounded',
+    fontWeight: '700',
     letterSpacing: 3,
   },
   lobbyItem: {
-    backgroundColor: '#4a1a6b',
+    backgroundColor: 'rgba(74, 26, 107, 0.5)',
     padding: 18,
     marginVertical: 6,
-    borderRadius: 4,
-    borderLeftWidth: 4,
-    borderLeftColor: '#8b3dc7',
-    borderWidth: 2,
-    borderColor: '#6b2d9e',
+    borderRadius: 999,
+    borderWidth: 1.5,
+    borderColor: 'rgba(180, 100, 255, 0.9)',
   },
   lobbyItemText: {
     color: '#fff',
     fontSize: 16,
+    fontFamily: 'Tsukimi Rounded',
     fontWeight: '600',
+    letterSpacing: 1,
   },
   lobbyItemDisabled: {
     opacity: 0.5,
   },
   lobbyItemJoining: {
     opacity: 1,
-    borderColor: '#8b3dc7',
-    borderWidth: 3,
+    borderColor: 'rgba(180, 100, 255, 1)',
+    borderWidth: 2,
   },
   gameOverTitle: {
     fontSize: 48,
