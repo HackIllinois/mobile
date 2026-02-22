@@ -32,6 +32,8 @@ import { useSavedEvents } from '../../lib/fetchSavedEvents';
 import { useMentorOfficeHours } from '../../lib/fetchMentorOfficeHours';
 import { Event } from '../../types';
 
+import { useRouter } from "expo-router";
+
 // --- Types ---
 type ScheduleMode = 'events' | 'mentorship';
 
@@ -55,6 +57,7 @@ const IS_TABLET = width > 768;
 
 
 export default function EventScreen() {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const [scheduleMode, setScheduleMode] = useState<ScheduleMode>('events');
   
@@ -69,6 +72,7 @@ export default function EventScreen() {
   const isMentors = scheduleMode === 'mentorship';
   const {
     mentorOfficeHours,
+    guest: mentorsGuest,
     loading: mentorsLoading,
     error: mentorsError,
     refetch: refetchMentors,
@@ -474,13 +478,28 @@ export default function EventScreen() {
                     />
                 }
                 ListEmptyComponent={
-                    <View style={styles.emptyContainer}>
-                        <Text style={styles.emptyText}>
-                            {scheduleMode === 'mentorship'
-                                ? 'No mentors found.'
-                                : selectedSave ? 'No saved events.' : 'No events found.'}
-                        </Text>
-                    </View>
+                  <View style={styles.emptyContainer}>
+                    {scheduleMode === "mentorship" && mentorsGuest ? (
+                      <>
+                        <Text style={styles.emptyText}>Log in to see mentors</Text>
+                        <TouchableOpacity
+                          onPress={() => router.push("/AuthScreen")}
+                          style={styles.retryButton}
+                          activeOpacity={0.85}
+                        >
+                          <Text style={styles.retryText}>Log in</Text>
+                        </TouchableOpacity>
+                      </>
+                    ) : (
+                      <Text style={styles.emptyText}>
+                        {scheduleMode === "mentorship"
+                          ? "No mentors found."
+                          : selectedSave
+                            ? "No saved events."
+                            : "No events found."}
+                      </Text>
+                    )}
+                  </View>
                 }
             />
         )}
@@ -501,13 +520,13 @@ export default function EventScreen() {
             onClose={() => setMenuModalVisible(false)} 
         />
 
-        {selectedMentorSession && (
-          <MentorDetailModal
-            visible={mentorModalVisible}
-            session={selectedMentorSession}
-            onClose={() => setMentorModalVisible(false)}
-          />
-        )}
+        <MentorDetailModal
+          visible={mentorModalVisible}
+          session={selectedMentorSession}
+          guest={mentorsGuest}
+          onClose={() => setMentorModalVisible(false)}
+          onLoginPress={() => router.push("/AuthScreen")}
+        />
 
       </View>
     </StarryBackground>
