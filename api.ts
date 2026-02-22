@@ -81,7 +81,7 @@ class API {
 
   private redirectToSignIn(): void {
     // TODO: redirect to sign in page
-    console.log("REDIRECT TO SIGN IN PAGE");
+    // console.log("REDIRECT TO SIGN IN PAGE");
   }
 
   private handleError(

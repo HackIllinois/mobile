@@ -51,7 +51,7 @@ export default function AuthScreen({ navigation }: any) {
   const redirectUri = "hackillinois://auth";
 
   const handleAuthResult = async (result: any) => {
-    console.log("Auth Result:", result);
+    // console.log("Auth Result:", result);
     if (result.type === "success" && result.url) {
       try {
         const params = new URLSearchParams(result.url.split("?")[1]);
@@ -83,9 +83,9 @@ export default function AuthScreen({ navigation }: any) {
         try {
           const pushToken = await registerForPushNotificationsAsync();
           if (pushToken) {
-            console.log("Sending push token to backend:", pushToken);
+            // console.log("Sending push token to backend:", pushToken);
             await api.post("/notification", { deviceToken: pushToken });
-            console.log("Push token registered successfully");
+            // console.log("Push token registered successfully");
           }
         } catch (notifError) {
           console.error("Failed to register push notifications:", notifError);
