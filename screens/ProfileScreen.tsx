@@ -4,6 +4,7 @@ import {
   TouchableOpacity,
   Animated,
   View,
+  Image,
   useWindowDimensions,
   StyleSheet,
 } from 'react-native';
@@ -88,6 +89,9 @@ export default function ProfileScreen() {
   const [showQrModal, setShowQrModal] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [teamRank, setTeamRank] = useState<number | null>(null);
+  const [refreshCooldown, setRefreshCooldown] = useState(false);
+  const [cooldownStartedAt, setCooldownStartedAt] = useState<number | null>(null);
+  const cooldownTimer = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (!profile?.team) return;
@@ -166,6 +170,17 @@ export default function ProfileScreen() {
     }, [profile, fetchQrCode])
   );
 
+  const handleManualQrRefresh = useCallback(() => {
+    fetchQrCode(true);
+    setRefreshCooldown(true);
+    setCooldownStartedAt(Date.now());
+    if (cooldownTimer.current) clearTimeout(cooldownTimer.current);
+    cooldownTimer.current = setTimeout(() => {
+      setRefreshCooldown(false);
+      setCooldownStartedAt(null);
+    }, 5000);
+  }, [fetchQrCode]);
+
   const handleRefetchProfile = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     refetchProfile();
@@ -194,6 +209,7 @@ export default function ProfileScreen() {
           <BackgroundSvg width={width} height={height} preserveAspectRatio="xMidYMid slice" />
         </View>
         <View style={{ flex: 1, marginTop: scaleWidth(50) }}>
+          
           {/* Avatar skeleton */}
           <SkeletonBox style={{
             width: scaleWidth(140),
@@ -203,6 +219,7 @@ export default function ProfileScreen() {
             left: scaleWidth(45),
             borderRadius: scaleWidth(12),
           }} />
+
           {/* Stats box skeleton */}
           <View style={{
             position: 'absolute',
@@ -400,6 +417,9 @@ export default function ProfileScreen() {
                 displayName={profile.displayName}
                 foodWave={profile.foodWave}
                 track={profile.track || 'GENERAL'}
+                teamBadge={profile.teamBadge || ''}
+                tier={profile.tier}
+                pointsAccumulated={profile.pointsAccumulated}
               />
             </View>
           </View>
@@ -422,6 +442,19 @@ export default function ProfileScreen() {
                 width={scaleWidth(83.557)}
                 height={scaleWidth(83.557)}
               />
+              {profile.teamBadge && (
+                <Image
+                  source={{ uri: profile.teamBadge }}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: scaleWidth(83.557),
+                    height: scaleWidth(83.557),
+                  }}
+                  resizeMode="contain"
+                />
+              )}
               <View style={{
                 position: 'absolute',
                 bottom: scaleWidth(-4),
@@ -526,7 +559,9 @@ export default function ProfileScreen() {
         qrCode={qrCode}
         qrLoading={qrLoading}
         onClose={() => setShowQrModal(false)}
-        onRefresh={() => fetchQrCode(true)}
+        onRefresh={handleManualQrRefresh}
+        refreshCooldown={refreshCooldown}
+        cooldownStartedAt={cooldownStartedAt}
         displayName={profile.displayName}
       />
 
