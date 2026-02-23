@@ -88,9 +88,9 @@ export default function HomeScreen() {
   const targetDate = new Date("2026-02-27T18:00:00");
   const [timeLeft, setTimeLeft] = useState(getTimeRemaining(targetDate));
   const insets = useSafeAreaInsets();
-
+  
   // Track where the timer header ends
-  const [timerBottom, setTimerBottom] = useState(height * 0.18);
+  const [timerBottom, setTimerBottom] = useState(height * 0.03);
 
   const onTimerLayout = (e: any) => {
     const { y, height: h } = e.nativeEvent.layout;
@@ -324,7 +324,8 @@ const styles = StyleSheet.create({
   headerOverlay: {
     alignSelf: "center",
     alignItems: "center",
-    marginTop: height * 0.02, 
+    position: 'absolute',
+    top: (height * 0.04) + 26, 
     zIndex: 50,
   },
   timerLabel: {

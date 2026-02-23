@@ -128,8 +128,8 @@ export default function ScreenThree({ onFinish, onStart, cloudX1, cloudX2, starO
                     adjustsFontSizeToFit
                     numberOfLines={2}
                     style={[styles.subtitleText, {
-                    fontSize: scaleFontSize(19),
-                    lineHeight: scaleHeight(30),
+                    fontSize: scaleFontSize(16),
+                    lineHeight: scaleHeight(22),
                     letterSpacing: scaleWidth(1.0),
                     marginTop: scaleHeight(10),
                     alignSelf: 'center',
