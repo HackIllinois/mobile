@@ -7,12 +7,24 @@ interface UserStatsCardProps {
   displayName: string;
   foodWave: number;
   track: string;
+  tier?: number;
+  teamBadge: string;
+  pointsAccumulated: number;
 }
+
+const getNextTierThreshold = (tier?: number): number | null => {
+  if (tier === 1) return null; // Gold — already at top
+  if (tier === 2) return 700;
+  if (tier === 3) return 300;
+  return 10; // no tier yet
+};
 
 export const UserStatsCard: React.FC<UserStatsCardProps> = ({
   displayName,
   foodWave,
   track,
+  tier,
+  pointsAccumulated,
 }) => {
   const { width, height } = useWindowDimensions();
 
@@ -175,7 +187,7 @@ export const UserStatsCard: React.FC<UserStatsCardProps> = ({
                   color: '#FFF',
                   fontFamily: 'Montserrat',
                   textAlign: 'center',
-                }}>X</Text>
+                }}>{tier ?? '-'}</Text>
               </View>
               {/* Points away text on the right portion */}
               <View style={{
@@ -187,20 +199,44 @@ export const UserStatsCard: React.FC<UserStatsCardProps> = ({
                 justifyContent: 'center',
                 paddingLeft: scaleWidth(6),
               }}>
-                <Text
-                  style={{
-                    fontSize: scaleWidth(9.5),
-                    fontWeight: '400',
-                    color: '#FFF',
-                    fontStyle: 'italic',
-                    textAlign: 'left',
-                  }}
-                  numberOfLines={2}
-                  adjustsFontSizeToFit={true}
-                  minimumFontScale={0.7}
-                >
-                  You're <Text style={{ fontWeight: '700' }}>X points away</Text> from the next tier!
-                </Text>
+                {(() => {
+                  const threshold = getNextTierThreshold(tier);
+                  if (threshold === null) {
+                    return (
+                      <Text
+                        style={{
+                          fontSize: scaleWidth(9.5),
+                          fontWeight: '400',
+                          color: '#FFF',
+                          fontStyle: 'italic',
+                          textAlign: 'left',
+                        }}
+                        numberOfLines={2}
+                        adjustsFontSizeToFit={true}
+                        minimumFontScale={0.7}
+                      >
+                        You're in the <Text style={{ fontWeight: '700' }}>Gold tier</Text>. Great work!
+                      </Text>
+                    );
+                  }
+                  const pointsNeeded = Math.max(0, threshold - pointsAccumulated);
+                  return (
+                    <Text
+                      style={{
+                        fontSize: scaleWidth(9.5),
+                        fontWeight: '400',
+                        color: '#FFF',
+                        fontStyle: 'italic',
+                        textAlign: 'left',
+                      }}
+                      numberOfLines={2}
+                      adjustsFontSizeToFit={true}
+                      minimumFontScale={0.7}
+                    >
+                      You're <Text style={{ fontWeight: '700' }}>{pointsNeeded} points away</Text> from the next tier!
+                    </Text>
+                  );
+                })()}
               </View>
             </View>
           </View>

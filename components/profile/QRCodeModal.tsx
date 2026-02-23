@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, TouchableOpacity, Pressable, Modal, ActivityIndicator, useWindowDimensions } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, TouchableOpacity, Pressable, Modal, ActivityIndicator, Animated, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import QRCode from 'react-native-qrcode-svg';
@@ -12,7 +12,11 @@ interface QRCodeModalProps {
   onClose: () => void;
   onRefresh: () => void;
   displayName?: string; // Kept for backwards compatibility but no longer displayed
+  refreshCooldown: boolean;
+  cooldownStartedAt: number | null;
 }
+
+const COOLDOWN_MS = 5000;
 
 export const QRCodeModal: React.FC<QRCodeModalProps> = ({
   visible,
@@ -20,8 +24,29 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
   qrLoading,
   onClose,
   onRefresh,
+  refreshCooldown,
+  cooldownStartedAt,
 }) => {
   const { width, height } = useWindowDimensions();
+  const localProgressAnim = useRef(new Animated.Value(0)).current;
+  const animationRef = useRef<Animated.CompositeAnimation | null>(null);
+
+  useEffect(() => {
+    animationRef.current?.stop();
+    if (!refreshCooldown || cooldownStartedAt === null) {
+      localProgressAnim.setValue(0);
+      return;
+    }
+    const elapsed = Date.now() - cooldownStartedAt;
+    const remaining = Math.max(0, COOLDOWN_MS - elapsed);
+    localProgressAnim.setValue(Math.min(1, elapsed / COOLDOWN_MS));
+    animationRef.current = Animated.timing(localProgressAnim, {
+      toValue: 1,
+      duration: remaining,
+      useNativeDriver: false,
+    });
+    animationRef.current.start();
+  }, [visible, refreshCooldown, cooldownStartedAt]);
 
   const figmaWidth = 393;
   const figmaHeight = 852;
@@ -56,7 +81,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
           backgroundColor: 'rgba(255, 255, 255, 0.85)',
           justifyContent: 'flex-start',
           alignItems: 'center',
-          paddingTop: scaleHeight(100),
+          paddingTop: scaleHeight(130),
         }}
         onPress={handleClose}
       >
@@ -96,7 +121,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
             height: QR_SIZE,
             justifyContent: 'center',
             alignItems: 'center',
-            marginTop: scaleWidth(25),
+            marginTop: scaleWidth(16),
           }}>
             {qrCode ? (
               <QRCode
@@ -118,19 +143,44 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
           </View>
 
           {/* Refresh Button */}
-          <TouchableOpacity
-            style={{
-              marginTop: scaleWidth(10),
-            }}
-            onPress={handleRefresh}
-            disabled={qrLoading}
-          >
-            <RefreshButtonSvg
-              width={scaleWidth(200)}
-              height={scaleWidth(50)}
-              opacity={qrLoading ? 0.5 : 1}
-            />
-          </TouchableOpacity>
+          {(() => {
+            const btnW = scaleWidth(200);
+            const btnH = scaleWidth(200 * 47 / 261); 
+            const btnRx = btnH / 2; 
+            return (
+              <TouchableOpacity
+                style={{ marginTop: scaleWidth(10) }}
+                onPress={handleRefresh}
+                disabled={qrLoading || refreshCooldown}
+              >
+                <View style={{
+                  width: btnW,
+                  height: btnH,
+                  overflow: 'hidden',
+                  borderRadius: btnRx,
+                }}>
+                  <RefreshButtonSvg
+                    width={btnW}
+                    height={btnH}
+                    opacity={qrLoading || refreshCooldown ? 0.5 : 1}
+                  />
+                  {refreshCooldown && (
+                    <Animated.View style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      bottom: 0,
+                      width: localProgressAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: ['0%', '100%'],
+                      }),
+                      backgroundColor: 'rgba(20, 8, 50, 0.55)',
+                    }} />
+                  )}
+                </View>
+              </TouchableOpacity>
+            );
+          })()}
         </Pressable>
       </Pressable>
     </Modal>

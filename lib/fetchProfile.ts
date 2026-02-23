@@ -45,6 +45,8 @@ export interface UserProfile {
   foodWave: number;
   track?: string;
   team?: string;
+  teamBadge?: string;
+  tier?: number;
 }
 
 interface AdmissionRsvpResponse {
