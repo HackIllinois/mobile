@@ -23,6 +23,7 @@ import QrCodeIcon from '../../assets/navbar/Camera.svg';
 import PointsIcon from '../../assets/navbar/Shop.svg';
 import DuelsIcon from '../../assets/navbar/Duels.svg';
 import * as Haptics from 'expo-haptics';
+import { MAX_APP_WIDTH } from '../../lib/layout';
 
 import { AVATARS } from './avatarConfig';
 
@@ -50,7 +51,8 @@ export const AvatarSelectionModal: React.FC<AvatarSelectionModalProps> = ({
   onClose,
   onAvatarSelected,
 }) => {
-  const { width, height } = useWindowDimensions();
+  const { width: windowWidth, height } = useWindowDimensions();
+  const width = Math.min(windowWidth, MAX_APP_WIDTH);
   const router = useRouter();
 
   const figmaWidth = 393;

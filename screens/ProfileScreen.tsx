@@ -32,6 +32,7 @@ import {
   getNonProfileRoleLabel,
 } from '../lib/fetchProfile';
 import * as Haptics from 'expo-haptics';
+import { MAX_APP_WIDTH } from '../lib/layout';
 import { queryClient } from '../lib/queryClient';
 
 interface QrCodeResponse {
@@ -61,7 +62,8 @@ const getRankSuffix = (rank: number): string => {
 };
 
 export default function ProfileScreen() {
-  const { width, height } = useWindowDimensions();
+  const { width: windowWidth, height } = useWindowDimensions();
+  const width = Math.min(windowWidth, MAX_APP_WIDTH);
 
   const figmaWidth = 393;
   const figmaHeight = 852;

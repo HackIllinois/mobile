@@ -1,10 +1,11 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Moon from "../../assets/event/Moon.svg";
 import Sun from "../../assets/event/Sun";
 import PinkMoon from "../../assets/event/PinkMoon.svg";
+import { getConstrainedWidth } from "../../lib/layout";
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const SCREEN_WIDTH = getConstrainedWidth();
 
 // --- SIZING CONSTANTS ---
 const MAX_ITEM_SIZE = 130;

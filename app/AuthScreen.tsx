@@ -22,6 +22,7 @@ import StaffButtonSvg from "../assets/login/staff-button.svg";
 import GuestButtonSvg from "../assets/login/guest-button.svg";
 
 import api from "../api";
+import { MAX_APP_WIDTH } from "../lib/layout";
 import { queryClient } from "../lib/queryClient";
 import { fetchProfile, prefetchAvatarImage, setCachedRoles } from "../lib/fetchProfile";
 import { prefetchShopImages } from "../lib/fetchShopItems";
@@ -40,7 +41,8 @@ interface AuthRolesResponse {
 }
 
 export default function AuthScreen({ navigation }: any) {
-  const { width, height } = useWindowDimensions();
+  const { width: windowWidth, height } = useWindowDimensions();
+  const width = Math.min(windowWidth, MAX_APP_WIDTH);
   const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [loadingGitHub, setLoadingGitHub] = useState(false);
   const [loadingGuest, setLoadingGuest] = useState(false);

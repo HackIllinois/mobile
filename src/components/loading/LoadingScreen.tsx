@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { StyleSheet, Animated, Easing, useWindowDimensions, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { MAX_APP_WIDTH } from "../../../lib/layout";
 import Clouds from "../../../assets/onboarding/loading/clouds.svg";
 import TinyStars from "../../../assets/onboarding/loading/tiny stars.svg";
 import Astronaut from "../../../assets/onboarding/loading/astronaut.svg";
@@ -15,7 +16,8 @@ type LoadingScreenProps = {
 };
 
 export default function LoadingScreen({ onFinish, progress, cloudX1, cloudX2, starOpacity }: LoadingScreenProps) {
-  const { width, height } = useWindowDimensions();
+  const { width: windowWidth, height } = useWindowDimensions();
+  const width = Math.min(windowWidth, MAX_APP_WIDTH);
 
   const figmaWidth = 393;
   const figmaHeight = 852;

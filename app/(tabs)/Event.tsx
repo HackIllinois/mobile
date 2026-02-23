@@ -350,12 +350,10 @@ export default function EventScreen() {
           )}
           <EventCard
             event={ev}
-            index={index}
             onPress={handleEventPress}
             handleSave={handleSave}
             onShowMenu={handleShowMenu}
             saved={savedEventIds.has(ev.eventId)}
-            showTime={showTime} 
           />
         </View>
       );

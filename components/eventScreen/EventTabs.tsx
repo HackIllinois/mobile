@@ -3,7 +3,6 @@ import {
   View,
   TouchableOpacity,
   StyleSheet,
-  Dimensions,
   Animated,
   LayoutChangeEvent,
 } from 'react-native';
@@ -12,8 +11,9 @@ import EventText from "../../assets/event/ActiveEvent.svg";
 import MentorshipText from "../../assets/event/ActiveMentorship.svg";
 import PassiveMentorText from "../../assets/event/PassiveMentorship.svg";
 import PassiveEventText from "../../assets/event/PassiveEvent.svg";
+import { getConstrainedWidth } from "../../lib/layout";
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const SCREEN_WIDTH = getConstrainedWidth();
 
 // --- Configuration ---
 const TAB_HEIGHT = 45;

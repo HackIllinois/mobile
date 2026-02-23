@@ -4,8 +4,7 @@ import { Event } from '../../types';
 import UnsavedEvent from '../../assets/event/EventCard.svg';
 import SavedEvent from '../../assets/event/SavedEventCard.svg';
 import ExpiredEvent from '../../assets/event/ExpiredEventCard.svg';
-// import ActiveEventCard from '../../assets/event/ActiveEventCard.svg';
-// import SavedActiveEventCard from '../../assets/event/SavedActiveEventCard.svg';
+
 
 // --- SIZING LOGIC ---
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -20,11 +19,9 @@ const CARD_HEIGHT = 200;
 
 interface EventCardProps {
   event: Event;
-  index: number;
   onPress: (event: Event) => void;
   handleSave: (eventId: string) => void;
   saved: boolean;
-  showTime: boolean;
   onShowMenu: (event: Event) => void;
 }
 
@@ -37,28 +34,14 @@ const formatTime = (timestamp: number): string => {
   });
 };
 
-export function EventCard({ event, index, onPress, handleSave, saved, showTime, onShowMenu }: EventCardProps) {
+export function EventCard({ event, onPress, handleSave, saved, onShowMenu }: EventCardProps) {
   const expired = event.endTime * 1000 < Date.now();
-  // const active = !expired && event.startTime * 1000 <= Date.now();
   let CardBackground = UnsavedEvent;
   if (expired) {
     CardBackground = ExpiredEvent;
   } else if (saved) {
     CardBackground = SavedEvent;
   }
-  // } else if (active && saved) {
-  //   CardBackground = SavedActiveEventCard;
-  // } else if (active) {
-  //   CardBackground = ActiveEventCard;
-  
-
-  const estimatedCharsPerLine = 20;
-  
-  // Hardcode specific title to always use 1 line
-  // hello yaseen
-  const isJohnDeereTitle = event.name === "John Deere Track Introduction";
-  const isStripeTitle = event.name === "Stripe Track Introduction";
-  const needsTwoLines = !isStripeTitle && !isJohnDeereTitle && event.name.length > estimatedCharsPerLine;
 
   return (
     <View style={styles.outerContainer}>
@@ -82,53 +65,54 @@ export function EventCard({ event, index, onPress, handleSave, saved, showTime, 
 
         {/* B. Content Overlay (Absolute positioning over SVG) */}
         <View style={styles.contentOverlay}>
-          
-          {/* Title: Dynamic lines based on content length, with hardcoded exception */}
-          <Text 
-            numberOfLines={2} 
-            ellipsizeMode="tail" 
-            style={styles.title}
-          >
-            {event.name}
-          </Text>
 
-          {/* Pill Row */}
-          <View style={styles.pillRow}>
-             <View style={styles.pillPoints}>
-               <Text style={styles.pillTextBlack}>{event.points || 0}Pt</Text>
-             </View>
-             {event.eventType === 'MEAL' ? (
-               // If MEAL: Render a Button
-               <TouchableOpacity 
-                 style={styles.pillTrack}
-                 onPress={() => onShowMenu(event)}
-                 activeOpacity={0.6}
-                 // Add hitSlop to make it easier to tap without opening the card
-                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-               >
-                 <Text style={styles.pillTextWhite}>Show Menu</Text>
-               </TouchableOpacity>
-             ) : (
-               // If NOT Meal: Render static Label
-               <View style={styles.pillTrack}>
-                 <Text style={styles.pillTextWhite}>{event.eventType || 'General'}</Text>
+          <View>
+            {/* Title */}
+            <Text
+              numberOfLines={2}
+              ellipsizeMode="tail"
+              style={styles.title}
+            >
+              {event.name}
+            </Text>
+
+            {/* Pill Row */}
+            <View style={styles.pillRow}>
+               <View style={styles.pillPoints}>
+                 <Text style={styles.pillTextBlack}>{event.points || 0}Pt</Text>
                </View>
-             )}
+               {event.eventType === 'MEAL' ? (
+                 <TouchableOpacity
+                   style={styles.pillTrack}
+                   onPress={() => onShowMenu(event)}
+                   activeOpacity={0.6}
+                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                 >
+                   <Text style={styles.pillTextWhite}>Show Menu</Text>
+                 </TouchableOpacity>
+               ) : (
+                 <View style={styles.pillTrack}>
+                   <Text style={styles.pillTextWhite}>{event.eventType || 'General'}</Text>
+                 </View>
+               )}
+            </View>
           </View>
 
-          {/* Time Info */}
-          <Text style={styles.timeText}>
-             {formatTime(event.startTime)} - {formatTime(event.endTime)}
-          </Text>
-          
-          {/* Location: Max 1 line, then ... */}
-          <Text 
-            numberOfLines={1} 
-            ellipsizeMode="tail" 
-            style={styles.locationText}
-          >
-             {event.locations?.[0]?.description || 'Siebel 1st Floor'}
-          </Text>
+          <View>
+            {/* Time Info */}
+            <Text style={styles.timeText}>
+               {formatTime(event.startTime)} - {formatTime(event.endTime)}
+            </Text>
+
+            {/* Location */}
+            <Text
+              numberOfLines={1}
+              ellipsizeMode="tail"
+              style={styles.locationText}
+            >
+               {event.locations?.[0]?.description || 'Siebel 1st Floor'}
+            </Text>
+          </View>
 
         </View>
 
@@ -149,18 +133,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     width: '100%',
   },
-  timeHeader: {
-    fontSize: 20,
-    color: '#ffffff',
-    fontWeight: '700',
-    marginBottom: 8,
-    marginTop: 10,
-    textShadowColor: 'rgba(0,0,0,0.3)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
-    opacity: 0.9
-  },
-  
   // The Card itself
   cardWrapper: {
     width: CARD_WIDTH,
@@ -188,24 +160,24 @@ const styles = StyleSheet.create({
     bottom: 0,
     paddingHorizontal: 24, // Inner padding
     paddingVertical: 20,
-    justifyContent: 'center', // Vertically center the text block
+    justifyContent: 'flex-start',
   },
 
   // -- Typography --
   title: {
     fontFamily: "Montserrat-Bold-700",
-    fontSize: 26,
+    fontSize: 20,
     fontWeight: '700',
     color: '#FFFFFF',
-    marginBottom: 12,
-    lineHeight: 32, // Consistent line height
-    maxWidth: 230,
+    marginBottom: 8,
+    lineHeight: 28, // Consistent line height
+    maxWidth: '70%',
   },
   
   // -- Pills --
   pillRow: {
     flexDirection: 'row',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   pillPoints: {
     backgroundColor: '#FFFFFF',
@@ -232,7 +204,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   locationText: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#FFFFFF',
     opacity: 0.9,
     fontWeight: '500',

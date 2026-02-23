@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, TouchableOpacity, Pressable, Modal, ActivityIndicator, Animated, useWindowDimensions } from 'react-native';
+import { MAX_APP_WIDTH } from '../../lib/layout';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import QRCode from 'react-native-qrcode-svg';
@@ -27,7 +28,8 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
   refreshCooldown,
   cooldownStartedAt,
 }) => {
-  const { width, height } = useWindowDimensions();
+  const { width: windowWidth, height } = useWindowDimensions();
+  const width = Math.min(windowWidth, MAX_APP_WIDTH);
   const localProgressAnim = useRef(new Animated.Value(0)).current;
   const animationRef = useRef<Animated.CompositeAnimation | null>(null);
 

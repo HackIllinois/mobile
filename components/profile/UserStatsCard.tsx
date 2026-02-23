@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, useWindowDimensions } from 'react-native';
+import { MAX_APP_WIDTH } from '../../lib/layout';
 import WaveButtonSvg from '../../assets/profile/profile-screen/wave-button.svg';
 import TierButtonSvg from '../../assets/profile/profile-screen/tier-button.svg';
 
@@ -26,7 +27,8 @@ export const UserStatsCard: React.FC<UserStatsCardProps> = ({
   tier,
   pointsAccumulated,
 }) => {
-  const { width, height } = useWindowDimensions();
+  const { width: windowWidth, height } = useWindowDimensions();
+  const width = Math.min(windowWidth, MAX_APP_WIDTH);
 
   const figmaWidth = 393;
   const figmaHeight = 852;

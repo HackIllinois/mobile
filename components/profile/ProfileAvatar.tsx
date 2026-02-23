@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 import { Animated, Image, TouchableOpacity, useWindowDimensions } from 'react-native';
+import { MAX_APP_WIDTH } from '../../lib/layout';
 import { getAvatarById, getCharacterIdFromUrl } from './avatarConfig';
 import * as Haptics from 'expo-haptics';
 
@@ -9,7 +10,8 @@ interface ProfileAvatarProps {
 }
 
 export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({ avatarUrl, avatarId }) => {
-  const { width } = useWindowDimensions();
+  const { width: windowWidth } = useWindowDimensions();
+  const width = Math.min(windowWidth, MAX_APP_WIDTH);
 
   const figmaWidth = 393;
   const scaleWidth = (size: number) => (width / figmaWidth) * size;

@@ -1,6 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import { StyleSheet, Animated, Easing, useWindowDimensions, View, Text } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { MAX_APP_WIDTH } from '../../lib/layout';
 import HackRocket from '../../assets/onboarding/hack-rocket.svg';
 import Clouds from '../../assets/onboarding/loading/clouds.svg';
 import TinyStars from '../../assets/onboarding/loading/tiny stars.svg';
@@ -14,7 +15,8 @@ type StartupAnimationProps = {
 };
 
 export default function StartupAnimation({ cloudX1, cloudX2, starOpacity }: StartupAnimationProps) {
-  const { width, height } = useWindowDimensions();
+  const { width: windowWidth, height } = useWindowDimensions();
+  const width = Math.min(windowWidth, MAX_APP_WIDTH);
 
   // Figma design dimensions (matching WelcomePage.tsx)
   const figmaWidth = 393;
