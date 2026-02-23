@@ -4,6 +4,8 @@ import { Event } from '../../types';
 import UnsavedEvent from '../../assets/event/EventCard.svg';
 import SavedEvent from '../../assets/event/SavedEventCard.svg';
 import ExpiredEvent from '../../assets/event/ExpiredEventCard.svg';
+// import ActiveEventCard from '../../assets/event/ActiveEventCard.svg';
+// import SavedActiveEventCard from '../../assets/event/SavedActiveEventCard.svg';
 
 // --- SIZING LOGIC ---
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -37,12 +39,18 @@ const formatTime = (timestamp: number): string => {
 
 export function EventCard({ event, index, onPress, handleSave, saved, showTime, onShowMenu }: EventCardProps) {
   const expired = event.endTime * 1000 < Date.now();
+  // const active = !expired && event.startTime * 1000 <= Date.now();
   let CardBackground = UnsavedEvent;
   if (expired) {
     CardBackground = ExpiredEvent;
   } else if (saved) {
     CardBackground = SavedEvent;
   }
+  // } else if (active && saved) {
+  //   CardBackground = SavedActiveEventCard;
+  // } else if (active) {
+  //   CardBackground = ActiveEventCard;
+  
 
   const estimatedCharsPerLine = 20;
   
@@ -77,7 +85,7 @@ export function EventCard({ event, index, onPress, handleSave, saved, showTime, 
           
           {/* Title: Dynamic lines based on content length, with hardcoded exception */}
           <Text 
-            numberOfLines={needsTwoLines ? 2 : 1} 
+            numberOfLines={2} 
             ellipsizeMode="tail" 
             style={styles.title}
           >
@@ -174,24 +182,23 @@ const styles = StyleSheet.create({
 
   contentOverlay: {
     position: 'absolute',
-    top: 8,
+    top: 20,
     left: 0,
     right: 0,
     bottom: 0,
-    paddingHorizontal: 24,
-    paddingTop: 30,
-    paddingBottom: 20,
-    justifyContent: 'flex-start',
+    paddingHorizontal: 24, // Inner padding
+    paddingVertical: 20,
+    justifyContent: 'center', // Vertically center the text block
   },
 
   // -- Typography --
   title: {
     fontFamily: "Montserrat-Bold-700",
-    fontSize: 20,
+    fontSize: 26,
     fontWeight: '700',
     color: '#FFFFFF',
-    marginBottom: 6,
-    lineHeight: 26, // Consistent line height
+    marginBottom: 12,
+    lineHeight: 32, // Consistent line height
     maxWidth: 230,
   },
   
