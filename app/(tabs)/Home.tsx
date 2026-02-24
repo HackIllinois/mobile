@@ -123,16 +123,16 @@ export default function HomeScreen() {
   const SCHEDULE = useMemo(() => {
     const checkinStart  = new Date("2026-02-27T14:00:00-06:00");
     const checkinEnd    = new Date("2026-02-27T17:00:00-06:00");
-    const scavStart     = new Date("2026-02-27T15:00:00-06:00");
-    const scavEnd       = new Date("2026-02-27T17:00:00-06:00");
+    const scavStart     = new Date("2026-02-27T14:30:00-06:00");
+    const scavEnd       = new Date("2026-02-27T16:30:00-06:00");
     const openingStart  = new Date("2026-02-27T17:00:00-06:00");
     const openingEnd    = new Date("2026-02-27T18:00:00-06:00");
-    const showcaseStart = new Date("2026-02-28T17:00:00-06:00");
-    const showcaseEnd   = new Date("2026-02-28T19:00:00-06:00");
-    const closingStart  = new Date("2026-03-01T15:00:00-06:00");
-    const closingEnd    = new Date("2026-03-01T16:00:00-06:00");
+    const showcaseStart = new Date("2026-03-01T09:00:00-06:00");
+    const showcaseEnd   = new Date("2026-03-01T11:30:00-06:00");
+    const closingStart  = new Date("2026-03-01T14:00:00-06:00");
+    const closingEnd    = new Date("2026-03-01T15:00:00-06:00");
     const hackingStart  = openingEnd;
-    const hackingEnd    = showcaseStart;
+    const hackingEnd    = new Date("2026-03-01T06:00:00-06:00");
 
     return {
       checkin:   { start: checkinStart,  end: checkinEnd },
@@ -262,35 +262,35 @@ export default function HomeScreen() {
       scavenger: {
         title: "Scavenger Hunt",
         description: "Explore the venue, meet other attendees, and complete quick challenges to earn points.",
-        location: "Venue-wide",
+        location: "Siebel Center for Computer Science",
         format: "In-person" as const,
-        tags: ["Beginner Friendly", "Team Activity"],
+        tags: ["Mini Event", "Team Activity"],
       },
       opening: {
         title: "Opening Ceremony",
         description: "Kickoff announcements, theme overview, sponsor intros, and important event logistics.",
-        location: "Main Stage",
+        location: "Siebel Center for Computer Science (Room 1404)",
         format: "In-person" as const,
-        tags: ["Required", "Announcements"],
+        tags: ["Important", "Announcements"],
       },
       hacking: {
         title: "Hacking",
         description: "Build your project, collaborate with teammates, and bring your ideas to life. Mentors are available throughout the venue.",
-        location: "Siebel Center",
+        location: "Siebel Center for CS & Siebel Center for Design",
         format: "In-person" as const,
-        tags: ["Competitive", "Mentors Available", "Food Provided"],
+        tags: ["Mentors Available", "Food Provided"],
       },
       showcase: {
         title: "Project Showcase",
         description: "Demo your project to judges and attendees, gather feedback, and celebrate what you built.",
-        location: "Expo Hall",
-        format: "Hybrid" as const,
+        location: "Siebel Center for Computer Science",
+        format: "In-person" as const,
         tags: ["Judging", "Demos"],
       },
       closing: {
         title: "Closing Ceremony",
         description: "Final results, awards, and wrap-up announcements for the weekend.",
-        location: "Main Stage",
+        location: "Siebel Center for Computer Science (Room 1404)",
         format: "In-person" as const,
         tags: ["Awards", "Announcements"],
       },
@@ -321,6 +321,16 @@ export default function HomeScreen() {
   const handlePlanetPress = (key: StageKey) => {
     setSelectedEvent(eventModalMap[key] ?? null);
     setModalVisible(true);
+  };
+
+  const pushScheduleFocus = (focusEvent: string) => {
+    router.push({
+      pathname: "/Event",
+      params: {
+        focusEvent,
+        focusRequestId: String(Date.now()),
+      },
+    });
   };
 
   return (
@@ -413,17 +423,39 @@ export default function HomeScreen() {
       <EventInfoModal
         visible={modalVisible}
         event={selectedEvent}
-        onViewDetails={(event) => {
-          setModalVisible(false);
-          setSelectedEvent(null);
-
-          if (event.id === "checkin") {
-            router.push({ pathname: "/Event", params: { focusEvent: "Attendee Check-In" } });
-            return;
-          }
-
-          router.push("/Event");
-        }}
+        onViewDetails={
+          selectedEvent?.id === "checkin"
+            ? () => {
+                setModalVisible(false);
+                setSelectedEvent(null);
+                pushScheduleFocus("Attendee Check-In");
+              }
+            : selectedEvent?.id === "opening"
+            ? () => {
+                setModalVisible(false);
+                setSelectedEvent(null);
+                pushScheduleFocus("Opening Ceremony");
+              }
+            : selectedEvent?.id === "showcase"
+            ? () => {
+                setModalVisible(false);
+                setSelectedEvent(null);
+                pushScheduleFocus("[ALL ATTENDEES] Project Showcase");
+              }
+            : selectedEvent?.id === "scavenger"
+            ? () => {
+                setModalVisible(false);
+                setSelectedEvent(null);
+                pushScheduleFocus("Solar Search");
+              }
+            : selectedEvent?.id === "closing"
+            ? () => {
+                setModalVisible(false);
+                setSelectedEvent(null);
+                pushScheduleFocus("Closing Ceremonies");
+              }
+            : undefined
+        }
         onClose={() => {
           setModalVisible(false);
           setSelectedEvent(null);

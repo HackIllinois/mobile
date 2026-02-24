@@ -58,7 +58,7 @@ const IS_TABLET = width > 768;
 
 export default function EventScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ focusEvent?: string }>();
+  const params = useLocalSearchParams<{ focusEvent?: string; focusRequestId?: string }>();
   const insets = useSafeAreaInsets();
   const [scheduleMode, setScheduleMode] = useState<ScheduleMode>('events');
   
@@ -228,7 +228,7 @@ export default function EventScreen() {
 
 
   const hasAutoScrolled = useRef(false);
-  const hasHandledFocusParam = useRef(false);
+  const lastHandledFocusRequestId = useRef<string | null>(null);
 
   useEffect(() => {
     if (hasAutoScrolled.current || filteredItems.length === 0 || !flatListRef.current) return;
@@ -282,13 +282,17 @@ export default function EventScreen() {
 
   useEffect(() => {
     const focusEvent = typeof params.focusEvent === "string" ? params.focusEvent : undefined;
-    if (!focusEvent || hasHandledFocusParam.current || events.length === 0) return;
+    const focusRequestId =
+      typeof params.focusRequestId === "string" ? params.focusRequestId : focusEvent ?? null;
+
+    if (!focusEvent || !focusRequestId || events.length === 0) return;
+    if (lastHandledFocusRequestId.current === focusRequestId) return;
 
     const normalized = focusEvent.trim().toLowerCase();
     const matched = events.find((ev) => ev.name?.trim().toLowerCase() === normalized);
     if (!matched) return;
 
-    hasHandledFocusParam.current = true;
+    lastHandledFocusRequestId.current = focusRequestId;
     setScheduleMode("events");
     setSaveValue(false);
 
@@ -298,7 +302,7 @@ export default function EventScreen() {
     requestAnimationFrame(() => {
       handleEventPress(matched);
     });
-  }, [events, params.focusEvent]);
+  }, [events, params.focusEvent, params.focusRequestId]);
 
 
   const handleScrollToIndexFailed = useCallback(

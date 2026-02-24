@@ -106,7 +106,8 @@ export default function EventInfoModal({ visible, event, onClose, onViewDetails 
       ? "Event Ended"
       : "Upcoming";
 
-  const primaryDisabled = event.status === "ended" || !onViewDetails;
+  const showPrimaryAction = !!onViewDetails;
+  const primaryDisabled = event.status === "ended";
 
   const timeText = `${event.startTime.toLocaleString("en-US", {
     weekday: "short",
@@ -169,27 +170,29 @@ export default function EventInfoModal({ visible, event, onClose, onViewDetails 
               </View>
             )}
 
-            <View style={styles.footer}>
-              <Pressable
-                disabled={primaryDisabled}
-                style={[styles.primaryBtn, primaryDisabled && styles.primaryBtnDisabled]}
-                onPress={() => {
-                  if (!onViewDetails) return;
-                  onViewDetails(event);
-                }}
-              >
-                <LinearGradient
-                  colors={primaryDisabled ? ["#666A88", "#4E516A"] : ["#66A8FF", "#8A65FF"]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.primaryBtnFill}
+            {showPrimaryAction && (
+              <View style={styles.footer}>
+                <Pressable
+                  disabled={primaryDisabled}
+                  style={[styles.primaryBtn, primaryDisabled && styles.primaryBtnDisabled]}
+                  onPress={() => {
+                    if (!onViewDetails) return;
+                    onViewDetails(event);
+                  }}
                 >
-                  <Text style={styles.primaryBtnText}>
-                    {event.status === "ended" ? "Event Ended" : "View Details"}
-                  </Text>
-                </LinearGradient>
-              </Pressable>
-            </View>
+                  <LinearGradient
+                    colors={primaryDisabled ? ["#666A88", "#4E516A"] : ["#66A8FF", "#8A65FF"]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.primaryBtnFill}
+                  >
+                    <Text style={styles.primaryBtnText}>
+                      {event.status === "ended" ? "Event Ended" : "View Details"}
+                    </Text>
+                  </LinearGradient>
+                </Pressable>
+              </View>
+            )}
           </LinearGradient>
         </Animated.View>
       </View>
