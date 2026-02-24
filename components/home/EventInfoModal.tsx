@@ -182,7 +182,7 @@ export default function EventInfoModal({ visible, event, onClose, onViewDetails 
                   style={[styles.primaryBtn, primaryDisabled && styles.primaryBtnDisabled]}
                   onPress={() => {
                     if (!onViewDetails) return;
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    Haptics.selectionAsync();
                     onViewDetails(event);
                   }}
                 >
