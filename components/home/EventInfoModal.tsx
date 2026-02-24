@@ -11,6 +11,7 @@ import {
   View,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import * as Haptics from "expo-haptics";
 
 export type EventModalStatus = "upcoming" | "live" | "closing" | "ended";
 
@@ -64,6 +65,7 @@ export default function EventInfoModal({ visible, event, onClose, onViewDetails 
   }, [backdrop, event, sheetY, visible]);
 
   const closeAnimated = () => {
+    Haptics.selectionAsync();
     Animated.parallel([
       Animated.timing(backdrop, { toValue: 0, duration: 160, useNativeDriver: true }),
       Animated.timing(sheetY, { toValue: SHEET_HEIGHT, duration: 160, useNativeDriver: true }),
@@ -180,6 +182,7 @@ export default function EventInfoModal({ visible, event, onClose, onViewDetails 
                   style={[styles.primaryBtn, primaryDisabled && styles.primaryBtnDisabled]}
                   onPress={() => {
                     if (!onViewDetails) return;
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     onViewDetails(event);
                   }}
                 >
