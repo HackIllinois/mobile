@@ -95,24 +95,26 @@ export default function ProfileScreen() {
   const [cooldownStartedAt, setCooldownStartedAt] = useState<number | null>(null);
   const cooldownTimer = useRef<NodeJS.Timeout | null>(null);
 
-  useEffect(() => {
-    if (!profile?.team) return;
-    const fetchTeamRank = async () => {
-      try {
-        const res = await api.get<AxiosResponse<TeamStanding[]>>('attendee-team/');
-        const raw = res.data as unknown as TeamStanding[] | { data: TeamStanding[] };
-        const standings: TeamStanding[] = Array.isArray(raw) ? raw : raw.data;
-        standings.sort((a: TeamStanding, b: TeamStanding) => b.points - a.points);
-        const rank = standings.findIndex(
-          (t: TeamStanding) => t.name.toLowerCase() === profile.team!.toLowerCase()
-        );
-        setTeamRank(rank >= 0 ? rank + 1 : null);
-      } catch (error) {
-        console.error('Failed to fetch team standings:', error);
-      }
-    };
-    fetchTeamRank();
-  }, [profile?.team]);
+  useFocusEffect(
+    useCallback(() => {
+      if (!profile?.team) return;
+      const fetchTeamRank = async () => {
+        try {
+          const res = await api.get<AxiosResponse<TeamStanding[]>>('attendee-team/');
+          const raw = res.data as unknown as TeamStanding[] | { data: TeamStanding[] };
+          const standings: TeamStanding[] = Array.isArray(raw) ? raw : raw.data;
+          standings.sort((a: TeamStanding, b: TeamStanding) => b.points - a.points);
+          const rank = standings.findIndex(
+            (t: TeamStanding) => t.name.toLowerCase() === profile.team!.toLowerCase()
+          );
+          setTeamRank(rank >= 0 ? rank + 1 : null);
+        } catch (error) {
+          console.error('Failed to fetch team standings:', error);
+        }
+      };
+      fetchTeamRank();
+    }, [profile?.team])
+  );
 
   const pulseAnim = useRef(new Animated.Value(0.3)).current;
   useEffect(() => {
@@ -472,13 +474,22 @@ export default function ProfileScreen() {
                 zIndex: 1,
               }}>
                 {teamRank !== null ? (
-                  <Text style={{
-                    fontFamily: 'Tsukimi Rounded',
-                    fontWeight: '700',
-                    fontSize: scaleWidth(10),
-                    color: '#1a0040',
-                    lineHeight: scaleWidth(12),
-                  }}>{teamRank}<Text style={{ fontSize: scaleWidth(6) }}>{getRankSuffix(teamRank)}</Text></Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+                    <Text style={{
+                      fontFamily: 'Tsukimi Rounded',
+                      fontWeight: '700',
+                      fontSize: scaleWidth(10),
+                      color: '#1a0040',
+                      lineHeight: scaleWidth(12),
+                    }}>{teamRank}</Text>
+                    <Text style={{
+                      fontFamily: 'Tsukimi Rounded',
+                      fontWeight: '700',
+                      fontSize: scaleWidth(5.5),
+                      color: '#1a0040',
+                      marginTop: scaleWidth(1),
+                    }}>{getRankSuffix(teamRank)}</Text>
+                  </View>
                 ) : (
                   <Text style={{
                     fontFamily: 'Tsukimi Rounded',
