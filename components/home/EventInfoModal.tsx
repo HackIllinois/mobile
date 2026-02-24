@@ -146,10 +146,11 @@ export default function EventInfoModal({ visible, event, onClose, onViewDetails 
                   <Text style={styles.statusText}>{statusLabel}</Text>
                 </View>
               </View>
-              <Pressable onPress={closeAnimated} style={styles.closeBtn} accessibilityLabel="Close event details">
-                <Text style={styles.closeText}>✕</Text>
-              </Pressable>
             </View>
+
+            <Pressable onPress={closeAnimated} style={styles.closeBtn} accessibilityLabel="Close event details">
+              <Text style={styles.closeText}>✕</Text>
+            </Pressable>
 
             <Text style={styles.description}>{event.description || "Details coming soon"}</Text>
 
@@ -227,7 +228,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(234, 226, 255, 0.45)",
     marginBottom: 12,
   },
-  headerRow: { flexDirection: "row", alignItems: "center" },
+  headerRow: { flexDirection: "row", alignItems: "flex-start" },
   iconWrap: {
     width: 58,
     height: 58,
@@ -237,7 +238,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginRight: 12,
   },
-  icon: { width: 52, height: 52 },
+  icon: { width: 60, height: 60 },
   headerText: { flex: 1, gap: 6 },
   title: { color: "#FFFFFF", fontSize: 22, fontWeight: "700" },
   statusPill: {
@@ -257,16 +258,19 @@ const styles = StyleSheet.create({
   statusMuted: { backgroundColor: "#B0A9D8" },
   statusText: { color: "#EFEAFF", fontSize: 12, fontWeight: "600" },
   closeBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    position: "absolute",
+    top: 12,
+    right: 12,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "rgba(255,255,255,0.07)",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.15)",
   },
-  closeText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
+  closeText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
   description: {
     color: "#ECE6FF",
     fontSize: 14,
