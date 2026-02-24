@@ -133,7 +133,7 @@ export default function Layout() {
         </Tabs>
 
         {/* Header */}
-        <View style={[styles.headerRow, { top: insets.top + 8}]}>
+        <View style={[styles.headerRow, { top: insets.top }]}>
           {title ? (
             <View style={{ marginTop: -6 }}>
               <Text style={[styles.headerTitle, styles.glowWide]}>{title}</Text>
@@ -169,10 +169,10 @@ const styles = StyleSheet.create({
   headerRow: {
     position: 'absolute',
     left: 20,
-    right: 20, 
+    right: 10,
     zIndex: 100,
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     justifyContent: 'space-between',
   },
   headerTitle: {
