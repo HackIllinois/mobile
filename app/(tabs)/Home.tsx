@@ -1,13 +1,21 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, StyleSheet, Dimensions, Animated, Easing } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
 
 import EventOrbit from "../../components/home/EventOrbit";
 import OrbitItem from "../../components/home/OrbitItem";
 import RocketOrbit from "../../components/home/RocketOrbit";
+import EventInfoModal, { EventModalData } from "../../components/home/EventInfoModal";
 import { getTimeRemaining } from "../../components/home/countdown";
 import HomeBackground from "../../assets/home/home_bg.svg";
 import TimerOutline from "../../assets/home/timer_outline.svg";
+import CheckInPng from "../../assets/home/check_in-png.png";
+import ScavengerPng from "../../assets/home/scavenger_hunt-png.png";
+import OpeningPng from "../../assets/home/opening-png.png";
+import HackingPng from "../../assets/home/hacking-png.png";
+import ShowcasePng from "../../assets/home/project-png.png";
+import ClosingPng from "../../assets/home/closing_ceremony_png.png";
 
 import { getConstrainedWidth } from "../../lib/layout";
 
@@ -85,12 +93,15 @@ const CLOSING_PLANET_SIZE = 180;
 const BOTTOM_CLEARANCE = 20;
 
 export default function HomeScreen() {
+  const router = useRouter();
   const targetDate = new Date("2026-02-27T18:00:00");
   const [timeLeft, setTimeLeft] = useState(getTimeRemaining(targetDate));
   const insets = useSafeAreaInsets();
   
   // Track where the timer header ends
   const [timerBottom, setTimerBottom] = useState(height * 0.03);
+  const [selectedEvent, setSelectedEvent] = useState<EventModalData | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
 
   const onTimerLayout = (e: any) => {
     const { y, height: h } = e.nativeEvent.layout;
@@ -230,6 +241,88 @@ export default function HomeScreen() {
 
   const formatTime = (num: number) => String(num).padStart(2, "0");
 
+  const eventModalMap = useMemo(() => {
+    const planetImage = {
+      checkin: CheckInPng,
+      scavenger: ScavengerPng,
+      opening: OpeningPng,
+      hacking: HackingPng,
+      showcase: ShowcasePng,
+      closing: ClosingPng,
+    } as const;
+
+    const base = {
+      checkin: {
+        title: "Check-In",
+        description: "Check in, receive your merch, and get settled.",
+        location: "Siebel Center for Computer Science",
+        format: "In-person" as const,
+        tags: ["Mandatory", "Free Stuff"],
+      },
+      scavenger: {
+        title: "Scavenger Hunt",
+        description: "Explore the venue, meet other attendees, and complete quick challenges to earn points.",
+        location: "Venue-wide",
+        format: "In-person" as const,
+        tags: ["Beginner Friendly", "Team Activity"],
+      },
+      opening: {
+        title: "Opening Ceremony",
+        description: "Kickoff announcements, theme overview, sponsor intros, and important event logistics.",
+        location: "Main Stage",
+        format: "In-person" as const,
+        tags: ["Required", "Announcements"],
+      },
+      hacking: {
+        title: "Hacking",
+        description: "Build your project, collaborate with teammates, and bring your ideas to life. Mentors are available throughout the venue.",
+        location: "Siebel Center",
+        format: "In-person" as const,
+        tags: ["Competitive", "Mentors Available", "Food Provided"],
+      },
+      showcase: {
+        title: "Project Showcase",
+        description: "Demo your project to judges and attendees, gather feedback, and celebrate what you built.",
+        location: "Expo Hall",
+        format: "Hybrid" as const,
+        tags: ["Judging", "Demos"],
+      },
+      closing: {
+        title: "Closing Ceremony",
+        description: "Final results, awards, and wrap-up announcements for the weekend.",
+        location: "Main Stage",
+        format: "In-person" as const,
+        tags: ["Awards", "Announcements"],
+      },
+    } as const;
+
+    const t = new Date();
+    return STAGE_ORDER.reduce((acc, key) => {
+      const schedule = SCHEDULE[key];
+      const status: EventModalData["status"] =
+        t > schedule.end ? "ended" : t >= schedule.start ? (t >= new Date(schedule.end.getTime() - 30 * 60 * 1000) ? "closing" : "live") : "upcoming";
+
+      acc[key] = {
+        id: key,
+        title: base[key].title,
+        description: base[key].description || "Details coming soon",
+        startTime: schedule.start,
+        endTime: schedule.end,
+        location: base[key].location,
+        format: base[key].format,
+        status,
+        tags: [...base[key].tags],
+        image: planetImage[key],
+      };
+      return acc;
+    }, {} as Record<StageKey, EventModalData>);
+  }, [SCHEDULE, currentStage]);
+
+  const handlePlanetPress = (key: StageKey) => {
+    setSelectedEvent(eventModalMap[key] ?? null);
+    setModalVisible(true);
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
       <HomeBackground
@@ -273,7 +366,7 @@ export default function HomeScreen() {
               offsetX={item.offsetX}
               offsetY={item.offsetY}
               variant={getVariantFor(item.eventKey)}
-              onPress={(key) => console.log("pressed", key)}
+              onPress={handlePlanetPress}
             />
           );
         }
@@ -291,6 +384,7 @@ export default function HomeScreen() {
             variant={getVariantFor(item.eventKey)}
             jiggle={jiggleAnims[i]}
             jigglePx={jigglePx}
+            onPress={handlePlanetPress}
           />
         );
       })}
@@ -315,6 +409,26 @@ export default function HomeScreen() {
           />
         );
       })()}
+
+      <EventInfoModal
+        visible={modalVisible}
+        event={selectedEvent}
+        onViewDetails={(event) => {
+          setModalVisible(false);
+          setSelectedEvent(null);
+
+          if (event.id === "checkin") {
+            router.push({ pathname: "/Event", params: { focusEvent: "Attendee Check-In" } });
+            return;
+          }
+
+          router.push("/Event");
+        }}
+        onClose={() => {
+          setModalVisible(false);
+          setSelectedEvent(null);
+        }}
+      />
     </SafeAreaView>
   );
 }

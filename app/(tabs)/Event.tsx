@@ -32,7 +32,7 @@ import { useSavedEvents } from '../../lib/fetchSavedEvents';
 import { useMentorOfficeHours } from '../../lib/fetchMentorOfficeHours';
 import { Event } from '../../types';
 
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 
 // --- Types ---
 type ScheduleMode = 'events' | 'mentorship';
@@ -58,6 +58,7 @@ const IS_TABLET = width > 768;
 
 export default function EventScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ focusEvent?: string }>();
   const insets = useSafeAreaInsets();
   const [scheduleMode, setScheduleMode] = useState<ScheduleMode>('events');
   
@@ -227,6 +228,7 @@ export default function EventScreen() {
 
 
   const hasAutoScrolled = useRef(false);
+  const hasHandledFocusParam = useRef(false);
 
   useEffect(() => {
     if (hasAutoScrolled.current || filteredItems.length === 0 || !flatListRef.current) return;
@@ -277,6 +279,26 @@ export default function EventScreen() {
 
     hasAutoScrolled.current = true;
   }, [filteredItems]);
+
+  useEffect(() => {
+    const focusEvent = typeof params.focusEvent === "string" ? params.focusEvent : undefined;
+    if (!focusEvent || hasHandledFocusParam.current || events.length === 0) return;
+
+    const normalized = focusEvent.trim().toLowerCase();
+    const matched = events.find((ev) => ev.name?.trim().toLowerCase() === normalized);
+    if (!matched) return;
+
+    hasHandledFocusParam.current = true;
+    setScheduleMode("events");
+    setSaveValue(false);
+
+    const matchedDate = new Date(matched.startTime * 1000).toDateString();
+    setSelectedDay(matchedDate);
+
+    requestAnimationFrame(() => {
+      handleEventPress(matched);
+    });
+  }, [events, params.focusEvent]);
 
 
   const handleScrollToIndexFailed = useCallback(
