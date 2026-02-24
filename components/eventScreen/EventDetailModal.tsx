@@ -212,13 +212,13 @@ const styles = StyleSheet.create({
   paperclipContainer: {
     position: 'absolute',
     top: 50,  
-    right: -35, 
+    right: -32, 
     zIndex: 10,
   },
   paperclipImage: {
     width: 50,   
     height: 90,  
-    transform: [{ rotate: '-5deg' }], 
+    transform: [{ rotate: '-10deg' }], 
   },
 
   // -- Content Styles --
