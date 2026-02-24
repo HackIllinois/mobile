@@ -57,16 +57,16 @@ export default function EventDetailModal({ visible, event, onClose, handleSave, 
 
           {/* Main Content Card */}
           <View style={styles.mainCard}>
-            
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 10 }}> 
-              <View style={styles.buttonsContainer}>
+            <View style={styles.buttonsContainer}>
               <TouchableOpacity onPress={onClose} style={styles.closeButton} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
                   <Text style={styles.closeText}>✕</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleSave(event.eventId)} style={styles.saveButton} hitSlop={15}>
-                  {saved ? <Saved /> : <Unsaved />}
+              <TouchableOpacity onPress={() => handleSave(event.eventId)} style={styles.saveButton} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
+                  {saved ? <Saved height={45} /> : <Unsaved height={45} />}
               </TouchableOpacity>
             </View>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 10, paddingTop: 30 }}> 
+              
               <View style={styles.headerSection}>
                   <Text style={styles.title}>{event.name}</Text>
                   
@@ -220,13 +220,20 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     width: '100%',
+    height: 40,
+    zIndex: 10,
   },
   saveButton: {
-    padding: 8,
-    alignSelf: 'flex-end',
+    height: 50,
+    minWidth: 50,
+    justifyContent: 'center',
+    alignItems: 'flex-end',
   },
   closeButton: {
-    alignSelf: 'flex-start',
+    height: 50,
+    width: 50,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
   },
   closeText: {
     fontSize: 24,
