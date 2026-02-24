@@ -179,7 +179,7 @@ export default function CartModal({
 
               <View style={styles.footer}>
                 <View style={styles.totalRow}>
-                  <Text style={styles.totalLabel}>total</Text>
+                  <Text style={styles.totalLabel}>Total</Text>
                   <View style={styles.totalValueContainer}>
                     <Image
                       source={require("../../assets/point-shop/point-shop-diamonds.png")}
@@ -245,6 +245,7 @@ const styles = StyleSheet.create({
     fontWeight: "300",
   },
   title: {
+    fontFamily: "Tsukimi Rounded",
     fontSize: 20,
     fontWeight: "700",
     color: "#e8dff0",
@@ -279,6 +280,7 @@ const styles = StyleSheet.create({
     borderTopColor: "#5a4570",
   },
   totalLabel: {
+    fontFamily: "Tsukimi Rounded",
     fontSize: 18,
     fontWeight: "600",
     color: "#e8dff0",
@@ -300,7 +302,7 @@ const styles = StyleSheet.create({
   },
   purchaseButton: {
     backgroundColor: "#6B4E8C",
-    borderRadius: 12,
+    borderRadius: 50,
     paddingVertical: 16,
     alignItems: "center",
     justifyContent: "center",
@@ -310,6 +312,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   purchaseButtonText: {
+    fontFamily: "Tsukimi Rounded",
     color: "#e8dff0",
     fontSize: 16,
     fontWeight: "700",
@@ -340,9 +343,10 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
     borderWidth: 1,
     borderColor: "#c4b4d4",
-    borderRadius: 12,
+    borderRadius: 50,
   },
   backToCartButtonText: {
+    fontFamily: "Tsukimi Rounded",
     color: "#e8dff0",
     fontSize: 14,
     fontWeight: "600",
