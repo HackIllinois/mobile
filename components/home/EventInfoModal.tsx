@@ -293,8 +293,8 @@ const styles = StyleSheet.create({
   },
   tagText: { color: "#DFF0FF", fontSize: 12, fontWeight: "600" },
   footer: { flexDirection: "row", gap: 10, marginTop: 18 },
-  primaryBtn: { flex: 1, borderRadius: 14, overflow: "hidden" },
+  primaryBtn: { flex: 1, borderRadius: 999, overflow: "hidden" },
   primaryBtnDisabled: { opacity: 0.8 },
-  primaryBtnFill: { minHeight: 46, alignItems: "center", justifyContent: "center" },
+  primaryBtnFill: { minHeight: 46, alignItems: "center", justifyContent: "center", borderRadius: 999 },
   primaryBtnText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
 });
