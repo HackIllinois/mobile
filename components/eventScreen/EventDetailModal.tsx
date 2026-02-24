@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Text, 
   StyleSheet, 
@@ -34,6 +34,8 @@ const formatTime = (timestamp: number): string => {
 };
 
 export default function EventDetailModal({ visible, event, onClose, handleSave, saved }: FullScreenModalProps) {
+  const [isMapFullScreen, setIsMapFullScreen] = useState(false);
+
   if (!event) return null;
 
   return (
@@ -70,7 +72,7 @@ export default function EventDetailModal({ visible, event, onClose, handleSave, 
                   
                   <View style={styles.pillRow}>
                     <View style={styles.pillPoints}>
-                      <Text style={styles.pillTextBlack}>{event.points || 0}Pt</Text>
+                      <Text style={styles.pillTextBlack}>{event.points || 0}Pts</Text>
                     </View>
             
                     <View style={styles.pillTrack}>
@@ -92,13 +94,20 @@ export default function EventDetailModal({ visible, event, onClose, handleSave, 
 
               {/* Simple Map Image (No Zoom) */}
               {event.mapImageUrl && (
-                <View style={styles.mapContainer}>
+                <TouchableOpacity 
+                  style={styles.mapContainer} 
+                  onPress={() => setIsMapFullScreen(true)}
+                  activeOpacity={0.9}
+                >
                   <Image
                       source={{ uri: event.mapImageUrl }}
                       style={styles.mapImage}
                       resizeMode="contain"
                   />
-                </View>
+                  <View style={styles.expandOverlay}>
+                    <Text style={styles.expandText}>Tap to enlarge</Text>
+                  </View>
+                </TouchableOpacity>
               )}
             </ScrollView>
           </View>
@@ -114,6 +123,31 @@ export default function EventDetailModal({ visible, event, onClose, handleSave, 
 
         </View>
       </View>
+
+      {/* Full Screen Map Modal */}
+      {event.mapImageUrl && (
+        <Modal
+          visible={isMapFullScreen}
+          transparent={false}
+          animationType="slide"
+          onRequestClose={() => setIsMapFullScreen(false)}
+        >
+          <View style={styles.fullScreenContainer}>
+            <TouchableOpacity 
+              style={styles.fullScreenCloseButton} 
+              onPress={() => setIsMapFullScreen(false)}
+            >
+              <Text style={styles.fullScreenCloseText}>✕ Close</Text>
+            </TouchableOpacity>
+            
+            <Image
+              source={{ uri: event.mapImageUrl }}
+              style={styles.fullScreenImage}
+              resizeMode="contain"
+            />
+          </View>
+        </Modal>
+      )}
     </Modal>
   );
 }
@@ -258,6 +292,47 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   mapImage: {
+    width: '100%',
+    height: '100%',
+  },
+  expandOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.1)',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    paddingBottom: 8,
+  },
+  expandText: {
+    color: '#333',
+    fontSize: 12,
+    fontWeight: '600',
+    backgroundColor: 'transparent',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  fullScreenContainer: {
+    flex: 1,
+    backgroundColor: '#000',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fullScreenCloseButton: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 20,
+    zIndex: 10,
+  },
+  fullScreenCloseText: {
+    color: '#FFF',
+    fontWeight: '700',
+    fontSize: 16,
+  },
+  fullScreenImage: {
     width: '100%',
     height: '100%',
   },
