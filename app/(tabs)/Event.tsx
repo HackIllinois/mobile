@@ -58,7 +58,7 @@ const IS_TABLET = width > 768;
 
 export default function EventScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ focusEvent?: string; focusRequestId?: string }>();
+  const params = useLocalSearchParams<{ focusEvent?: string; focusEventId?: string; focusRequestId?: string }>();
   const insets = useSafeAreaInsets();
   const [scheduleMode, setScheduleMode] = useState<ScheduleMode>('events');
   
@@ -282,14 +282,20 @@ export default function EventScreen() {
 
   useEffect(() => {
     const focusEvent = typeof params.focusEvent === "string" ? params.focusEvent : undefined;
+    const focusEventId = typeof params.focusEventId === "string" ? params.focusEventId : undefined;
     const focusRequestId =
-      typeof params.focusRequestId === "string" ? params.focusRequestId : focusEvent ?? null;
+      typeof params.focusRequestId === "string"
+        ? params.focusRequestId
+        : focusEventId ?? focusEvent ?? null;
 
-    if (!focusEvent || !focusRequestId || events.length === 0) return;
+    if ((!focusEvent && !focusEventId) || !focusRequestId || events.length === 0) return;
     if (lastHandledFocusRequestId.current === focusRequestId) return;
 
-    const normalized = focusEvent.trim().toLowerCase();
-    const matched = events.find((ev) => ev.name?.trim().toLowerCase() === normalized);
+    const normalized = focusEvent?.trim().toLowerCase();
+    // Prefer stable backend ids for deep-link focus; fall back to title matching while mappings are being filled in.
+    const matched =
+      (focusEventId ? events.find((ev) => ev.eventId === focusEventId) : undefined) ??
+      (normalized ? events.find((ev) => ev.name?.trim().toLowerCase() === normalized) : undefined);
     if (!matched) return;
 
     lastHandledFocusRequestId.current = focusRequestId;
@@ -302,7 +308,7 @@ export default function EventScreen() {
     requestAnimationFrame(() => {
       handleEventPress(matched);
     });
-  }, [events, params.focusEvent, params.focusRequestId]);
+  }, [events, params.focusEvent, params.focusEventId, params.focusRequestId]);
 
 
   const handleScrollToIndexFailed = useCallback(

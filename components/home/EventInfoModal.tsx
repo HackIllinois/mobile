@@ -16,6 +16,8 @@ export type EventModalStatus = "upcoming" | "live" | "closing" | "ended";
 
 export interface EventModalData {
   id: string;
+  focusEventId?: string;
+  focusEventName?: string;
   title: string;
   description: string;
   startTime: Date;
