@@ -10,7 +10,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import QRCode from "react-native-qrcode-svg";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import * as Brightness from "expo-brightness";
 import { ShopItem } from "../../types";
 import CartItem from "./CartItem";
 import api from "../../api";
@@ -37,6 +38,7 @@ export default function CartModal({
   onRefresh,
 }: CartModalProps) {
   const [qrCodeData, setQrCodeData] = useState<string | null>();
+  const prevBrightness = useRef<number | null>(null);
 
   // Reset QR code state when modal is closed
   useEffect(() => {
@@ -44,6 +46,20 @@ export default function CartModal({
       setQrCodeData(null);
     }
   }, [visible]);
+
+  useEffect(() => {
+    if (qrCodeData) {
+      Brightness.getBrightnessAsync().then((b) => {
+        prevBrightness.current = b;
+        Brightness.setBrightnessAsync(1);
+      });
+    } else {
+      if (prevBrightness.current !== null) {
+        Brightness.setBrightnessAsync(prevBrightness.current);
+        prevBrightness.current = null;
+      }
+    }
+  }, [qrCodeData]);
 
   const handleBackToCart = () => {
     setQrCodeData(null);
