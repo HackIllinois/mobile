@@ -65,18 +65,25 @@ export default function EventDetailModal({ visible, event, onClose, handleSave, 
                   {saved ? <Saved height={45} /> : <Unsaved height={45} />}
               </TouchableOpacity>
             </View>
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 10, paddingTop: 30 }}> 
+            <ScrollView showsVerticalScrollIndicator={false}> 
               
               <View style={styles.headerSection}>
-                  <Text style={styles.title}>{event.name}</Text>
-                  
-                  <View style={styles.pillRow}>
-                    <View style={styles.pillPoints}>
-                      <Text style={styles.pillTextBlack}>{event.points || 0}Pts</Text>
-                    </View>
-            
-                    <View style={styles.pillTrack}>
-                      <Text style={styles.pillTextWhite}>{event.eventType || 'General'}</Text>
+                  <View style={styles.titleContainer}>
+                    <Text style={styles.title}>
+                      {event.name}
+                    </Text>
+                    
+                    <View style={[
+                      styles.pillRow,
+                      event.name === "Capital One Super Smash Bros Ultimate Tournament" && { marginTop: -28 }
+                    ]}>
+                      <View style={styles.pillPoints}>
+                        <Text style={styles.pillTextBlack}>{event.points || 0}Pts</Text>
+                      </View>
+              
+                      <View style={styles.pillTrack}>
+                        <Text style={styles.pillTextWhite}>{event.eventType || 'General'}</Text>
+                      </View>
                     </View>
                   </View>
 
@@ -242,23 +249,27 @@ const styles = StyleSheet.create({
     opacity: 0.5
   },
   headerSection: {
-    marginTop: -20,
+    marginBottom: 15,
+  },
+  titleContainer: {
+    gap: 6,
+    marginBottom: 12,
   },
   title: {
     fontSize: 28,
     fontWeight: '800',
     color: '#000',
-    marginBottom: 8,
+    lineHeight: 30,
+    includeFontPadding: false,
+    flexShrink: 1,
   },
   pillWrapper: {
     marginBottom: 12,     
-    marginTop: 4,         
     alignSelf: 'flex-start', 
   },
   // -- Pills --
   pillRow: {
     flexDirection: 'row',
-    marginBottom: 12,
   },
   pillPoints: {
     backgroundColor: '#FFFFFF',
