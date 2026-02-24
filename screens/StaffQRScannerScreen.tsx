@@ -336,7 +336,7 @@ export default function StaffQRScannerScreen() {
 
     // Handler Logic
     const handleQRCodeScanned = useCallback(({ data }: BarcodeScanningResult) => {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+      Haptics.selectionAsync();
       if (scannedRef.current || isLoading) return;
       scannedRef.current = true;
       setScanned(true);
@@ -363,7 +363,7 @@ export default function StaffQRScannerScreen() {
     }, []);
 
     const handleCloseScanner = useCallback(() => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        Haptics.selectionAsync();
         setIsScanning(false);
         setScanMode(null);
         setSelectedEventId(null);
@@ -373,7 +373,7 @@ export default function StaffQRScannerScreen() {
     }, []);
     
     const handleScanPress = () => {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      Haptics.selectionAsync();
       if (permission?.granted) {
         setIsScanning(true);
       } else if (permission?.canAskAgain) {
@@ -409,7 +409,7 @@ export default function StaffQRScannerScreen() {
           <TouchableOpacity
             style={styles.menuButtonFirst}
             onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              Haptics.selectionAsync();
               setScanMode('attendance');
               handleScanPress();
             }}
@@ -426,7 +426,7 @@ export default function StaffQRScannerScreen() {
           <TouchableOpacity
             style={styles.menuButton}
             onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                Haptics.selectionAsync();
                 setScanMode('attendeeCheckin');
                 setIsEventModalVisible(true);
             }}
@@ -443,7 +443,7 @@ export default function StaffQRScannerScreen() {
           <TouchableOpacity
             style={styles.menuButton}
             onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              Haptics.selectionAsync();
               setScanMode('shopRedeem');
               handleScanPress();
             }}

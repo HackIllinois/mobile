@@ -32,7 +32,7 @@ export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({ avatarUrl, avatarI
   // Single animated value drives both scale and opacity
   const glowAnim = useRef(new Animated.Value(0)).current;
   const handlePress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    Haptics.selectionAsync();
     triggerGlow();
   }
 

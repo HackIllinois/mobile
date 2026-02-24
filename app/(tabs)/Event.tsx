@@ -106,7 +106,7 @@ export default function EventScreen() {
 
   // --- Handlers ---
   const handleEventPress = (event: Event) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setSelectedEvent(event);
     setModalVisible(true);
   };
@@ -126,7 +126,7 @@ export default function EventScreen() {
 
   // Unified Refresh Logic
   const onRefresh = useCallback(async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Haptics.selectionAsync();
     setIsRefreshing(true);
 
     if (scheduleMode === 'events') {

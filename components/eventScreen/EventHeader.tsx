@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import Moon from "../../assets/event/Moon.svg";
 import Sun from "../../assets/event/Sun";
 import PinkMoon from "../../assets/event/PinkMoon.svg";
@@ -66,6 +67,7 @@ export const EventHeader: React.FC<EventHeaderProps> = ({
   };
 
   const handleDayPress = (dayId: string) => {
+    Haptics.selectionAsync();
     if (selectedDay === dayId) {
       setSelectedDay(null);
     } else {
@@ -74,6 +76,7 @@ export const EventHeader: React.FC<EventHeaderProps> = ({
   };
 
   const handleSavePress = () => {
+    Haptics.selectionAsync();
     setSaveValue(!selectedSave);
   };
 

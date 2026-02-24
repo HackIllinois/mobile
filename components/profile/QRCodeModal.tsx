@@ -61,12 +61,12 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
   const MODAL_HEIGHT = scaleWidth(310);
 
   const handleClose = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Haptics.selectionAsync();
     onClose();
   }
 
   const handleRefresh = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Haptics.selectionAsync();
     onRefresh();
   }
 
@@ -85,7 +85,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
           alignItems: 'center',
           paddingTop: scaleHeight(130),
         }}
-        onPress={handleClose}
+        onPress={onClose}
       >
         <Pressable onPress={(e) => e.stopPropagation()} style={{
           backgroundColor: '#FFEAFE',

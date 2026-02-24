@@ -65,7 +65,7 @@ export const CurvedTabBar = ({
             });
 
             if (!isFocused && !event.defaultPrevented) {
-              Haptics.selectionAsync();
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
               navigation.navigate(route.name);
             }
           };

@@ -8,6 +8,7 @@ import {
   Image,
   Alert,
 } from "react-native";
+import * as Haptics from "expo-haptics";
 import { SafeAreaView } from "react-native-safe-area-context";
 import QRCode from "react-native-qrcode-svg";
 import { useEffect, useState } from "react";
@@ -46,6 +47,7 @@ export default function CartModal({
   }, [visible]);
 
   const handleBackToCart = () => {
+    Haptics.selectionAsync();
     setQrCodeData(null);
     onRefresh();
   };
@@ -82,6 +84,7 @@ export default function CartModal({
   const cartItems = getCartItemsWithQuantities();
 
   const handlePurchasePress = async () => {
+    Haptics.selectionAsync();
     try {
       const response = await api.get<any>("/shop/cart/qr");
       if (response.data && response.data.QRCode) {
@@ -119,7 +122,7 @@ export default function CartModal({
           onPress={onClose}
         />
         <SafeAreaView style={styles.modalContainer} edges={["bottom"]}>
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+          <TouchableOpacity style={styles.closeButton} onPress={() => { Haptics.selectionAsync(); onClose(); }}>
             <Text style={styles.closeButtonText}>✕</Text>
           </TouchableOpacity>
 

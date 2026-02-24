@@ -184,7 +184,7 @@ export default function ProfileScreen() {
   }, [fetchQrCode]);
 
   const handleRefetchProfile = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Haptics.selectionAsync();
     refetchProfile();
   }
 

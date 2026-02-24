@@ -137,21 +137,21 @@ export const AvatarSelectionModal: React.FC<AvatarSelectionModalProps> = ({
   }, [visible, floatAnim]);
 
   const handlePreviousAvatar = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Haptics.selectionAsync();
     setCurrentIndex((prevIndex) =>
       prevIndex === 0 ? AVATARS.length - 1 : prevIndex - 1
     );
   };
 
   const handleNextAvatar = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Haptics.selectionAsync();
     setCurrentIndex((prevIndex) =>
       (prevIndex + 1) % AVATARS.length
     );
   };
 
   const handleSelect = async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Haptics.selectionAsync();
     setIsUpdating(true);
     setError(null);
 

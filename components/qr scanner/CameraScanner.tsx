@@ -53,7 +53,7 @@ function CameraScannerView({
   );
 
   const handleChooseImage = useCallback(async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Haptics.selectionAsync();
     try {
       if (!imageLibraryPermission?.granted) {
         if (imageLibraryPermission?.canAskAgain) {
