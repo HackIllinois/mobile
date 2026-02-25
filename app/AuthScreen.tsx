@@ -62,6 +62,7 @@ export default function AuthScreen({ navigation }: any) {
         if (!token) throw new Error("No token returned");
 
         await SecureStore.setItemAsync("jwt", token);
+        await SecureStore.deleteItemAsync("isGuest");
 
         const roleResponse = await api.get<AxiosResponse<AuthRolesResponse>>(
           "/auth/roles/",

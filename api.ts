@@ -36,7 +36,7 @@ class API {
     this.axiosInstance.interceptors.response.use(
       (response) => response,
       
-      (error: AxiosError) => {
+      async (error: AxiosError) => {
         if (error.response) {
           const data = error.response.data as any;
           if (
@@ -44,7 +44,10 @@ class API {
             data.error === AuthenticationErrorType.TokenInvalid ||
             data.error === AuthenticationErrorType.TokenExpired
           ) {
-            void this.redirectToSignIn();
+            const isGuest = await SecureStore.getItemAsync("isGuest");
+            if (isGuest !== "true") {
+              void this.redirectToSignIn();
+            }
           } else {
             this.handleError(error.response.status, data?.error, data?.message);
           }
