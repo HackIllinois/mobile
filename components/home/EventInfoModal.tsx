@@ -68,7 +68,7 @@ export default function EventInfoModal({ visible, event, onClose, onViewDetails 
     ]).start();
   }, [backdrop, event, hiddenY, sheetY, visible]);
 
-  const closeAnimated = (afterClose?: () => void) => {
+  const closeAnimated = (afterClose?: unknown) => {
     Haptics.selectionAsync();
     Animated.parallel([
       Animated.timing(backdrop, { toValue: 0, duration: 250, useNativeDriver: true }),
@@ -76,7 +76,9 @@ export default function EventInfoModal({ visible, event, onClose, onViewDetails 
     ]).start(({ finished }) => {
       if (finished) {
         onClose();
-        afterClose?.();
+        if (typeof afterClose === "function") {
+          afterClose();
+        }
       }
     });
   };
