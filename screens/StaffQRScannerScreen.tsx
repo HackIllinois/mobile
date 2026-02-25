@@ -415,7 +415,7 @@ export default function StaffQRScannerScreen() {
             }}
           >
             <View style={styles.buttonContainer}>
-              <ButtonSvg width={300} height={70} style={styles.buttonSvg} onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)}/>
+              <ButtonSvg width={300} height={70} style={styles.buttonSvg} />
               <View style={styles.buttonTextContainer}>
                 <Text style={styles.menuButtonText}>Meeting Attendance</Text>
                 <Text style={styles.menuButtonArrow}>{">"}</Text>
