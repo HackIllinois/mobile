@@ -3,6 +3,7 @@ import { View, TouchableOpacity, Pressable, Modal, ActivityIndicator, Animated, 
 import { MAX_APP_WIDTH } from '../../lib/layout';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import * as Brightness from 'expo-brightness';
 import QRCode from 'react-native-qrcode-svg';
 import RefreshButtonSvg from '../../assets/profile/qr-screen/refresh-button.svg';
 
@@ -32,6 +33,21 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
   const width = Math.min(windowWidth, MAX_APP_WIDTH);
   const localProgressAnim = useRef(new Animated.Value(0)).current;
   const animationRef = useRef<Animated.CompositeAnimation | null>(null);
+  const prevBrightness = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (visible) {
+      Brightness.getBrightnessAsync().then((b) => {
+        prevBrightness.current = b;
+        Brightness.setBrightnessAsync(1);
+      });
+    } else {
+      if (prevBrightness.current !== null) {
+        Brightness.setBrightnessAsync(prevBrightness.current);
+        prevBrightness.current = null;
+      }
+    }
+  }, [visible]);
 
   useEffect(() => {
     animationRef.current?.stop();
@@ -61,12 +77,12 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
   const MODAL_HEIGHT = scaleWidth(310);
 
   const handleClose = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Haptics.selectionAsync();
     onClose();
   }
 
   const handleRefresh = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Haptics.selectionAsync();
     onRefresh();
   }
 
@@ -85,7 +101,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
           alignItems: 'center',
           paddingTop: scaleHeight(130),
         }}
-        onPress={handleClose}
+        onPress={onClose}
       >
         <Pressable onPress={(e) => e.stopPropagation()} style={{
           backgroundColor: '#FFEAFE',

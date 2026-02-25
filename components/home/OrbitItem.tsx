@@ -124,7 +124,7 @@ export default function OrbitItem({
   });
 
   const handlePress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    Haptics.selectionAsync();
 
     pressAnim.stopAnimation();
     pressAnim.setValue(0);

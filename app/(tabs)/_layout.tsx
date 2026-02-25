@@ -1,5 +1,6 @@
 import { useEffect } from "react";
-import { Tabs, Link, usePathname, useRouter } from "expo-router";
+import { Tabs, usePathname, useRouter } from "expo-router";
+import * as Haptics from "expo-haptics";
 import { TouchableOpacity, View, StyleSheet, Alert, Text, Dimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as SecureStore from "expo-secure-store";
@@ -52,7 +53,13 @@ export default function Layout() {
     });
   }, []);
 
+  const handleProfilePress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    router.push("/Profile");
+  };
+
   const handleLogout = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     Alert.alert(
       "Log Out",
       "Are you sure you want to log out?",
@@ -133,7 +140,7 @@ export default function Layout() {
         </Tabs>
 
         {/* Header */}
-        <View style={[styles.headerRow, { top: insets.top + 8}]}>
+        <View style={[styles.headerRow, { top: insets.top }]}>
           {title ? (
             <View style={{ marginTop: -6 }}>
               <Text style={[styles.headerTitle, styles.glowWide]}>{title}</Text>
@@ -149,11 +156,9 @@ export default function Layout() {
               <Text style={styles.logoutLabel}>LOGOUT</Text>
             </TouchableOpacity>
           ) : (
-            <Link href="/Profile" asChild>
-              <TouchableOpacity>
-                <ProfileSvg width={45} height={45} />
-              </TouchableOpacity>
-            </Link>
+            <TouchableOpacity onPress={handleProfilePress}>
+              <ProfileSvg width={45} height={45} />
+            </TouchableOpacity>
           )}
         </View>
 
@@ -169,10 +174,10 @@ const styles = StyleSheet.create({
   headerRow: {
     position: 'absolute',
     left: 20,
-    right: 20, 
+    right: 10,
     zIndex: 100,
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     justifyContent: 'space-between',
   },
   headerTitle: {

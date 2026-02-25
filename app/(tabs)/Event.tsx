@@ -32,7 +32,7 @@ import { useSavedEvents } from '../../lib/fetchSavedEvents';
 import { useMentorOfficeHours } from '../../lib/fetchMentorOfficeHours';
 import { Event } from '../../types';
 
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 
 // --- Types ---
 type ScheduleMode = 'events' | 'mentorship';
@@ -58,6 +58,7 @@ const IS_TABLET = width > 768;
 
 export default function EventScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ focusEvent?: string; focusEventId?: string; focusRequestId?: string }>();
   const insets = useSafeAreaInsets();
   const [scheduleMode, setScheduleMode] = useState<ScheduleMode>('events');
   
@@ -106,7 +107,7 @@ export default function EventScreen() {
 
   // --- Handlers ---
   const handleEventPress = (event: Event) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setSelectedEvent(event);
     setModalVisible(true);
   };
@@ -126,7 +127,7 @@ export default function EventScreen() {
 
   // Unified Refresh Logic
   const onRefresh = useCallback(async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Haptics.selectionAsync();
     setIsRefreshing(true);
 
     if (scheduleMode === 'events') {
@@ -227,6 +228,7 @@ export default function EventScreen() {
 
 
   const hasAutoScrolled = useRef(false);
+  const lastHandledFocusRequestId = useRef<string | null>(null);
 
   useEffect(() => {
     if (hasAutoScrolled.current || filteredItems.length === 0 || !flatListRef.current) return;
@@ -277,6 +279,36 @@ export default function EventScreen() {
 
     hasAutoScrolled.current = true;
   }, [filteredItems]);
+
+  useEffect(() => {
+    const focusEvent = typeof params.focusEvent === "string" ? params.focusEvent : undefined;
+    const focusEventId = typeof params.focusEventId === "string" ? params.focusEventId : undefined;
+    const focusRequestId =
+      typeof params.focusRequestId === "string"
+        ? params.focusRequestId
+        : focusEventId ?? focusEvent ?? null;
+
+    if ((!focusEvent && !focusEventId) || !focusRequestId || events.length === 0) return;
+    if (lastHandledFocusRequestId.current === focusRequestId) return;
+
+    const normalized = focusEvent?.trim().toLowerCase();
+    // Prefer stable backend ids for deep-link focus; fall back to title matching while mappings are being filled in.
+    const matched =
+      (focusEventId ? events.find((ev) => ev.eventId === focusEventId) : undefined) ??
+      (normalized ? events.find((ev) => ev.name?.trim().toLowerCase() === normalized) : undefined);
+    if (!matched) return;
+
+    lastHandledFocusRequestId.current = focusRequestId;
+    setScheduleMode("events");
+    setSaveValue(false);
+
+    const matchedDate = new Date(matched.startTime * 1000).toDateString();
+    setSelectedDay(matchedDate);
+
+    requestAnimationFrame(() => {
+      handleEventPress(matched);
+    });
+  }, [events, params.focusEvent, params.focusEventId, params.focusRequestId]);
 
 
   const handleScrollToIndexFailed = useCallback(

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { TouchableOpacity, Text, StyleSheet, View, Animated } from "react-native";
+import * as Haptics from "expo-haptics";
 
 interface CartButtonProps {
   onPress?: () => void;
@@ -40,7 +41,7 @@ export default function CartButton({ onPress, itemCount }: CartButtonProps) {
     >
       <TouchableOpacity
         style={styles.button}
-        onPress={onPress}
+        onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); onPress?.(); }}
         activeOpacity={0.7}
       >
         <Text style={styles.text}>Cart</Text>
