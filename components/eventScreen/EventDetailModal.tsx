@@ -35,6 +35,8 @@ const formatTime = (timestamp: number): string => {
 };
 
 export default function EventDetailModal({ visible, event, onClose, handleSave, saved }: FullScreenModalProps) {
+  const [isMapFullScreen, setIsMapFullScreen] = useState(false);
+
   if (!event) return null;
 
   return (
@@ -62,20 +64,29 @@ export default function EventDetailModal({ visible, event, onClose, handleSave, 
               <TouchableOpacity onPress={() => { Haptics.selectionAsync(); onClose(); }} style={styles.closeButton} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
                   <Text style={styles.closeText}>✕</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleSave(event.eventId)} style={styles.saveButton} hitSlop={15}>
-                  {saved ? <Saved /> : <Unsaved />}
+              <TouchableOpacity onPress={() => handleSave(event.eventId)} style={styles.saveButton} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
+                  {saved ? <Saved height={45} /> : <Unsaved height={45} />}
               </TouchableOpacity>
             </View>
+            <ScrollView showsVerticalScrollIndicator={false}> 
+              
               <View style={styles.headerSection}>
-                  <Text style={styles.title}>{event.name}</Text>
-                  
-                  <View style={styles.pillRow}>
-                    <View style={styles.pillPoints}>
-                      <Text style={styles.pillTextBlack}>{event.points || 0}Pt</Text>
-                    </View>
-            
-                    <View style={styles.pillTrack}>
-                      <Text style={styles.pillTextWhite}>{event.eventType || 'General'}</Text>
+                  <View style={styles.titleContainer}>
+                    <Text style={styles.title}>
+                      {event.name}
+                    </Text>
+                    
+                    <View style={[
+                      styles.pillRow,
+                      event.name === "Capital One Super Smash Bros Ultimate Tournament" && { marginTop: -28 }
+                    ]}>
+                      <View style={styles.pillPoints}>
+                        <Text style={styles.pillTextBlack}>{event.points || 0}Pts</Text>
+                      </View>
+              
+                      <View style={styles.pillTrack}>
+                        <Text style={styles.pillTextWhite}>{event.eventType || 'General'}</Text>
+                      </View>
                     </View>
                   </View>
 
@@ -93,13 +104,20 @@ export default function EventDetailModal({ visible, event, onClose, handleSave, 
 
               {/* Simple Map Image (No Zoom) */}
               {event.mapImageUrl && (
-                <View style={styles.mapContainer}>
+                <TouchableOpacity 
+                  style={styles.mapContainer} 
+                  onPress={() => setIsMapFullScreen(true)}
+                  activeOpacity={0.9}
+                >
                   <Image
                       source={{ uri: event.mapImageUrl }}
                       style={styles.mapImage}
                       resizeMode="contain"
                   />
-                </View>
+                  <View style={styles.expandOverlay}>
+                    <Text style={styles.expandText}>Tap to enlarge</Text>
+                  </View>
+                </TouchableOpacity>
               )}
             </ScrollView>
           </View>
@@ -115,6 +133,31 @@ export default function EventDetailModal({ visible, event, onClose, handleSave, 
 
         </View>
       </View>
+
+      {/* Full Screen Map Modal */}
+      {event.mapImageUrl && (
+        <Modal
+          visible={isMapFullScreen}
+          transparent={false}
+          animationType="slide"
+          onRequestClose={() => setIsMapFullScreen(false)}
+        >
+          <View style={styles.fullScreenContainer}>
+            <TouchableOpacity 
+              style={styles.fullScreenCloseButton} 
+              onPress={() => setIsMapFullScreen(false)}
+            >
+              <Text style={styles.fullScreenCloseText}>✕ Close</Text>
+            </TouchableOpacity>
+            
+            <Image
+              source={{ uri: event.mapImageUrl }}
+              style={styles.fullScreenImage}
+              resizeMode="contain"
+            />
+          </View>
+        </Modal>
+      )}
     </Modal>
   );
 }
@@ -172,13 +215,13 @@ const styles = StyleSheet.create({
   paperclipContainer: {
     position: 'absolute',
     top: 50,  
-    right: -35, 
+    right: -32, 
     zIndex: 10,
   },
   paperclipImage: {
     width: 50,   
     height: 90,  
-    transform: [{ rotate: '-5deg' }], 
+    transform: [{ rotate: '-10deg' }], 
   },
 
   // -- Content Styles --
@@ -187,13 +230,20 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     width: '100%',
+    height: 40,
+    zIndex: 10,
   },
   saveButton: {
-    padding: 8,
-    alignSelf: 'flex-end',
+    height: 50,
+    minWidth: 50,
+    justifyContent: 'center',
+    alignItems: 'flex-end',
   },
   closeButton: {
-    alignSelf: 'flex-start',
+    height: 50,
+    width: 50,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
   },
   closeText: {
     fontSize: 24,
@@ -202,23 +252,27 @@ const styles = StyleSheet.create({
     opacity: 0.5
   },
   headerSection: {
-    marginTop: -20,
+    marginBottom: 15,
+  },
+  titleContainer: {
+    gap: 6,
+    marginBottom: 12,
   },
   title: {
     fontSize: 28,
     fontWeight: '800',
     color: '#000',
-    marginBottom: 8,
+    lineHeight: 30,
+    includeFontPadding: false,
+    flexShrink: 1,
   },
   pillWrapper: {
     marginBottom: 12,     
-    marginTop: 4,         
     alignSelf: 'flex-start', 
   },
   // -- Pills --
   pillRow: {
     flexDirection: 'row',
-    marginBottom: 12,
   },
   pillPoints: {
     backgroundColor: '#FFFFFF',
@@ -259,6 +313,47 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   mapImage: {
+    width: '100%',
+    height: '100%',
+  },
+  expandOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.1)',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    paddingBottom: 8,
+  },
+  expandText: {
+    color: '#333',
+    fontSize: 12,
+    fontWeight: '600',
+    backgroundColor: 'transparent',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  fullScreenContainer: {
+    flex: 1,
+    backgroundColor: '#000',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fullScreenCloseButton: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 20,
+    zIndex: 10,
+  },
+  fullScreenCloseText: {
+    color: '#FFF',
+    fontWeight: '700',
+    fontSize: 16,
+  },
+  fullScreenImage: {
     width: '100%',
     height: '100%',
   },

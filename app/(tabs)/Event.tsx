@@ -507,6 +507,7 @@ export default function EventScreen() {
                         progressViewOffset={HEADER_HEIGHT_EXPANDED}
                     />
                 }
+                
                 ListEmptyComponent={
                   <View style={styles.emptyContainer}>
                     {scheduleMode === "mentorship" && mentorsGuest ? (

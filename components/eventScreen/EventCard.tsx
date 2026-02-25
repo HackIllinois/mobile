@@ -4,6 +4,8 @@ import { Event } from '../../types';
 import UnsavedEvent from '../../assets/event/EventCard.svg';
 import SavedEvent from '../../assets/event/SavedEventCard.svg';
 import ExpiredEvent from '../../assets/event/ExpiredEventCard.svg';
+import SavedActiveEvent from '../../assets/event/SavedActiveEventCard.svg';
+import ActiveEvent from '../../assets/event/ActiveEventCard.svg';
 
 
 // --- SIZING LOGIC ---
@@ -35,10 +37,23 @@ const formatTime = (timestamp: number): string => {
 };
 
 export function EventCard({ event, onPress, handleSave, saved, onShowMenu }: EventCardProps) {
-  const expired = event.endTime * 1000 < Date.now();
+  const DEBUG_MODE = false; 
+  const now = DEBUG_MODE 
+  ? new Date(2026, 1, 28, 19, 0, 0).getTime()  // Feb 28, 7:00 PM (month 1 = February)
+  : Date.now();
+
+  const startTimeMs = event.startTime * 1000;
+  const endTimeMs = event.endTime * 1000;
+
+  const expired = endTimeMs < now;
+  const active = !expired && startTimeMs <= now;
   let CardBackground = UnsavedEvent;
   if (expired) {
     CardBackground = ExpiredEvent;
+  } else if (saved && active) {
+    CardBackground = SavedActiveEvent;
+  } else if (active) {
+    CardBackground = ActiveEvent;
   } else if (saved) {
     CardBackground = SavedEvent;
   }
@@ -69,6 +84,7 @@ export function EventCard({ event, onPress, handleSave, saved, onShowMenu }: Eve
           <View>
             {/* Title */}
             <Text
+              key={event.eventId}
               numberOfLines={2}
               ellipsizeMode="tail"
               style={styles.title}
@@ -79,7 +95,7 @@ export function EventCard({ event, onPress, handleSave, saved, onShowMenu }: Eve
             {/* Pill Row */}
             <View style={styles.pillRow}>
                <View style={styles.pillPoints}>
-                 <Text style={styles.pillTextBlack}>{event.points || 0}Pt</Text>
+                 <Text style={styles.pillTextBlack}>{event.points || 0}Pts</Text>
                </View>
                {event.eventType === 'MEAL' ? (
                  <TouchableOpacity
@@ -98,7 +114,7 @@ export function EventCard({ event, onPress, handleSave, saved, onShowMenu }: Eve
             </View>
           </View>
 
-          <View>
+          <View style={styles.bottomInfo}>
             {/* Time Info */}
             <Text style={styles.timeText}>
                {formatTime(event.startTime)} - {formatTime(event.endTime)}
@@ -170,8 +186,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#FFFFFF',
     marginBottom: 8,
-    lineHeight: 28, // Consistent line height
-    maxWidth: '70%',
+    maxWidth: '75%',
   },
   
   // -- Pills --
@@ -197,6 +212,9 @@ const styles = StyleSheet.create({
   pillTextWhite: { color: '#FFF', fontWeight: '800', fontSize: 13, textTransform: 'uppercase' },
 
   // -- Info --
+  bottomInfo: {
+    marginTop: 10,
+  },
   timeText: {
     fontSize: 16,
     color: '#FFFFFF',
