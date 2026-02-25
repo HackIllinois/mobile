@@ -8,6 +8,8 @@ import StartupAnimation from "./components/hackrocket/StartupAnimation";
 import { StyleSheet, Text, View, Button } from "react-native";
 import QRScannerScreen from "./screens/UserQRScannerScreen";
 import PointShop from "./screens/PointShop";
+import Toast from "react-native-toast-message";
+import { navigationRef } from "./lib/navigationRef";
 
 const Stack = createNativeStackNavigator();
 
@@ -36,8 +38,9 @@ export default function App() {
     return <StartupAnimation />;
   }
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <Stack.Navigator>
+        <Stack.Screen name="Auth" component={AuthScreen} />
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="Scanner" component={QRScannerScreen} />
       </Stack.Navigator>
