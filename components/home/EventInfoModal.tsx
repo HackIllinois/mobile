@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
+  Dimensions,
   Image,
   ImageSourcePropType,
   Modal,
@@ -38,10 +39,13 @@ interface EventInfoModalProps {
 }
 
 const SHEET_HEIGHT = 420;
+const SCREEN_HEIGHT = Dimensions.get("window").height;
 
 export default function EventInfoModal({ visible, event, onClose, onViewDetails }: EventInfoModalProps) {
   const backdrop = useRef(new Animated.Value(0)).current;
+  const [sheetTravel, setSheetTravel] = useState(SHEET_HEIGHT);
   const sheetY = useRef(new Animated.Value(SHEET_HEIGHT)).current;
+  const hiddenY = Math.max(SCREEN_HEIGHT, sheetTravel + 24);
 
   useEffect(() => {
     if (visible && event) {
@@ -60,17 +64,22 @@ export default function EventInfoModal({ visible, event, onClose, onViewDetails 
 
     Animated.parallel([
       Animated.timing(backdrop, { toValue: 0, duration: 180, useNativeDriver: true }),
-      Animated.timing(sheetY, { toValue: SHEET_HEIGHT, duration: 180, useNativeDriver: true }),
+      Animated.timing(sheetY, { toValue: hiddenY, duration: 180, useNativeDriver: true }),
     ]).start();
-  }, [backdrop, event, sheetY, visible]);
+  }, [backdrop, event, hiddenY, sheetY, visible]);
 
-  const closeAnimated = () => {
+  const closeAnimated = (afterClose?: unknown) => {
     Haptics.selectionAsync();
     Animated.parallel([
-      Animated.timing(backdrop, { toValue: 0, duration: 160, useNativeDriver: true }),
-      Animated.timing(sheetY, { toValue: SHEET_HEIGHT, duration: 160, useNativeDriver: true }),
+      Animated.timing(backdrop, { toValue: 0, duration: 250, useNativeDriver: true }),
+      Animated.timing(sheetY, { toValue: hiddenY, duration: 280, useNativeDriver: true }),
     ]).start(({ finished }) => {
-      if (finished) onClose();
+      if (finished) {
+        onClose();
+        if (typeof afterClose === "function") {
+          afterClose();
+        }
+      }
     });
   };
 
@@ -80,7 +89,7 @@ export default function EventInfoModal({ visible, event, onClose, onViewDetails 
         onMoveShouldSetPanResponder: (_, g) => g.dy > 8 && Math.abs(g.dy) > Math.abs(g.dx),
         onPanResponderMove: (_, g) => {
           if (g.dy > 0) {
-            sheetY.setValue(Math.min(g.dy, SHEET_HEIGHT));
+            sheetY.setValue(Math.min(g.dy, hiddenY));
           }
         },
         onPanResponderRelease: (_, g) => {
@@ -96,7 +105,7 @@ export default function EventInfoModal({ visible, event, onClose, onViewDetails 
           }).start();
         },
       }),
-    [sheetY]
+    [hiddenY, sheetY]
   );
 
   if (!visible || !event) return null;
@@ -132,6 +141,10 @@ export default function EventInfoModal({ visible, event, onClose, onViewDetails 
 
         <Animated.View
           style={[styles.sheetWrap, { transform: [{ translateY: sheetY }] }]}
+          onLayout={(e) => {
+            const h = Math.ceil(e.nativeEvent.layout.height);
+            if (h > 0 && Math.abs(h - sheetTravel) > 1) setSheetTravel(h);
+          }}
           {...panResponder.panHandlers}
         >
           <LinearGradient colors={["rgba(94,65,163,0.94)", "rgba(41,26,84,0.96)"]} style={styles.sheet}>
@@ -182,8 +195,7 @@ export default function EventInfoModal({ visible, event, onClose, onViewDetails 
                   style={[styles.primaryBtn, primaryDisabled && styles.primaryBtnDisabled]}
                   onPress={() => {
                     if (!onViewDetails) return;
-                    Haptics.selectionAsync();
-                    onViewDetails(event);
+                    closeAnimated(() => onViewDetails(event));
                   }}
                 >
                   <LinearGradient
