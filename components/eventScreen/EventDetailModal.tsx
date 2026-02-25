@@ -103,20 +103,22 @@ export default function EventDetailModal({ visible, event, onClose, handleSave, 
 
               {/* Simple Map Image (No Zoom) */}
               {event.mapImageUrl && (
-                <TouchableOpacity 
-                  style={styles.mapContainer} 
-                  onPress={() => setIsMapFullScreen(true)}
-                  activeOpacity={0.9}
-                >
-                  <Image
-                      source={{ uri: event.mapImageUrl }}
-                      style={styles.mapImage}
-                      resizeMode="contain"
-                  />
-                  <View style={styles.expandOverlay}>
-                    <Text style={styles.expandText}>Tap to enlarge</Text>
-                  </View>
-                </TouchableOpacity>
+                <View>
+                  <TouchableOpacity 
+                    style={styles.mapContainer} 
+                    onPress={() => setIsMapFullScreen(true)}
+                    activeOpacity={0.9}
+                  >
+                    <Image
+                        source={{ uri: event.mapImageUrl }}
+                        style={styles.mapImage}
+                        resizeMode="contain"
+                    />
+                    <View style={styles.expandOverlay}>
+                    </View>
+                  </TouchableOpacity>
+                  <Text style={styles.expandText}>Tap To Enlarge</Text>
+                </View>
               )}
             </ScrollView>
           </View>
@@ -330,6 +332,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 8,
+    alignSelf: 'center',
   },
   fullScreenContainer: {
     flex: 1,
