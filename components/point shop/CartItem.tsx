@@ -16,12 +16,12 @@ export default function CartItem({
   onDecrement,
 }: CartItemProps) {
   const handleIncrement = async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Haptics.selectionAsync();
     await onIncrement();
   };
 
   const handleDecrement = async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Haptics.selectionAsync();
     await onDecrement();
   };
 

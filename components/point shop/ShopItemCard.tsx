@@ -14,7 +14,7 @@ const ShopItemCard = memo(({ item, onPress, scale = 1 }: ShopItemCardProps) => {
   const opacityAnim = useRef(new Animated.Value(0)).current;
 
   const handlePress = async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Haptics.selectionAsync();
     
     // Call the onPress handler first
     const result = await onPress();

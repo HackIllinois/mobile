@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import * as Haptics from 'expo-haptics';
 import {
   View,
   TouchableOpacity,
@@ -126,7 +127,7 @@ export default function EventTabs({ activeTab, onTabPress }: EventTabsProps) {
         <TouchableOpacity
           style={styles.tabButton}
           onLayout={(e) => onLayoutTab('events', e)}
-          onPress={() => onTabPress('events')}
+          onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); onTabPress('events'); }}
           activeOpacity={0.8}
         >
           {activeTab === 'events' ? <EventText /> : <PassiveEventText />}
@@ -137,7 +138,7 @@ export default function EventTabs({ activeTab, onTabPress }: EventTabsProps) {
         <TouchableOpacity
           style={styles.tabButton}
           onLayout={(e) => onLayoutTab('mentorship', e)}
-          onPress={() => onTabPress('mentorship')}
+          onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); onTabPress('mentorship'); }}
           activeOpacity={0.8}
         >
           {activeTab === 'mentorship' ? <MentorshipText /> : <PassiveMentorText />}

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import * as Haptics from 'expo-haptics';
 import { View, Text, TextInput, Button, FlatList, Alert, Pressable, StyleSheet, Dimensions, PermissionsAndroid, Platform, Image, ImageBackground, GestureResponderEvent, Modal, Animated } from 'react-native';
 
 // Asset imports
@@ -1104,6 +1105,7 @@ export default function Duels() {
           disabled={buttonsDisabled}
           onPress={() => {
             if (!displayName) return;
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             LocalConnectionModule.InitPeerName(displayName);
             LocalConnectionModule.startAdvertising();
             setRole('host');
@@ -1117,6 +1119,7 @@ export default function Duels() {
           disabled={buttonsDisabled}
           onPress={() => {
             if (!displayName) return;
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             LocalConnectionModule.InitPeerName(displayName);
             LocalConnectionModule.startScanning();
             setRole('guest');
@@ -1138,6 +1141,7 @@ export default function Duels() {
         <Pressable
           style={styles.cancelButton}
           onPress={() => {
+            Haptics.selectionAsync();
             LocalConnectionModule.stopAdvertising();
             setRole(null);
             setScreen('home');
@@ -1196,6 +1200,7 @@ export default function Duels() {
         <Pressable
           style={styles.cancelButton}
           onPress={() => {
+            Haptics.selectionAsync();
             // Clear any pending join timeout
             if (joinTimeoutRef.current) {
               clearTimeout(joinTimeoutRef.current);
