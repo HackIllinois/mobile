@@ -158,8 +158,8 @@ export default function PointShop() {
     checkTutorial();
   }, []);
 
-  const nonRaffleItems = shopItemData.filter((item) => !item.isRaffle);
-  const raffleItems = shopItemData.filter((item) => item.isRaffle);
+  const nonRaffleItems = shopItemData.filter((item) => !item.isRaffle).sort((a, b) => a.price - b.price);
+  const raffleItems = shopItemData.filter((item) => item.isRaffle).sort((a, b) => a.price - b.price);
   const topPages = chunkItems(nonRaffleItems);
   const bottomPages = chunkItems(raffleItems);
 

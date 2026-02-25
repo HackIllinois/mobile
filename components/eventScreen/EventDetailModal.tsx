@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import * as Haptics from 'expo-haptics';
 import { 
   Text, 
@@ -59,7 +59,6 @@ export default function EventDetailModal({ visible, event, onClose, handleSave, 
           {/* Main Content Card */}
           <View style={styles.mainCard}>
             
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 10 }}> 
               <View style={styles.buttonsContainer}>
               <TouchableOpacity onPress={() => { Haptics.selectionAsync(); onClose(); }} style={styles.closeButton} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
                   <Text style={styles.closeText}>✕</Text>
