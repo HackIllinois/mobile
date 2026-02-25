@@ -80,7 +80,7 @@ export default function EventDetailModal({ visible, event, onClose, handleSave, 
                       event.name === "Capital One Super Smash Bros Ultimate Tournament" && { marginTop: -28 }
                     ]}>
                       <View style={styles.pillPoints}>
-                        <Text style={styles.pillTextBlack}>{event.points || 0}Pts</Text>
+                        <Text style={styles.pillTextBlack}>{event.points || 0}pts</Text>
                       </View>
               
                       <View style={styles.pillTrack}>
