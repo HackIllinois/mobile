@@ -1,13 +1,22 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, StyleSheet, Dimensions, Animated, Easing } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
 
 import EventOrbit from "../../components/home/EventOrbit";
 import OrbitItem from "../../components/home/OrbitItem";
 import RocketOrbit from "../../components/home/RocketOrbit";
+import EventInfoModal, { EventModalData } from "../../components/home/EventInfoModal";
 import { getTimeRemaining } from "../../components/home/countdown";
+import { useEvents } from "../../lib/fetchEvents";
 import HomeBackground from "../../assets/home/home_bg.svg";
 import TimerOutline from "../../assets/home/timer_outline.svg";
+import CheckInPng from "../../assets/home/check_in-png.png";
+import ScavengerPng from "../../assets/home/scavenger_hunt-png.png";
+import OpeningPng from "../../assets/home/opening-png.png";
+import HackingPng from "../../assets/home/hacking-png.png";
+import ShowcasePng from "../../assets/home/project-png.png";
+import ClosingPng from "../../assets/home/closing_ceremony_png.png";
 
 import { getConstrainedWidth } from "../../lib/layout";
 
@@ -57,6 +66,17 @@ interface FixedEvent {
 }
 
 type EventItem = OrbitEvent | FixedEvent;
+type HomeEventConfig = {
+  title: string;
+  description: string;
+  location: string;
+  format: "In-person" | "Virtual" | "Hybrid";
+  tags: string[];
+  start: string;
+  end: string;
+  focusEventId?: string;
+  focusEventName?: string;
+};
 
 const ROCKET_CFG: Partial<Record<StageKey, {
   radiusMul?: number;
@@ -84,13 +104,86 @@ const CLOSING_PLANET_SIZE = 180;
 
 const BOTTOM_CLEARANCE = 20;
 
+// Homepage planet UI config + fallback modal content.
+// API data overrides time/location when a mapped schedule event is found.
+const HOME_EVENT_CONFIG: Record<StageKey, HomeEventConfig> = {
+  checkin: {
+    title: "Check-In",
+    description: "Check in, receive your merch, and get settled.",
+    location: "Siebel Center for Computer Science",
+    format: "In-person",
+    tags: ["Mandatory", "Free Stuff"],
+    start: "2026-02-27T14:00:00-06:00",
+    end: "2026-02-27T17:00:00-06:00",
+    // Prefer filling this with the backend eventId once confirmed.
+    focusEventName: "Attendee Check-In",
+  },
+  scavenger: {
+    title: "Scavenger Hunt",
+    description: "Explore the venue, meet other attendees, and complete quick challenges to earn points.",
+    location: "Siebel Center for Computer Science",
+    format: "In-person",
+    tags: ["Mini Event", "Team Activity"],
+    start: "2026-02-27T14:30:00-06:00",
+    end: "2026-02-27T16:30:00-06:00",
+    // Prefer filling this with the backend eventId once confirmed.
+    focusEventName: "Solar Search",
+  },
+  opening: {
+    title: "Opening Ceremony",
+    description: "Kickoff announcements, theme overview, sponsor intros, and important event logistics.",
+    location: "Siebel Center for Computer Science (Room 1404)",
+    format: "In-person",
+    tags: ["Important", "Announcements"],
+    start: "2026-02-27T17:00:00-06:00",
+    end: "2026-02-27T18:00:00-06:00",
+    // Prefer filling this with the backend eventId once confirmed.
+    focusEventName: "Opening Ceremony",
+  },
+  hacking: {
+    title: "Hacking",
+    description: "Build your project, collaborate with teammates, and bring your ideas to life. Mentors are available throughout the venue.",
+    location: "Siebel Center for CS & Siebel Center for Design",
+    format: "In-person",
+    tags: ["Mentors Available", "Food Provided"],
+    start: "2026-02-27T18:00:00-06:00",
+    end: "2026-03-01T06:00:00-06:00",
+  },
+  showcase: {
+    title: "Project Showcase",
+    description: "Demo your project to judges and attendees, gather feedback, and celebrate what you built.",
+    location: "Siebel Center for Computer Science",
+    format: "In-person",
+    tags: ["Judging", "Demos"],
+    start: "2026-03-01T09:00:00-06:00",
+    end: "2026-03-01T11:30:00-06:00",
+    // Prefer filling this with the backend eventId once confirmed.
+    focusEventName: "[ALL ATTENDEES] Project Showcase",
+  },
+  closing: {
+    title: "Closing Ceremony",
+    description: "Final results, awards, and wrap-up announcements for the weekend.",
+    location: "Siebel Center for Computer Science (Room 1404)",
+    format: "In-person",
+    tags: ["Awards", "Announcements"],
+    start: "2026-03-01T14:00:00-06:00",
+    end: "2026-03-01T15:00:00-06:00",
+    // Prefer filling this with the backend eventId once confirmed.
+    focusEventName: "Closing Ceremonies",
+  },
+};
+
 export default function HomeScreen() {
+  const router = useRouter();
+  const { events: apiEvents } = useEvents();
   const targetDate = new Date("2026-02-27T18:00:00");
   const [timeLeft, setTimeLeft] = useState(getTimeRemaining(targetDate));
   const insets = useSafeAreaInsets();
   
   // Track where the timer header ends
   const [timerBottom, setTimerBottom] = useState(height * 0.03);
+  const [selectedEvent, setSelectedEvent] = useState<EventModalData | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
 
   const onTimerLayout = (e: any) => {
     const { y, height: h } = e.nativeEvent.layout;
@@ -110,27 +203,13 @@ export default function HomeScreen() {
   const orbitGap = Math.min(Math.max(derivedOrbitGap, width * 0.11), width * 0.18);
 
   const SCHEDULE = useMemo(() => {
-    const checkinStart  = new Date("2026-02-27T14:00:00-06:00");
-    const checkinEnd    = new Date("2026-02-27T17:00:00-06:00");
-    const scavStart     = new Date("2026-02-27T15:00:00-06:00");
-    const scavEnd       = new Date("2026-02-27T17:00:00-06:00");
-    const openingStart  = new Date("2026-02-27T17:00:00-06:00");
-    const openingEnd    = new Date("2026-02-27T18:00:00-06:00");
-    const showcaseStart = new Date("2026-02-28T17:00:00-06:00");
-    const showcaseEnd   = new Date("2026-02-28T19:00:00-06:00");
-    const closingStart  = new Date("2026-03-01T15:00:00-06:00");
-    const closingEnd    = new Date("2026-03-01T16:00:00-06:00");
-    const hackingStart  = openingEnd;
-    const hackingEnd    = showcaseStart;
-
-    return {
-      checkin:   { start: checkinStart,  end: checkinEnd },
-      scavenger: { start: scavStart,     end: scavEnd },
-      opening:   { start: openingStart,  end: openingEnd },
-      hacking:   { start: hackingStart,  end: hackingEnd },
-      showcase:  { start: showcaseStart, end: showcaseEnd },
-      closing:   { start: closingStart,  end: closingEnd },
-    } satisfies Record<StageKey, { start: Date; end: Date }>;
+    return STAGE_ORDER.reduce((acc, key) => {
+      acc[key] = {
+        start: new Date(HOME_EVENT_CONFIG[key].start),
+        end: new Date(HOME_EVENT_CONFIG[key].end),
+      };
+      return acc;
+    }, {} as Record<StageKey, { start: Date; end: Date }>);
   }, []);
 
   const computeStage = (t: Date): StageKey => {
@@ -230,6 +309,80 @@ export default function HomeScreen() {
 
   const formatTime = (num: number) => String(num).padStart(2, "0");
 
+  const eventModalMap = useMemo(() => {
+    const planetImage = {
+      checkin: CheckInPng,
+      scavenger: ScavengerPng,
+      opening: OpeningPng,
+      hacking: HackingPng,
+      showcase: ShowcasePng,
+      closing: ClosingPng,
+    } as const;
+
+    const apiEventByName = new Map(
+      apiEvents.map((ev) => [ev.name?.trim().toLowerCase(), ev] as const)
+    );
+    const apiEventById = new Map(apiEvents.map((ev) => [ev.eventId, ev] as const));
+
+    const t = new Date();
+    return STAGE_ORDER.reduce((acc, key) => {
+      const cfg = HOME_EVENT_CONFIG[key];
+      // API-first: hydrate modal time/location from live schedule data when possible.
+      // Fallback to local config so the homepage still works if API names/ids drift or data is unavailable.
+      const matchedApiEvent =
+        (cfg.focusEventId ? apiEventById.get(cfg.focusEventId) : undefined) ??
+        (cfg.focusEventName ? apiEventByName.get(cfg.focusEventName.trim().toLowerCase()) : undefined);
+
+      const startTime = matchedApiEvent?.startTime
+        ? new Date(matchedApiEvent.startTime * 1000)
+        : SCHEDULE[key].start;
+      const endTime = matchedApiEvent?.endTime
+        ? new Date(matchedApiEvent.endTime * 1000)
+        : SCHEDULE[key].end;
+      const locationFromApi =
+        matchedApiEvent?.locations?.[0]?.description?.trim() || undefined;
+
+      const status: EventModalData["status"] =
+        t > endTime ? "ended" : t >= startTime ? (t >= new Date(endTime.getTime() - 30 * 60 * 1000) ? "closing" : "live") : "upcoming";
+
+      acc[key] = {
+        id: key,
+        focusEventId: matchedApiEvent?.eventId,
+        focusEventName: cfg.focusEventName,
+        title: cfg.title,
+        description: cfg.description || "Details coming soon",
+        startTime,
+        endTime,
+        location: locationFromApi ?? cfg.location,
+        format: cfg.format,
+        status,
+        tags: [...cfg.tags],
+        image: planetImage[key],
+      };
+      return acc;
+    }, {} as Record<StageKey, EventModalData>);
+  }, [SCHEDULE, currentStage, apiEvents]);
+
+  const handlePlanetPress = (key: StageKey) => {
+    setSelectedEvent(eventModalMap[key] ?? null);
+    setModalVisible(true);
+  };
+
+  const pushScheduleFocus = (params: { focusEvent?: string; focusEventId?: string }) => {
+    router.push({
+      pathname: "/Event",
+      params: {
+        ...(params.focusEvent ? { focusEvent: params.focusEvent } : {}),
+        ...(params.focusEventId ? { focusEventId: params.focusEventId } : {}),
+        // Unique request id ensures repeated "View Details" taps re-trigger focus in the Schedule screen.
+        focusRequestId: String(Date.now()),
+      },
+    });
+  };
+
+  const getScheduleFocusTarget = (event: EventModalData | null) =>
+    event ? { focusEventId: event.focusEventId, focusEvent: event.focusEventName } : null;
+
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
       <HomeBackground
@@ -273,7 +426,7 @@ export default function HomeScreen() {
               offsetX={item.offsetX}
               offsetY={item.offsetY}
               variant={getVariantFor(item.eventKey)}
-              onPress={(key) => console.log("pressed", key)}
+              onPress={handlePlanetPress}
             />
           );
         }
@@ -291,6 +444,7 @@ export default function HomeScreen() {
             variant={getVariantFor(item.eventKey)}
             jiggle={jiggleAnims[i]}
             jigglePx={jigglePx}
+            onPress={handlePlanetPress}
           />
         );
       })}
@@ -315,6 +469,28 @@ export default function HomeScreen() {
           />
         );
       })()}
+
+      <EventInfoModal
+        visible={modalVisible}
+        event={selectedEvent}
+        onViewDetails={
+          selectedEvent?.id &&
+          (getScheduleFocusTarget(selectedEvent)?.focusEvent ||
+            getScheduleFocusTarget(selectedEvent)?.focusEventId)
+            ? () => {
+                const target = getScheduleFocusTarget(selectedEvent);
+                setModalVisible(false);
+                setSelectedEvent(null);
+                if (!target) return;
+                pushScheduleFocus(target);
+              }
+            : undefined
+        }
+        onClose={() => {
+          setModalVisible(false);
+          setSelectedEvent(null);
+        }}
+      />
     </SafeAreaView>
   );
 }
