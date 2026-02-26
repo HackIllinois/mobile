@@ -93,9 +93,6 @@ const ROCKET_CFG: Partial<Record<StageKey, {
   closing:   { radiusMul: 0.75, centerYMul: 0.00, size: 40 },
 };
 
-const DEBUG_NOW: Date | null =
-  __DEV__ ? new Date("2026-03-01T14:00:00-06:00") : null;
-
 const TIMER_PHASES: { label: string; targetDate: Date; activeUntil: Date }[] = [
   { // check in
     label: "T-Minus Liftoff",
@@ -126,7 +123,13 @@ const getActivePhase = (t: Date) => {
   return TIMER_PHASES[TIMER_PHASES.length - 1]; // fallback: last phase
 };
 
-// const now = () => DEBUG_NOW ?? new Date();
+// uncomment debug now and switch now to use debug now to test different times for different states
+
+// const DEBUG_NOW: Date | null =
+//   __DEV__ ? new Date("2026-03-01T14:00:00-06:00") : null;
+
+// const now = () => DEBUG_NOW ?? new Date(); 
+// uncomment this ^ to debug
 const now = () => new Date();
 
 const NAVBAR_HEIGHT = 85;
