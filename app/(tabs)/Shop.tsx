@@ -129,6 +129,7 @@ export default function PointShop() {
 
   const tutorialAnim = useRef(new Animated.Value(0)).current;
   const errorOpacity = useRef(new Animated.Value(0)).current;
+  const cartEpoch = useRef(0);
 
   useEffect(() => {
     if (isTutorialActive && tutorialStep !== null) {
@@ -158,6 +159,12 @@ export default function PointShop() {
     checkTutorial();
   }, []);
 
+  useFocusEffect(
+    useCallback(() => {
+      refetchProfile();
+    }, [refetchProfile])
+  );
+
   const nonRaffleItems = shopItemData.filter((item) => !item.isRaffle).sort((a, b) => a.price - b.price);
   const raffleItems = shopItemData.filter((item) => item.isRaffle).sort((a, b) => a.price - b.price);
   const topPages = chunkItems(nonRaffleItems);
@@ -182,9 +189,12 @@ export default function PointShop() {
 
   const addToCart = async (itemId: string): Promise<{ success: boolean; errorMessage?: string }> => {
     if (!isTutorialActive) {
+      const epoch = cartEpoch.current;
       try {
         await api.post(`/shop/cart/${itemId}`);
-        setCartIds((ids) => [...ids, itemId]);
+        if (epoch === cartEpoch.current) {
+          setCartIds((ids) => [...ids, itemId]);
+        }
         return { success: true };
       } catch (error: any) {
         console.error("Failed to add item to cart:", error);
@@ -200,12 +210,15 @@ export default function PointShop() {
   };
 
   const removeFromCart = async (itemId: string): Promise<{ success: boolean; errorMessage?: string }> => {
+    const epoch = cartEpoch.current;
     try {
       await api.delete(`/shop/cart/${itemId}`);
-      setCartIds((ids) => {
-        const index = ids.indexOf(itemId);
-        return index === -1 ? ids : [...ids.slice(0, index), ...ids.slice(index + 1)];
-      });
+      if (epoch === cartEpoch.current) {
+        setCartIds((ids) => {
+          const index = ids.indexOf(itemId);
+          return index === -1 ? ids : [...ids.slice(0, index), ...ids.slice(index + 1)];
+        });
+      }
       return { success: true };
     } catch (error: any) {
       console.error("Failed to remove item from cart:", error);
@@ -216,6 +229,7 @@ export default function PointShop() {
   };
 
   const fetchCartItems = async () => {
+    cartEpoch.current += 1;
     try {
       const response = await api.get<any>("/shop/cart");
       if (response.data && response.data.items) {
