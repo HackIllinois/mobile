@@ -14,7 +14,7 @@ import ScavengerFinishedPng from "../../assets/home/scavenger_finished-png.png";
 import OpeningFinishedPng from "../../assets/home/opening_finished-png.png";
 import HackingFinishedPng from "../../assets/home/hacking_finished-png.png";
 import ShowcaseFinishedPng from "../../assets/home/project_finished-png.png";
-import ClosingFinishedPng from "../../assets/home/closing_finished-png.png";
+import ClosingFinishedPng from "../../assets/home/closing_finished.png";
 
 interface OrbitItemProps {
   radius: number;

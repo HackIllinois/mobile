@@ -126,7 +126,7 @@ const getActivePhase = (t: Date) => {
 // uncomment debug now and switch now to use debug now to test different times for different states
 
 // const DEBUG_NOW: Date | null =
-//   __DEV__ ? new Date("2026-03-01T14:00:00-06:00") : null;
+//   __DEV__ ? new Date("2026-02-28T19:00:00-06:00") : null;
 
 // const now = () => DEBUG_NOW ?? new Date(); 
 // uncomment this ^ to debug
@@ -135,7 +135,7 @@ const now = () => new Date();
 const NAVBAR_HEIGHT = 85;
 
 const CLOSING_PLANET_GAP = 16;
-const CLOSING_PLANET_SIZE = 180;
+const CLOSING_PLANET_SIZE = 150;
 
 const BOTTOM_CLEARANCE = 20;
 
@@ -170,7 +170,7 @@ const HOME_EVENT_CONFIG: Record<StageKey, HomeEventConfig> = {
     location: "Siebel Center for Computer Science (Room 1404)",
     format: "In-person",
     tags: ["Important", "Announcements"],
-    start: "2026-02-27T17:00:00-06:00",
+    start: "2026-02-27T16:30:00-06:00",
     end: "2026-02-27T18:00:00-06:00",
     // Prefer filling this with the backend eventId once confirmed.
     focusEventName: "Opening Ceremony",
