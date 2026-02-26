@@ -135,7 +135,7 @@ export default function ScreenThree({ onFinish, onStart, cloudX1, cloudX2, starO
                     alignSelf: 'center',
                     width: '95%',
                 }]}>
-                    Battle other attendees in this 1v1 game where the winner steals the loser's points!
+                    Battle other attendees in this 1v1 game to win points!
                 </Text>
             </View>
 
