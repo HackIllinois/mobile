@@ -331,8 +331,6 @@ export default function EventScreen() {
   const renderMentorCard = (m: MentorshipSession, showTimeHeader: boolean, timeHeaderText: string) => {
     return (
       <>
-        {showTimeHeader && <Text style={styles.timeHeader}>{timeHeaderText}</Text>}
-
         <Pressable onPress={() => handleMentorPress(m)} style={styles.mentorCard}>
           <View style={styles.mentorHeaderRow}>
             <Text style={styles.mentorName} numberOfLines={2}>
@@ -395,7 +393,9 @@ export default function EventScreen() {
     return (
       <View style={{ marginBottom: 40, width: '100%', alignItems: 'center' }}>
         {showDayHeader && (
-          <Text style={styles.dayHeader}>{dayHeaderText}</Text>
+          <View style={[styles.underlineContainer, { marginBottom: 20 }]}>
+            <Text style={styles.dayHeader}>{dayHeaderText}</Text>
+          </View>
         )}
         {renderMentorCard(m, showTime, timeHeaderText)}
       </View>

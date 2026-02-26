@@ -95,7 +95,7 @@ export function EventCard({ event, onPress, handleSave, saved, onShowMenu }: Eve
             {/* Pill Row */}
             <View style={styles.pillRow}>
                <View style={styles.pillPoints}>
-                 <Text style={styles.pillTextBlack}>{event.points || 0}Pts</Text>
+                 <Text style={styles.pillTextBlack}>{event.points || 0}pts</Text>
                </View>
                {event.eventType === 'MEAL' ? (
                  <TouchableOpacity
