@@ -94,9 +94,40 @@ const ROCKET_CFG: Partial<Record<StageKey, {
 };
 
 const DEBUG_NOW: Date | null =
-  __DEV__ ? new Date("2026-03-01T15:30:00-06:00") : null;
+  __DEV__ ? new Date("2026-03-01T14:00:00-06:00") : null;
 
-const now = () => DEBUG_NOW ?? new Date();
+const TIMER_PHASES: { label: string; targetDate: Date; activeUntil: Date }[] = [
+  { // check in
+    label: "T-Minus Liftoff",
+    targetDate: new Date("2026-02-27T14:00:00-06:00"),
+    activeUntil: new Date("2026-02-27T14:00:00-06:00"), // show until check-in starts
+  },
+  { // opening ceremony
+    label: "Opening Ceremony",
+    targetDate: new Date("2026-02-27T17:00:00-06:00"),
+    activeUntil: new Date("2026-02-27T17:00:00-06:00"), // show until check-in starts
+  },
+  { // project showcase
+    label: "Project Showcase",
+    targetDate: new Date("2026-03-01T09:00:00-06:00"),
+    activeUntil: new Date("2026-03-01T09:00:00-06:00"), // show until check-in starts
+  },
+  {
+    label: "Landing In",
+    targetDate: new Date("2026-03-01T14:00:00-06:00"), // closing ceremony end
+    activeUntil: new Date("2026-03-01T14:00:00-06:00"), // show until event ends
+  },
+];
+
+const getActivePhase = (t: Date) => {
+  for (let i = 0; i < TIMER_PHASES.length; i++) {
+    if (t < TIMER_PHASES[i].activeUntil) return TIMER_PHASES[i];
+  }
+  return TIMER_PHASES[TIMER_PHASES.length - 1]; // fallback: last phase
+};
+
+// const now = () => DEBUG_NOW ?? new Date();
+const now = () => new Date();
 
 const NAVBAR_HEIGHT = 85;
 
@@ -177,10 +208,11 @@ const HOME_EVENT_CONFIG: Record<StageKey, HomeEventConfig> = {
 export default function HomeScreen() {
   const router = useRouter();
   const { events: apiEvents } = useEvents();
-  const targetDate = new Date("2026-02-27T18:00:00");
-  const [timeLeft, setTimeLeft] = useState(getTimeRemaining(targetDate));
-  const insets = useSafeAreaInsets();
   
+  const insets = useSafeAreaInsets();
+  const [timerTick, setTimerTick] = useState(0);
+  const activePhase = useMemo(() => getActivePhase(now()), [timerTick]);
+  const [timeLeft, setTimeLeft] = useState(() => getTimeRemaining(activePhase.targetDate));
   // Track where the timer header ends
   const [timerBottom, setTimerBottom] = useState(height * 0.03);
   const [selectedEvent, setSelectedEvent] = useState<EventModalData | null>(null);
@@ -222,18 +254,18 @@ export default function HomeScreen() {
     return best;
   };
 
-  const [currentStage, setCurrentStage] = useState<StageKey>(() => computeStage(new Date()));
-  // const [currentStage, setCurrentStage] = useState<StageKey>(() => computeStage(now()));
-
-  useEffect(() => {
-    const id = setInterval(() => setCurrentStage(computeStage(new Date())), 1000);
-    return () => clearInterval(id);
-  }, [SCHEDULE]);
+  // const [currentStage, setCurrentStage] = useState<StageKey>(() => computeStage(new Date()));
+  const [currentStage, setCurrentStage] = useState<StageKey>(() => computeStage(now()));
 
   // useEffect(() => {
-  //   const id = setInterval(() => setCurrentStage(computeStage(now())), 1000);
+  //   const id = setInterval(() => setCurrentStage(computeStage(new Date())), 1000);
   //   return () => clearInterval(id);
   // }, [SCHEDULE]);
+
+  useEffect(() => {
+    const id = setInterval(() => setCurrentStage(computeStage(now())), 1000);
+    return () => clearInterval(id);
+  }, [SCHEDULE]);
 
   const anchorX = width / 2;
   const orbitScale = 1.2;
@@ -304,7 +336,10 @@ export default function HomeScreen() {
   }, [items, currentStage]);
 
   useEffect(() => {
-    const timer = setInterval(() => setTimeLeft(getTimeRemaining(targetDate)), 1000);
+    const timer = setInterval(() => {
+      setTimerTick(t => t + 1);
+      setTimeLeft(getTimeRemaining(getActivePhase(now()).targetDate));
+    }, 1000);
     return () => clearInterval(timer);
   }, []);
 
@@ -325,7 +360,7 @@ export default function HomeScreen() {
     );
     const apiEventById = new Map(apiEvents.map((ev) => [ev.eventId, ev] as const));
 
-    const t = new Date();
+    const t = now();
     return STAGE_ORDER.reduce((acc, key) => {
       const cfg = HOME_EVENT_CONFIG[key];
       // API-first: hydrate modal time/location from live schedule data when possible.
@@ -395,7 +430,7 @@ export default function HomeScreen() {
 
       {/* Timer */}
       <View style={styles.headerOverlay} onLayout={onTimerLayout} pointerEvents="none">
-        <Text style={styles.timerLabel}>T-minus Liftoff</Text>
+        <Text style={styles.timerLabel}>{activePhase.label}</Text>
         <View style={styles.timerPill}>
           <TimerOutline width="100%" height="100%" style={StyleSheet.absoluteFill} />
           <Text style={styles.timerText}>
