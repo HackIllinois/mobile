@@ -16,6 +16,8 @@ import { fetchEvents } from "../lib/fetchEvents";
 import { fetchShopItems, prefetchShopImages } from "../lib/fetchShopItems";
 import { fetchProfile, prefetchAvatarImage } from "../lib/fetchProfile";
 import { setupNotificationListeners } from "../lib/notifications";
+import { checkVersion } from "../lib/versionCheck";
+import UpdateRequiredScreen from "../components/UpdateRequiredScreen";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -39,6 +41,8 @@ function RootLayoutContent() {
   const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
+  const [showUpdateRequired, setShowUpdateRequired] = useState(false);
+  const [versionGateChecked, setVersionGateChecked] = useState(false);
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const welcomeFadeAnim = useRef(new Animated.Value(0)).current;
   const onboardingContentFadeAnim = useRef(new Animated.Value(0)).current;
@@ -62,7 +66,7 @@ function RootLayoutContent() {
     const loadAppData = async () => {
       const startTime = Date.now();
       let completedTasks = 0;
-      const totalTasks = 4; // onboarding, jwt, public data, + 1 for minimum wait
+      const totalTasks = 5; // onboarding, jwt, public data, version check, + 1 for minimum wait
 
       const markProgress = () => {
         completedTasks++;
@@ -70,6 +74,13 @@ function RootLayoutContent() {
       };
 
       try {
+        // Task 0: Persisted version gate - if we already know update is required, block immediately
+        const versionUpdateRequired = await AsyncStorage.getItem("versionUpdateRequired");
+        if (versionUpdateRequired === "true") {
+          setShowUpdateRequired(true);
+        }
+        setVersionGateChecked(true);
+
         // Task 1: Check onboarding status
         const hasCompleted = TESTING_MODE
           ? false
@@ -111,7 +122,20 @@ function RootLayoutContent() {
           );
         }
 
-        await Promise.all(publicDataPromises).then(markProgress).catch(markProgress);
+        const versionPromise = checkVersion()
+        .then((r) => {
+          if (r.updateRequired) {
+            setShowUpdateRequired(true);
+            void AsyncStorage.setItem("versionUpdateRequired", "true");
+          } else {
+            void AsyncStorage.setItem("versionUpdateRequired", "false");
+          }
+          return r;
+        })
+        .catch(() => ({ updateRequired: false }))
+        .then(markProgress);
+
+        await Promise.all([...publicDataPromises, versionPromise]);
       } catch (e) {
         console.error("Error during app initialization:", e);
         setShowOnboarding(true);
@@ -127,6 +151,19 @@ function RootLayoutContent() {
     };
 
     loadAppData();
+  }, []);
+
+  // Poll for new required version every 10 minutes
+  useEffect(() => {
+    const interval = setInterval(() => {
+      checkVersion().then((r) => {
+        if (r.updateRequired) {
+          setShowUpdateRequired(true);
+          void AsyncStorage.setItem("versionUpdateRequired", "true");
+        }
+      });
+    }, 10 * 60 * 1000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleLoadingFinish = () => {
@@ -194,6 +231,16 @@ function RootLayoutContent() {
 
   if (!fontsLoaded || showOnboarding === null) {
     return null;
+  }
+
+  // Don't show any app UI until we've at least checked persisted version gate
+  if (!versionGateChecked) {
+    return null;
+  }
+
+  // Version gate first
+  if (showUpdateRequired) {
+    return <UpdateRequiredScreen />;
   }
 
   if (showLoading) {

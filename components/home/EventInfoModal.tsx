@@ -133,7 +133,13 @@ export default function EventInfoModal({ visible, event, onClose, onViewDetails 
   })}`;
 
   return (
-    <Modal visible transparent animationType="none" onRequestClose={closeAnimated}>
+    <Modal 
+      visible={visible}
+      transparent={true}
+      animationType="fade"
+      statusBarTranslucent
+      onRequestClose={closeAnimated}
+    >
       <View style={styles.root}>
         <Pressable style={StyleSheet.absoluteFill} onPress={closeAnimated}>
           <Animated.View style={[styles.backdrop, { opacity: backdrop }]} />
@@ -148,8 +154,6 @@ export default function EventInfoModal({ visible, event, onClose, onViewDetails 
           {...panResponder.panHandlers}
         >
           <LinearGradient colors={["rgba(94,65,163,0.94)", "rgba(41,26,84,0.96)"]} style={styles.sheet}>
-            <View style={styles.handle} />
-
             <View style={styles.headerRow}>
               <View style={styles.iconWrap}>
                 <Image source={event.image} style={styles.icon} resizeMode="contain" />

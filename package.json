@@ -35,8 +35,8 @@
     "expo-status-bar": "~3.0.8",
     "expo-web-browser": "^15.0.8",
     "lottie-react-native": "~7.3.1",
-    "react": "19.1.0",
-    "react-dom": "19.1.0",
+    "react": "19.1.4",
+    "react-dom": "19.1.4",
     "react-native": "^0.81.5",
     "react-native-gesture-handler": "~2.28.0",
     "react-native-maps": "1.20.1",
@@ -48,11 +48,13 @@
     "react-native-svg-transformer": "^1.5.1",
     "react-native-toast-message": "^2.3.3",
     "react-native-typewriter": "^0.7.0",
+    "react-native-version-check": "^3.5.0",
     "react-native-web": "^0.21.0"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
     "@types/react": "~19.1.10",
+    "@types/react-native-version-check": "^3.4.8",
     "typescript": "~5.9.2"
   },
   "private": true

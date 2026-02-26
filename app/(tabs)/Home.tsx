@@ -11,12 +11,13 @@ import { getTimeRemaining } from "../../components/home/countdown";
 import { useEvents } from "../../lib/fetchEvents";
 import HomeBackground from "../../assets/home/home_bg.svg";
 import TimerOutline from "../../assets/home/timer_outline.svg";
-import CheckInPng from "../../assets/home/check_in-png.png";
-import ScavengerPng from "../../assets/home/scavenger_hunt-png.png";
-import OpeningPng from "../../assets/home/opening-png.png";
-import HackingPng from "../../assets/home/hacking-png.png";
-import ShowcasePng from "../../assets/home/project-png.png";
-import ClosingPng from "../../assets/home/closing_ceremony_png.png";
+
+const CheckInPng = require("../../assets/home/check_in-png.png");
+const ScavengerPng = require("../../assets/home/scavenger_hunt-png.png");
+const OpeningPng = require("../../assets/home/opening-png.png");
+const HackingPng = require("../../assets/home/hacking-png.png");
+const ShowcasePng = require("../../assets/home/project-png.png");
+const ClosingPng = require("../../assets/home/closing_ceremony_png.png");
 
 import { getConstrainedWidth } from "../../lib/layout";
 
