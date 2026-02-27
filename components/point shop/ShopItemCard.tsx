@@ -2,7 +2,6 @@ import { ShopItem } from "../../types";
 import { StyleSheet, View, Text, Image, TouchableOpacity, Animated, Easing } from "react-native";
 import { memo, useRef } from "react";
 import * as Haptics from "expo-haptics";
-
 interface ShopItemCardProps {
   item: ShopItem;
   onPress: () => Promise<{ success: boolean; errorMessage?: string }>;
@@ -42,6 +41,8 @@ const ShopItemCard = memo(({ item, onPress, scale = 1 }: ShopItemCardProps) => {
     }
   };
 
+  const displayQuantity = item.quantity < 0 || item.quantity > 1000 ? 0 : item.quantity;
+
   return (
     <View style={styles.outerContainer}>
       {/* Animated +1 popup */}
@@ -75,7 +76,15 @@ const ShopItemCard = memo(({ item, onPress, scale = 1 }: ShopItemCardProps) => {
           <Text style={styles.name} numberOfLines={2}>
             {item.name}
           </Text>
-          <Text style={styles.price}>🪙 {item.price}</Text>
+          <View style={styles.priceRow}>
+            <Text style={styles.price}>{displayQuantity} left | </Text>
+            <Image
+              source={require("../../assets/point-shop/point-shop-diamonds.png")}
+              style={styles.icon}
+              resizeMode="contain"
+            />
+            <Text style={styles.price}>{item.price}</Text>
+          </View>
           <Image source={{ uri: item.imageURL }} style={styles.image} />
         </View>
       </TouchableOpacity>
@@ -145,12 +154,22 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     maxWidth: 70,
   },
+  priceRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 6,
+  },
   price: {
     fontSize: 12,
     fontWeight: "400",
     color: "#ccc",
     textAlign: "center",
-    marginBottom: 6,
+  },
+  icon: {
+    width: 14,
+    height: 14,
+    marginHorizontal: 2,
   },
   image: {
     width: 60,
