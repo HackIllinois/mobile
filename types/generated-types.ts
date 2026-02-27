@@ -4,6 +4,127 @@
  */
 
 export interface paths {
+    "/admission/accept/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * RSVP with an accept decision
+         * @description **Required role: USER**
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["AttendeeProfileCreateRequest"];
+                };
+            };
+            responses: {
+                /** @description The updated decision */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdmissionDecision"];
+                    };
+                };
+                /**
+                 * @description One of:
+                 *     - AlreadyExists: Profile already exists
+                 *     - ProfileDataRequired: Profile data required when accepting
+                 *
+                 *     **See examples dropdown below**
+                 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "AlreadyExists";
+                            /** @enum {string} */
+                            message: "Your profile is already created!";
+                        } | {
+                            /** @enum {string} */
+                            error: "ProfileDataRequired";
+                            /** @enum {string} */
+                            message: "Profile data is required when accepting admission";
+                        };
+                    };
+                };
+                /** @description Not accepted so can't make a decision */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "NotAccepted";
+                            /** @enum {string} */
+                            message: "You weren't accepted, you cannot accept/decline this decision";
+                        };
+                    };
+                };
+                /**
+                 * @description One of:
+                 *     - DecisionNotFound: Couldn't find user's decision
+                 *     - NotFound: Couldn't find user's application
+                 *
+                 *     **See examples dropdown below**
+                 */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "DecisionNotFound";
+                            /** @enum {string} */
+                            message: "Couldn't find your decision!";
+                        } | {
+                            /** @enum {string} */
+                            error: "NotFound";
+                            /** @enum {string} */
+                            message: "Couldn't find your registration";
+                        };
+                    };
+                };
+                /** @description Already RSVPd */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "AlreadyRSVPed";
+                            /** @enum {string} */
+                            message: "You've already RSVPed!";
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admission/notsent/": {
         parameters: {
             query?: never;
@@ -144,16 +265,14 @@ export interface paths {
         };
         get?: never;
         /**
-         * RSVP with a accept or decline decision
+         * RSVP with a decline decision
          * @description **Required role: USER**
          */
         put: {
             parameters: {
                 query?: never;
                 header?: never;
-                path: {
-                    decision: "accept" | "decline";
-                };
+                path?: never;
                 cookie?: never;
             };
             requestBody?: never;
@@ -344,6 +463,127 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/attendee-team/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Gets all teams
+         * @description **Required role: null**
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description List of all teams */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AttendeeTeam"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Creates a new team
+         * @description **Required role: STAFF**
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["CreateAttendeeTeamRequest"];
+                };
+            };
+            responses: {
+                /** @description The created team */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AttendeeTeam"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/attendee-team/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Deletes a team by ID
+         * @description **Required role: STAFF**
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully deleted team */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": Record<string, never>;
+                    };
+                };
+                /** @description Could not find the team */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "NotFound";
+                            /** @enum {string} */
+                            message: "Failed to find team";
+                        };
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/login/{provider}/": {
         parameters: {
             query?: never;
@@ -436,6 +676,49 @@ export interface paths {
                         "application/json": {
                             /** @enum {boolean} */
                             success: true;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/refresh/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh the user's JWT
+         * @description **Required role: USER**
+         *
+         *     Refreshes the user's JWT to reflect their most up to date authentication information
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description JWT refresh succeeded */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            jwt: string;
                         };
                     };
                 };
@@ -756,8 +1039,7 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            /** @enum {boolean} */
-                            success: true;
+                            jwt: string;
                         };
                     };
                 };
@@ -954,6 +1236,419 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ctf/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Retrieves all CTF flags
+         * @description **Required role: STAFF**
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The list of CTF flags */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CTF"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Creates a new CTF flag
+         * @description **Required role: ADMIN**
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["FlagCreateRequest"];
+                };
+            };
+            responses: {
+                /** @description The created CTF flag */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CTF"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ctf/submit/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Submits an answer for a CTF flag
+         * @description **Required role: USER**
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        answer: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description The submitted answer is correct */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CTF"];
+                    };
+                };
+                /**
+                 * @description One of:
+                 *     - CTFSolveFailed: The submitted flag is incorrect
+                 *     - AlreadyClaimed: The flag has already been claimed
+                 *
+                 *     **See examples dropdown below**
+                 */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "CTFSolveFailed";
+                            /** @enum {string} */
+                            message: "The submitted flag is incorrect";
+                        } | {
+                            /** @enum {string} */
+                            error: "AlreadyClaimed";
+                            /** @enum {string} */
+                            message: "You've already claimed this flag";
+                        };
+                    };
+                };
+                /** @description Failed to find flag */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "FlagNotFound";
+                            /** @enum {string} */
+                            message: "Failed to find flag";
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ctf/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Deletes a CTF flag
+         * @description **Required role: ADMIN**
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The deleted CTF flag */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": Record<string, never>;
+                    };
+                };
+                /** @description Failed to find flag */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "FlagNotFound";
+                            /** @enum {string} */
+                            message: "Failed to find flag";
+                        };
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/duel/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Initiates a duel between two users
+         * @description **Required role: USER**
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["DuelCreateRequest"];
+                };
+            };
+            responses: {
+                /** @description The created duel */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Duel"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/duel/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Gets a duel
+         * @description **Required role: USER**
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["schemas"]["DuelId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The requested duel */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Duel"];
+                    };
+                };
+                /** @description The requested duel was not found. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "DuelNotFoundError";
+                            /** @enum {string} */
+                            message: "The requested duel was not found.";
+                        };
+                    };
+                };
+            };
+        };
+        /**
+         * Updates a duel only if both users submit matching changes
+         * @description **Required role: USER**
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["schemas"]["DuelId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["DuelUpdateRequest"];
+                };
+            };
+            responses: {
+                /** @description The updated duel */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Duel"];
+                    };
+                };
+                /** @description Update pending confirmation */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Duel"];
+                    };
+                };
+                /** @description You do not have permission to perform this action. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "DuelForbiddenError";
+                            /** @enum {string} */
+                            message: "You do not have permission to perform this action.";
+                        };
+                    };
+                };
+                /** @description The requested duel was not found. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "DuelNotFoundError";
+                            /** @enum {string} */
+                            message: "The requested duel was not found.";
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        /**
+         * Deletes a duel
+         * @description **Required role: ADMIN**
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["schemas"]["DuelId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The duel was deleted */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: true;
+                        };
+                    };
+                };
+                /** @description The requested duel was not found. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "DuelNotFoundError";
+                            /** @enum {string} */
+                            message: "The requested duel was not found.";
+                        };
+                    };
+                };
+            };
+        };
         options?: never;
         head?: never;
         patch?: never;
@@ -1396,6 +2091,71 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/event/update-attendance/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Updates a user's attendance for an event
+         * @description **Required role: STAFF**
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["schemas"]["EventId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        userId: string;
+                        present: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Successfully updated user's attendance status */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: true;
+                        };
+                    };
+                };
+                /** @description Couldn't find the event specified */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "NotFound";
+                            /** @enum {string} */
+                            message: "Could not find event";
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/event/{id}/": {
         parameters: {
             query?: never;
@@ -1496,20 +2256,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/mail/send/": {
+    "/judge/info/": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * Gets all judge profiles
+         * @description **Required role: null**
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The judge profiles */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["JudgeProfile"][];
+                    };
+                };
+            };
+        };
         put?: never;
         /**
-         * Sends an email
-         * @description **Required role: ADMIN**
-         *
-         *     **WARNING**: This endpoint is not very well documented, so make sure you know what you're doing before you use it directly.
+         * Creates a judge profile
+         * @description **Required role: STAFF**
          */
         post: {
             parameters: {
@@ -1520,17 +2301,267 @@ export interface paths {
             };
             requestBody?: {
                 content: {
-                    "application/json": components["schemas"]["MailInfo"];
+                    "application/json": components["schemas"]["JudgeProfileCreateRequest"];
                 };
             };
             responses: {
-                /** @description The upload url */
+                /** @description The created judge profile */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["JudgeProfile"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/judge/info/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Updates a judge profile
+         * @description **Required role: STAFF**
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["schemas"]["JudgeMongoId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["JudgeProfileCreateRequest"];
+                };
+            };
+            responses: {
+                /** @description The updated judge profile */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["MailSendResults"];
+                        "application/json": components["schemas"]["JudgeProfile"];
+                    };
+                };
+                /** @description Failed to find the judge requested */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "NotFound";
+                            /** @enum {string} */
+                            message: "Failed to find judge";
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        /**
+         * Deletes a judge profile
+         * @description **Required role: STAFF**
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["schemas"]["JudgeMongoId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully deleted */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: true;
+                        };
+                    };
+                };
+                /** @description Failed to find the judge requested */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "NotFound";
+                            /** @enum {string} */
+                            message: "Failed to find judge";
+                        };
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mail/send/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Bulk send a generic email
+         * @description **Required role: ADMIN**
+         *
+         *     Sends a generic email with the given subject and body to all provided email addresses.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["MailSend"];
+                };
+            };
+            responses: {
+                /** @description Bulk send results */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["MailBulkSendResult"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mail/send/attendees/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send a generic email to all attendees
+         * @description **Required role: ADMIN**
+         *
+         *     Fetches all attendee profiles, joins with registration submissions to get emails, and sends a generic email to each.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["MailSendAttendees"];
+                };
+            };
+            responses: {
+                /** @description Bulk send results */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["MailBulkSendResult"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mail/send/self/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send a generic email to yourself
+         * @description **Required role: ADMIN**
+         *
+         *     Looks up the authenticated user's email from the user collection and sends them a generic email.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["MailSendSelf"];
+                };
+            };
+            responses: {
+                /** @description Email sent successfully */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["MailSendResult"];
+                    };
+                };
+                /** @description User email not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "UserEmailNotFound";
+                            /** @enum {string} */
+                            message: "User email not found";
+                        };
                     };
                 };
             };
@@ -1550,7 +2581,7 @@ export interface paths {
         };
         /**
          * Gets all mentor office hours
-         * @description **Required role: STAFF**
+         * @description **Required role: USER**
          */
         get: {
             parameters: {
@@ -1591,7 +2622,7 @@ export interface paths {
             };
             responses: {
                 /** @description The new office hours */
-                200: {
+                201: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -1684,6 +2715,173 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/mentor/info/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Gets all mentor profiles
+         * @description **Required role: null**
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The mentor profiles */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["MentorProfile"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Creates a mentor profile
+         * @description **Required role: STAFF**
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["MentorProfileCreateRequest"];
+                };
+            };
+            responses: {
+                /** @description The created mentor profile */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["MentorProfile"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mentor/info/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Updates a mentor profile
+         * @description **Required role: STAFF**
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["schemas"]["MentorId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["MentorProfileCreateRequest"];
+                };
+            };
+            responses: {
+                /** @description The updated mentor profile */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["MentorProfile"];
+                    };
+                };
+                /** @description Failed to find the mentor requested */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "NotFound";
+                            /** @enum {string} */
+                            message: "Failed to find mentor";
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        /**
+         * Deletes a mentor profile
+         * @description **Required role: STAFF**
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["schemas"]["MentorId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully deleted */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: true;
+                        };
+                    };
+                };
+                /** @description Failed to find the mentor requested */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "NotFound";
+                            /** @enum {string} */
+                            message: "Failed to find mentor";
+                        };
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/mentor/{id}/": {
         parameters: {
             query?: never;
@@ -1692,7 +2890,50 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put?: never;
+        /**
+         * Updates the specified mentor's office hours
+         * @description **Required role: STAFF**
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["schemas"]["MentorId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["MentorCreateOfficeHours"];
+                };
+            };
+            responses: {
+                /** @description The updated office hours */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["MentorOfficeHours"];
+                    };
+                };
+                /** @description Failed to find the mentor requested */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "NotFound";
+                            /** @enum {string} */
+                            message: "Failed to find mentor";
+                        };
+                    };
+                };
+            };
+        };
         post?: never;
         /**
          * Deletes the specified mentor's office hours
@@ -2679,14 +3920,42 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["RegistrationChallengeInput"];
+                        "application/json": components["schemas"]["RegistrationChallengeStatus"];
+                    };
+                };
+                /** @description You are not registered for this track */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "MissingPro";
+                            /** @enum {string} */
+                            message: "You are not registered for this track";
+                        };
+                    };
+                };
+                /** @description Couldn't find your registration */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "NotFound";
+                            /** @enum {string} */
+                            message: "Couldn't find your registration";
+                        };
                     };
                 };
             };
         };
         put?: never;
         /**
-         * Attempts to solve the challenge
+         * Attempts to solve the challenge by uploading a solution image
          * @description **Required role: USER**
          */
         post: {
@@ -2696,11 +3965,7 @@ export interface paths {
                 path?: never;
                 cookie?: never;
             };
-            requestBody?: {
-                content: {
-                    "application/json": components["schemas"]["RegistrationChallengeSolve"];
-                };
-            };
+            requestBody?: never;
             responses: {
                 /** @description Successfully solved, the new challenge status is returned */
                 200: {
@@ -2708,7 +3973,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["RegistrationChallengeInput"];
+                        "application/json": components["schemas"]["RegistrationChallengeStatus"];
                     };
                 };
                 /**
@@ -2925,7 +4190,11 @@ export interface paths {
                 path?: never;
                 cookie?: never;
             };
-            requestBody?: never;
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["RegistrationApplicationSubmittedRequest"];
+                };
+            };
             responses: {
                 /** @description The new registration information */
                 200: {
@@ -2936,13 +4205,7 @@ export interface paths {
                         "application/json": components["schemas"]["RegistrationApplicationSubmittedRequest"];
                     };
                 };
-                /**
-                 * @description One of:
-                 *     - AlreadySubmitted: Registration is already submitted, cannot update anymore
-                 *     - IncompleteApplication: Your application is incomplete. Please fill out all required fields before submitting.
-                 *
-                 *     **See examples dropdown below**
-                 */
+                /** @description Registration is already submitted, cannot update anymore */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -2953,11 +4216,6 @@ export interface paths {
                             error: "AlreadySubmitted";
                             /** @enum {string} */
                             message: "You've already submitted your registration!";
-                        } | {
-                            /** @enum {string} */
-                            error: "IncompleteApplication";
-                            /** @enum {string} */
-                            message: "Your application is incomplete. Please fill out all required fields before submitting.";
                         };
                     };
                 };
@@ -2972,20 +4230,6 @@ export interface paths {
                             error: "RegistrationClosed";
                             /** @enum {string} */
                             message: "Registration is closed, check back next year!";
-                        };
-                    };
-                };
-                /** @description Couldn't find registration information (make sure you create it first!) */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            /** @enum {string} */
-                            error: "NotFound";
-                            /** @enum {string} */
-                            message: "Couldn't find your registration";
                         };
                     };
                 };
@@ -3049,6 +4293,53 @@ export interface paths {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/resume/batch-download/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Gets a download url for all the resumes
+         * @description **Requires one role of: SPONSOR, ADMIN**
+         *
+         *     List of presigned urls from s3 that is valid for 60 seconds
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        userIds: string[];
+                    };
+                };
+            };
+            responses: {
+                /** @description List of download urls */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ResumeListDownloadURL"];
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -3890,6 +5181,45 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/sponsor/resumebook/all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Returns all admitted applicants
+         * @description **Requires one role of: SPONSOR, ADMIN**
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The complete list of admitted applicants */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ResumeBookEntry"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/sponsor/resumebook/pagecount": {
         parameters: {
             query?: never;
@@ -3980,6 +5310,222 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/staff-team/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Gets all teams
+         * @description **Required role: USER**
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description List of all teams */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Staff Team"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Creates a new team
+         * @description **Required role: STAFF**
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The created team */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Staff Team"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/staff-team/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Gets a team and its staff
+         * @description **Required role: USER**
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Team and its staff members */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            team: components["schemas"]["Staff Team"];
+                            /** @description List of staff in the team */
+                            staff: {
+                                firstName: string;
+                                lastName: string;
+                                title: string;
+                                team?: string;
+                                emoji?: string;
+                                profilePictureUrl?: string;
+                                quote?: string;
+                                /** @default true */
+                                isActive: boolean;
+                                email: string;
+                                staffEmail: string;
+                                school: string;
+                                major: string;
+                                education: string;
+                                graduate: string;
+                                userId: components["schemas"]["UserId"];
+                            }[];
+                        };
+                    };
+                };
+                /** @description Could not find the team */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "NotFound";
+                            /** @enum {string} */
+                            message: "Failed to find team";
+                        };
+                    };
+                };
+            };
+        };
+        /**
+         * Updates a team by ID
+         * @description **Required role: STAFF**
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Updated team */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Staff Team"];
+                    };
+                };
+                /** @description Could not find the team */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "NotFound";
+                            /** @enum {string} */
+                            message: "Failed to find team";
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        /**
+         * Deletes a team by ID
+         * @description **Required role: STAFF**
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully deleted team */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": Record<string, never>;
+                    };
+                };
+                /** @description Could not find the team */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "NotFound";
+                            /** @enum {string} */
+                            message: "Failed to find team";
+                        };
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/staff/attendance/": {
         parameters: {
             query?: never;
@@ -4051,6 +5597,232 @@ export interface paths {
             };
         };
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/staff/info/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Gets all active staff information for the team page
+         * @description **Required role: USER**
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Active staff information */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            staffInfo: {
+                                firstName: string;
+                                lastName: string;
+                                title: string;
+                                team?: string;
+                                emoji?: string;
+                                profilePictureUrl?: string;
+                                quote?: string;
+                                /** @default true */
+                                isActive: boolean;
+                                email: string;
+                                staffEmail: string;
+                                school: string;
+                                major: string;
+                                education: string;
+                                graduate: string;
+                                userId: components["schemas"]["UserId"];
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        /**
+         * Updates an existing staff member profile
+         * @description **Required role: ADMIN**
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        firstName?: string;
+                        lastName?: string;
+                        title?: string;
+                        team?: string;
+                        emoji?: string;
+                        profilePictureUrl?: string;
+                        quote?: string;
+                        /** @default true */
+                        isActive?: boolean;
+                        email?: string;
+                        staffEmail?: string;
+                        school?: string;
+                        major?: string;
+                        education?: string;
+                        graduate?: string;
+                        userId?: components["schemas"]["UserId"];
+                        staffId: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Staff member updated successfully */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: true;
+                        };
+                    };
+                };
+                /** @description Staff member not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "StaffNotFound";
+                            /** @enum {string} */
+                            message: "The specified staff member was not found";
+                        };
+                    };
+                };
+            };
+        };
+        /**
+         * Creates a new staff member profile
+         * @description **Required role: ADMIN**
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        firstName: string;
+                        lastName: string;
+                        title: string;
+                        team?: string;
+                        emoji?: string;
+                        profilePictureUrl?: string;
+                        quote?: string;
+                        /** @default true */
+                        isActive?: boolean;
+                        email: string;
+                        staffEmail: string;
+                        school: string;
+                        major: string;
+                        education: string;
+                        graduate: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Staff member created successfully */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: true;
+                        };
+                    };
+                };
+                /** @description No account found for the provided email */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "StaffEmailNotFound";
+                            /** @enum {string} */
+                            message: "No account found for this email, the staff member must sign in with their staff email first";
+                        };
+                    };
+                };
+            };
+        };
+        /**
+         * Deletes a staff member profile
+         * @description **Required role: ADMIN**
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        staffId: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Staff member deleted successfully */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: true;
+                        };
+                    };
+                };
+                /** @description Staff member not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            error: "StaffNotFound";
+                            /** @enum {string} */
+                            message: "The specified staff member was not found";
+                        };
+                    };
+                };
+            };
+        };
         options?: never;
         head?: never;
         patch?: never;
@@ -4275,6 +6047,189 @@ export interface paths {
                             error: "NotFound";
                             /** @enum {string} */
                             message: "Could not find event";
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/staff/shift/add/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Adds a shift assignment for a specific user
+         * @description **Required role: ADMIN**
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        userId: components["schemas"]["UserId"];
+                        shiftId: components["schemas"]["EventId"];
+                    };
+                };
+            };
+            responses: {
+                /** @description Successfully added shift assignment */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: true;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/staff/shift/all/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Gets all staff shift assignments
+         * @description **Required role: ADMIN**
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description All staff shift assignments */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            assignments: {
+                                userId: components["schemas"]["UserId"];
+                                shifts: components["schemas"]["EventId"][];
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/staff/shift/candidates/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Gets staff shift assignment candidates from user_users (Google users)
+         * @description **Required role: ADMIN**
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Google users eligible for staff shift assignment */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            users: components["schemas"]["UserInfo"][];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/staff/shift/remove/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Removes a shift assignment for a specific user
+         * @description **Required role: ADMIN**
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        userId: components["schemas"]["UserId"];
+                        shiftId: components["schemas"]["EventId"];
+                    };
+                };
+            };
+            responses: {
+                /** @description Successfully removed shift assignment */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            success: true;
                         };
                     };
                 };
@@ -5027,6 +6982,8 @@ export interface components {
             /** @example false */
             emailSent: boolean;
             reimbursementValue: number;
+            /** @example false */
+            correctProChallenge: boolean;
         };
         AdmissionDecisionUpdate: {
             userId: components["schemas"]["UserId"];
@@ -5047,7 +7004,11 @@ export interface components {
          *       "foodWave": 1,
          *       "dietaryRestrictions": [
          *         "Peanut Allergy"
-         *       ]
+         *       ],
+         *       "shirtSize": "M",
+         *       "team": "Alpha",
+         *       "teamBadge": "https://raw.githubusercontent.com/HackIllinois/adonix-metadata/main/teamBadges/alpha.png",
+         *       "tier": 3
          *     }
          */
         AttendeeProfile: {
@@ -5059,6 +7020,18 @@ export interface components {
             pointsAccumulated: number;
             foodWave: number;
             dietaryRestrictions: string[];
+            shirtSize: string;
+            team: string;
+            teamBadge: string;
+            tier?: number;
+            duelStats?: {
+                /** @default 0 */
+                duelsPlayed: number;
+                /** @default 0 */
+                uniqueDuelsPlayed: number;
+                /** @default 0 */
+                duelsWon: number;
+            };
         };
         /**
          * @example {
@@ -5067,13 +7040,15 @@ export interface components {
          *       "avatarId": "goblin",
          *       "dietaryRestrictions": [
          *         "Peanut Allergy"
-         *       ]
+         *       ],
+         *       "shirtSize": "M"
          *     }
          */
         AttendeeProfileCreateRequest: {
             discordTag: string;
             displayName: string;
             dietaryRestrictions: string[];
+            shirtSize: string;
             avatarId: string;
         };
         /**
@@ -5088,14 +7063,54 @@ export interface components {
          * @example {
          *       "displayName": "Bob The Great",
          *       "discordTag": "hackillinois",
-         *       "avatarId": "goblin"
+         *       "avatarId": "goblin",
+         *       "shirtSize": "L"
          *     }
          */
         AttendeeProfileUpdateRequest: {
             discordTag?: string;
             displayName?: string;
             dietaryRestrictions?: string[];
+            shirtSize?: string;
             avatarId?: string;
+        };
+        /**
+         * @example {
+         *       "id": "6717efb83b5d4c1a2e47a7e1",
+         *       "name": "Team 1",
+         *       "badge": "https://raw.githubusercontent.com/HackIllinois/adonix-metadata/main/teamBadges/team1.png",
+         *       "points": 6700,
+         *       "members": 67
+         *     }
+         */
+        AttendeeTeam: {
+            id?: string;
+            name: string;
+            badge: string;
+            points: number;
+            members: number;
+        };
+        /**
+         * @example {
+         *       "flagId": "flag1",
+         *       "flag": "hackctf{flag1-example_flag}",
+         *       "points": 10
+         *     }
+         */
+        CTF: {
+            flagId: string;
+            flag: string;
+            points: number;
+        };
+        /**
+         * @example {
+         *       "name": "Team 1",
+         *       "badge": "https://raw.githubusercontent.com/HackIllinois/adonix-metadata/main/teamBadges/team1.png"
+         *     }
+         */
+        CreateAttendeeTeamRequest: {
+            name: string;
+            badge: string;
         };
         /**
          * @example {
@@ -5131,7 +7146,7 @@ export interface components {
             endTime: number;
             exp?: number;
             /** @enum {string} */
-            eventType: "MEAL" | "SPEAKER" | "WORKSHOP" | "MINIEVENT" | "QNA" | "MEETING" | "STAFFSHIFT" | "OTHER";
+            eventType: "MEAL" | "SPEAKER" | "WORKSHOP" | "MINIEVENT" | "SIDEQUEST" | "QNA" | "MEETING" | "STAFFSHIFT" | "OTHER";
             locations: components["schemas"]["Location"][];
             isAsync: boolean;
             mapImageUrl?: string;
@@ -5141,6 +7156,7 @@ export interface components {
             displayOnStaffCheckIn?: boolean;
             isMandatory?: boolean;
             isPro: boolean;
+            menu?: string[];
         };
         CreateSponsorRequest: {
             email: components["schemas"]["SponsorEmail"];
@@ -5153,6 +7169,64 @@ export interface components {
         };
         DeleteSponsorRequest: {
             userId: components["schemas"]["UserId"];
+        };
+        /**
+         * @example {
+         *       "hostId": "google12345",
+         *       "guestId": "google67890",
+         *       "hostScore": 6,
+         *       "guestScore": 7,
+         *       "hostHasDisconnected": false,
+         *       "guestHasDisconnected": false,
+         *       "hasFinished": false,
+         *       "isScoringDuel": true,
+         *       "pendingUpdates": {
+         *         "host": [],
+         *         "guest": []
+         *       }
+         *     }
+         */
+        Duel: {
+            hostId: string;
+            guestId: string;
+            hostScore: number;
+            guestScore: number;
+            hostHasDisconnected: boolean;
+            guestHasDisconnected: boolean;
+            hasFinished: boolean;
+            isScoringDuel: boolean;
+            pendingUpdates: {
+                host: string[];
+                guest: string[];
+            };
+        };
+        /**
+         * @example {
+         *       "hostId": "google12345",
+         *       "guestId": "google67890"
+         *     }
+         */
+        DuelCreateRequest: {
+            hostId: string;
+            guestId: string;
+        };
+        /** @example duel1 */
+        DuelId: string;
+        /**
+         * @example {
+         *       "hostScore": 0,
+         *       "guestScore": 1,
+         *       "hostHasDisconnected": false,
+         *       "guestHasDisconnected": false,
+         *       "hasFinished": false
+         *     }
+         */
+        DuelUpdateRequest: {
+            hostScore?: number;
+            guestScore?: number;
+            hostHasDisconnected?: boolean;
+            guestHasDisconnected?: boolean;
+            hasFinished?: boolean;
         };
         /**
          * @example {
@@ -5178,11 +7252,14 @@ export interface components {
          *       "isMandatory": false,
          *       "displayOnStaffCheckIn": true,
          *       "mapImageUrl": "example.com/image.png",
-         *       "exp": 12393928829
+         *       "exp": 12393928829,
+         *       "menu": [
+         *         "Pizza",
+         *         "Pizza"
+         *       ]
          *     }
          */
         Event: {
-            menu: string[];
             eventId: components["schemas"]["EventId"];
             isStaff: boolean;
             name: string;
@@ -5191,7 +7268,7 @@ export interface components {
             endTime: number;
             exp?: number;
             /** @enum {string} */
-            eventType: "MEAL" | "SPEAKER" | "WORKSHOP" | "MINIEVENT" | "QNA" | "MEETING" | "STAFFSHIFT" | "OTHER";
+            eventType: "MEAL" | "SPEAKER" | "WORKSHOP" | "MINIEVENT" | "SIDEQUEST" | "QNA" | "MEETING" | "STAFFSHIFT" | "OTHER";
             locations: components["schemas"]["Location"][];
             isAsync: boolean;
             mapImageUrl?: string;
@@ -5201,6 +7278,7 @@ export interface components {
             displayOnStaffCheckIn?: boolean;
             isMandatory?: boolean;
             isPro: boolean;
+            menu?: string[];
         };
         EventAttendance: {
             present: [
@@ -5241,6 +7319,36 @@ export interface components {
         Events: {
             events: components["schemas"]["Event"][];
         };
+        /**
+         * @example {
+         *       "flagId": "flag1",
+         *       "flag": "hackctf{flag1-example_flag}",
+         *       "points": 10
+         *     }
+         */
+        FlagCreateRequest: {
+            flagId: string;
+            flag: string;
+            points: number;
+        };
+        /** @example 65f0d1d7f6201f6a63dbf53e */
+        JudgeMongoId: string;
+        JudgeProfile: components["schemas"]["JudgeProfileCreateRequest"] & {
+            _id: components["schemas"]["JudgeMongoId"];
+        };
+        JudgeProfileCreateRequest: {
+            /** @example Ada Lovelace */
+            name: string;
+            /** @example Can judge product, technical depth, and storytelling. */
+            description: string;
+            /**
+             * Format: uri
+             * @description Public URL for the judge profile image bytes
+             * @default https://raw.githubusercontent.com/HackIllinois/hackillinois/main/mobile/assets/profile/avatar-screen/avatars/character1.svg
+             * @example https://raw.githubusercontent.com/HackIllinois/hackillinois/main/mobile/assets/profile/avatar-screen/avatars/character1.svg
+             */
+            imageUrl: string;
+        };
         ListRoles: {
             userIds: components["schemas"]["UserId"][];
         };
@@ -5252,32 +7360,41 @@ export interface components {
             latitude: number;
             longitude: number;
         };
-        MailInfo: {
-            templateId: string;
-            recipients: string[];
-            scheduleTime?: string;
-            subs?: {
-                [key: string]: unknown;
-            };
-            recipientSubs?: {
-                [key: string]: unknown;
-            }[];
+        /**
+         * @example {
+         *       "success": true,
+         *       "successCount": 10,
+         *       "failedCount": 0,
+         *       "errors": []
+         *     }
+         */
+        MailBulkSendResult: {
+            success: boolean;
+            successCount: number;
+            failedCount: number;
+            errors: string[];
+        };
+        MailSend: {
+            subject: string;
+            body: string;
+            emails: string[];
+        };
+        MailSendAttendees: {
+            subject: string;
+            body: string;
         };
         /**
          * @example {
-         *       "results": {
-         *         "total_rejected_recipients": 0,
-         *         "total_accepted_recipients": 1,
-         *         "id": "11668787493850529"
-         *       }
+         *       "success": true
          *     }
          */
-        MailSendResults: {
-            results: {
-                total_rejected_recipients: number;
-                total_accepted_recipients: number;
-                id: string;
-            };
+        MailSendResult: {
+            success: boolean;
+            message?: string;
+        };
+        MailSendSelf: {
+            subject: string;
+            body: string;
         };
         MentorAttendanceRequest: {
             mentorId: components["schemas"]["MentorId"];
@@ -5285,12 +7402,39 @@ export interface components {
         MentorCreateOfficeHours: {
             /** @example Bob the Mentor */
             mentorName: string;
+            /** @example Siebel 2407 */
+            location: string;
+            /**
+             * @description Unix timestamp
+             * @example 1707235200000
+             */
+            startTime: number;
+            /**
+             * @description Unix timestamp
+             * @example 1707238800000
+             */
+            endTime: number;
         };
         /** @example a1f25 */
         MentorId: string;
         MentorOfficeHours: components["schemas"]["MentorCreateOfficeHours"] & {
             mentorId: components["schemas"]["MentorId"];
-            attendees: components["schemas"]["UserId"][];
+        };
+        MentorProfile: components["schemas"]["MentorProfileCreateRequest"] & {
+            mentorId: components["schemas"]["MentorId"];
+        };
+        MentorProfileCreateRequest: {
+            /** @example Bob the Mentor */
+            name: string;
+            /** @example I can help with React, Node.js, and product ideation. */
+            description: string;
+            /**
+             * Format: uri
+             * @description Public URL for the mentor profile image bytes
+             * @default https://raw.githubusercontent.com/HackIllinois/mobile/refs/heads/main/assets/point-shop/point-shop-shopkeeper-2.png
+             * @example https://raw.githubusercontent.com/HackIllinois/mobile/refs/heads/main/assets/point-shop/point-shop-shopkeeper-2.png
+             */
+            imageUrl: string;
         };
         /** @example hackillinois2025_interest */
         NewsletterId: string;
@@ -5487,6 +7631,7 @@ export interface components {
             age?: string;
             /** Format: email */
             email?: string;
+            phoneNumber?: string;
             gender?: string;
             race?: string[];
             country?: string;
@@ -5499,11 +7644,13 @@ export interface components {
             hackathonsParticipated?: string;
             application1?: string;
             application2?: string;
+            application3?: string;
             applicationOptional?: string;
-            applicationPro?: string;
-            attribution?: string;
-            eventInterest?: string;
+            pro?: boolean;
+            attribution?: string[];
+            eventInterest?: string[];
             requestTravelReimbursement?: boolean;
+            mlhNewsletter?: boolean;
         };
         /**
          * @example {
@@ -5511,6 +7658,7 @@ export interface components {
          *       "lastName": "Kanandini",
          *       "age": "21",
          *       "email": "rpak@gmail.org",
+         *       "phoneNumber": "+1 123-456-7890",
          *       "gender": "Prefer Not to Answer",
          *       "race": [
          *         "Prefer Not to Answer"
@@ -5525,11 +7673,18 @@ export interface components {
          *       "hackathonsParticipated": "2-3",
          *       "application1": "I love hack",
          *       "application2": "I love hack",
+         *       "application3": "I love hack",
          *       "applicationOptional": "",
-         *       "applicationPro": "I wanna be a Pro",
-         *       "attribution": "Word of Mouth",
-         *       "eventInterest": "Meeting New People",
-         *       "requestTravelReimbursement": false
+         *       "pro": true,
+         *       "attribution": [
+         *         "Word of Mouth",
+         *         "Instagram"
+         *       ],
+         *       "eventInterest": [
+         *         "Meeting New People"
+         *       ],
+         *       "requestTravelReimbursement": false,
+         *       "mlhNewsletter": true
          *     }
          */
         RegistrationApplicationSubmittedRequest: {
@@ -5539,6 +7694,7 @@ export interface components {
             age: string;
             /** Format: email */
             email: string;
+            phoneNumber: string;
             gender: string;
             race: string[];
             country: string;
@@ -5551,59 +7707,25 @@ export interface components {
             hackathonsParticipated: string;
             application1: string;
             application2: string;
+            application3: string;
             applicationOptional?: string;
-            applicationPro?: string;
-            attribution: string;
-            eventInterest: string;
+            pro?: boolean;
+            attribution: string[];
+            eventInterest: string[];
             requestTravelReimbursement: boolean;
+            mlhNewsletter: boolean;
         };
         /**
          * @example {
-         *       "people": {
-         *         "Zeus": 36,
-         *         "Apollo": 32,
-         *         "Athena": 34,
-         *         "Hades": 28,
-         *         "Hermes": 29,
-         *         "Artemis": 30
-         *       },
-         *       "alliances": [
-         *         [
-         *           "Zeus",
-         *           "Apollo"
-         *         ],
-         *         [
-         *           "Apollo",
-         *           "Athena"
-         *         ],
-         *         [
-         *           "Hades",
-         *           "Hermes"
-         *         ],
-         *         [
-         *           "Hermes",
-         *           "Artemis"
-         *         ],
-         *         [
-         *           "Hades",
-         *           "Artemis"
-         *         ]
-         *       ],
+         *       "inputFileId": "abc123",
          *       "attempts": 3,
          *       "complete": false
          *     }
          */
-        RegistrationChallengeInput: {
-            people: {
-                [key: string]: number;
-            };
-            alliances: string[][];
+        RegistrationChallengeStatus: {
+            inputFileId: string;
             attempts: number;
             complete: boolean;
-        };
-        RegistrationChallengeSolve: {
-            /** @example 123 */
-            solution: number;
         };
         /** @description If registration is currently open or not */
         RegistrationStatus: {
@@ -5619,6 +7741,8 @@ export interface components {
             education: string;
             major: string;
             graduate: string;
+            pro?: boolean;
+            title?: string;
         };
         ResumeBookFilter: {
             graduations?: (number | null)[];
@@ -5628,6 +7752,17 @@ export interface components {
         ResumeDownloadURL: {
             /** @example https://resume-bucket-dev.s3.us-east-2.amazonaws.com/abcd */
             url: string;
+        };
+        /**
+         * @example {
+         *       "urls": [
+         *         "https://resume-bucket-dev.s3.us-east-2.amazonaws.com/abcd",
+         *         "https://resume-bucket-dev.s3.us-east-2.amazonaws.com/xyzw"
+         *       ]
+         *     }
+         */
+        ResumeListDownloadURL: {
+            urls: string[];
         };
         /**
          * @example {
@@ -5761,6 +7896,13 @@ export interface components {
             /** @example 1A3Z56 */
             code: string;
         };
+        /** @description Represents a team within the organization. */
+        "Staff Team": {
+            /** @example 6717efb83b5d4c1a2e47a7e1 */
+            id?: string;
+            /** @example Systems */
+            name: string;
+        };
         StatisticLog: {
             timestamp: number;
             events: components["schemas"]["EventStatistic"][];
@@ -5802,7 +7944,7 @@ export interface components {
             endTime?: number;
             exp?: number;
             /** @enum {string} */
-            eventType?: "MEAL" | "SPEAKER" | "WORKSHOP" | "MINIEVENT" | "QNA" | "MEETING" | "STAFFSHIFT" | "OTHER";
+            eventType?: "MEAL" | "SPEAKER" | "WORKSHOP" | "MINIEVENT" | "SIDEQUEST" | "QNA" | "MEETING" | "STAFFSHIFT" | "OTHER";
             locations?: components["schemas"]["Location"][];
             isAsync?: boolean;
             mapImageUrl?: string;
@@ -5812,6 +7954,7 @@ export interface components {
             displayOnStaffCheckIn?: boolean;
             isMandatory?: boolean;
             isPro?: boolean;
+            menu?: string[];
             eventId: components["schemas"]["EventId"];
         };
         /** @description A user's events they are following */

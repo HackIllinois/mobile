@@ -32,11 +32,12 @@ import { useSavedEvents } from '../../lib/fetchSavedEvents';
 import { useMentorOfficeHours } from '../../lib/fetchMentorOfficeHours';
 import { useMentorProfiles } from '../../lib/fetchMentorProfiles';
 import { Event } from '../../types';
+import * as SecureStore from 'expo-secure-store';
 
 import { useLocalSearchParams, useRouter } from "expo-router";
 
 // --- Types ---
-type ScheduleMode = 'events' | 'mentorship';
+type ScheduleMode = 'events' | 'mentorship' | 'shifts';
 
 type MentorshipSession = {
   id: string;
@@ -80,6 +81,24 @@ export default function EventScreen() {
     refetch: refetchMentors,
   } = useMentorOfficeHours(isMentors);
   const { mentorProfiles } = useMentorProfiles(isMentors);
+
+  const [isStaff, setIsStaff] = useState(false);
+  useEffect(() => {
+    SecureStore.getItemAsync('userRoles').then((rolesString) => {
+      if (rolesString) {
+        const roles: string[] = JSON.parse(rolesString);
+        setIsStaff(roles.includes('STAFF') || roles.includes('ADMIN'));
+      }
+    }).catch(() => {});
+  }, []);
+
+  const isShifts = scheduleMode === 'shifts';
+  const {
+    shifts,
+    loading: shiftsLoading,
+    error: shiftsError,
+    refetch: refetchShifts,
+  } = useStaffShifts(isStaff && isShifts);
 
   // --- State ---
   const [savedEventIds, setSavedEventIds] = useState<Set<string>>(new Set());
@@ -134,12 +153,14 @@ export default function EventScreen() {
 
     if (scheduleMode === 'events') {
       await refetchEvents();
-    } else {
+    } else if (scheduleMode === 'mentorship') {
       await refetchMentors();
+    } else {
+      await refetchShifts();
     }
 
     setIsRefreshing(false);
-  }, [refetchEvents, refetchMentors, scheduleMode]);
+  }, [refetchEvents, refetchMentors, refetchShifts, scheduleMode]);
 
   const handleSave = async (eventId: string) => {
     Haptics.selectionAsync();
@@ -215,8 +236,10 @@ export default function EventScreen() {
   }, [eventDays]);
 
   const activeItems = useMemo(() => {
-    return scheduleMode === 'events' ? events : mentorshipSessions;
-  }, [scheduleMode, events, mentorshipSessions]);
+    if (scheduleMode === 'events') return events;
+    if (scheduleMode === 'shifts') return shifts;
+    return mentorshipSessions;
+  }, [scheduleMode, events, mentorshipSessions, shifts]);
 
   const filteredItems = useMemo(() => {
     let data: any[] = activeItems as any[];
@@ -375,7 +398,7 @@ export default function EventScreen() {
       weekday: 'long'
     });
 
-    if (scheduleMode === 'events') {
+    if (scheduleMode === 'events' || scheduleMode === 'shifts') {
       const ev = item as Event;
       return (
         <View style={styles.eventWrapper}>
@@ -390,6 +413,7 @@ export default function EventScreen() {
             handleSave={handleSave}
             onShowMenu={handleShowMenu}
             saved={savedEventIds.has(ev.eventId)}
+            hideSave={scheduleMode === 'shifts'}
           />
         </View>
       );
@@ -431,8 +455,8 @@ export default function EventScreen() {
   });
 
   // --- Loading/Error/Empty States ---
-  const isLoading = (eventsLoading && scheduleMode === 'events') || (mentorsLoading && scheduleMode === 'mentorship');
-  const isError = (eventsError && scheduleMode === 'events') || (mentorsError && scheduleMode === 'mentorship');
+  const isLoading = (eventsLoading && scheduleMode === 'events') || (mentorsLoading && scheduleMode === 'mentorship') || (shiftsLoading && scheduleMode === 'shifts');
+  const isError = (eventsError && scheduleMode === 'events') || (mentorsError && scheduleMode === 'mentorship') || (shiftsError && scheduleMode === 'shifts');
   const isEmpty = !isLoading && !isRefreshing && filteredItems.length === 0;
 
   return (
@@ -448,10 +472,11 @@ export default function EventScreen() {
                 <EventTabs
                   activeTab={scheduleMode}
                   onTabPress={(mode) => {
-                    setScheduleMode(mode);
+                    setScheduleMode(mode as ScheduleMode);
                     setSaveValue(false);
                     setSelectedDay(null);
                   }}
+                  showShifts={isStaff}
                 />
             </Animated.View>
 
@@ -484,7 +509,7 @@ export default function EventScreen() {
         ) : isError ? (
              <View style={styles.emptyContainer}>
                  <Text style={styles.emptyText}>Error fetching data</Text>
-                 <TouchableOpacity onPress={() => scheduleMode === 'events' ? refetchEvents() : refetchMentors()} style={styles.retryButton}>
+                 <TouchableOpacity onPress={() => scheduleMode === 'events' ? refetchEvents() : scheduleMode === 'mentorship' ? refetchMentors() : refetchShifts()} style={styles.retryButton}>
                     <Text style={styles.retryText}>Retry</Text>
                  </TouchableOpacity>
              </View>
@@ -531,9 +556,11 @@ export default function EventScreen() {
                       <Text style={styles.emptyText}>
                         {scheduleMode === "mentorship"
                           ? "No mentors found."
-                          : selectedSave
-                            ? "No saved events."
-                            : "No events found."}
+                          : scheduleMode === "shifts"
+                            ? "No shifts assigned."
+                            : selectedSave
+                              ? "No saved events."
+                              : "No events found."}
                       </Text>
                     )}
                   </View>
