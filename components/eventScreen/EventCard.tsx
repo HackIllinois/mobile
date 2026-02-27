@@ -25,6 +25,7 @@ interface EventCardProps {
   handleSave: (eventId: string) => void;
   saved: boolean;
   onShowMenu: (event: Event) => void;
+  hideSave?: boolean;
 }
 
 const formatTime = (timestamp: number): string => {
@@ -36,9 +37,9 @@ const formatTime = (timestamp: number): string => {
   });
 };
 
-export function EventCard({ event, onPress, handleSave, saved, onShowMenu }: EventCardProps) {
-  const DEBUG_MODE = false; 
-  const now = DEBUG_MODE 
+export function EventCard({ event, onPress, handleSave, saved, onShowMenu, hideSave = false }: EventCardProps) {
+  const DEBUG_MODE = false;
+  const now = DEBUG_MODE
   ? new Date(2026, 1, 28, 19, 0, 0).getTime()  // Feb 28, 7:00 PM (month 1 = February)
   : Date.now();
 
@@ -50,11 +51,11 @@ export function EventCard({ event, onPress, handleSave, saved, onShowMenu }: Eve
   let CardBackground = UnsavedEvent;
   if (expired) {
     CardBackground = ExpiredEvent;
-  } else if (saved && active) {
+  } else if (!hideSave && saved && active) {
     CardBackground = SavedActiveEvent;
   } else if (active) {
     CardBackground = ActiveEvent;
-  } else if (saved) {
+  } else if (!hideSave && saved) {
     CardBackground = SavedEvent;
   }
 
@@ -133,10 +134,12 @@ export function EventCard({ event, onPress, handleSave, saved, onShowMenu }: Eve
         </View>
 
         {/* C. Save Button Hit Area */}
-        <Pressable 
-           style={styles.saveHitArea}
-           onPress={() => handleSave(event.eventId)}
-        />
+        {!hideSave && (
+          <Pressable
+            style={styles.saveHitArea}
+            onPress={() => handleSave(event.eventId)}
+          />
+        )}
 
       </Pressable>
     </View>

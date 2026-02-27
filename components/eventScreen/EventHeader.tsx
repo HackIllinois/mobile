@@ -32,7 +32,7 @@ interface EventHeaderProps {
   setSelectedDay: (id: string | null) => void;
   selectedSave: boolean;
   setSaveValue: (val: boolean) => void;
-  scheduleMode?: 'events' | 'mentorship';
+  scheduleMode?: 'events' | 'mentorship' | 'shifts';
 }
 
 export const EventHeader: React.FC<EventHeaderProps> = ({

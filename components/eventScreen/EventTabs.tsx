@@ -12,6 +12,8 @@ import EventText from "../../assets/event/ActiveEvent.svg";
 import MentorshipText from "../../assets/event/ActiveMentorship.svg";
 import PassiveMentorText from "../../assets/event/PassiveMentorship.svg";
 import PassiveEventText from "../../assets/event/PassiveEvent.svg";
+import ActiveShiftsText from "../../assets/event/ActiveShifts";
+import PassiveShiftsText from "../../assets/event/PassiveShifts";
 import { getConstrainedWidth } from "../../lib/layout";
 
 const SCREEN_WIDTH = getConstrainedWidth();
@@ -26,31 +28,34 @@ const STROKE_WIDTH = 3;
 const STROKE_OFFSET = 2;
 
 // --- FIX: Nudge the center point for Mentorship ---
-// If the text looks too far left, make this negative.
-// If the text looks too far right (your case), make this positive.
-const MENTORSHIP_OFFSET = 3; 
+const MENTORSHIP_OFFSET = 3;
 
-type TabMode = 'events' | 'mentorship';
+export type TabMode = 'events' | 'mentorship' | 'shifts';
+
+const tabIndex = (tab: TabMode): number =>
+  tab === 'events' ? 0 : tab === 'mentorship' ? 1 : 2;
 
 interface EventTabsProps {
   activeTab: TabMode;
   onTabPress: (tab: TabMode) => void;
+  showShifts?: boolean;
 }
 
-export default function EventTabs({ activeTab, onTabPress }: EventTabsProps) {
-  const animatedValue = useRef(new Animated.Value(activeTab === 'events' ? 0 : 1)).current;
-  
+export default function EventTabs({ activeTab, onTabPress, showShifts = false }: EventTabsProps) {
+  const animatedValue = useRef(new Animated.Value(tabIndex(activeTab))).current;
+
   const [layouts, setLayouts] = useState({
     events: { x: 0, width: 0 },
     mentorship: { x: 0, width: 0 },
+    shifts: { x: 0, width: 0 },
   });
 
-  const [currentIndex, setCurrentIndex] = useState(activeTab === 'events' ? 0 : 1);
+  const [currentIndex, setCurrentIndex] = useState(tabIndex(activeTab));
 
   useEffect(() => {
-    const targetValue = activeTab === 'events' ? 0 : 1;
+    const targetValue = tabIndex(activeTab);
     setCurrentIndex(targetValue);
-    
+
     Animated.timing(animatedValue, {
       toValue: targetValue,
       duration: 300,
@@ -58,7 +63,7 @@ export default function EventTabs({ activeTab, onTabPress }: EventTabsProps) {
     }).start();
   }, [activeTab]);
 
-  const onLayoutTab = (key: 'events' | 'mentorship', event: LayoutChangeEvent) => {
+  const onLayoutTab = (key: 'events' | 'mentorship' | 'shifts', event: LayoutChangeEvent) => {
     const { x, width } = event.nativeEvent.layout;
     if (layouts[key].x !== x || layouts[key].width !== width) {
       setLayouts(prev => ({ ...prev, [key]: { x, width } }));
@@ -67,26 +72,22 @@ export default function EventTabs({ activeTab, onTabPress }: EventTabsProps) {
 
   // --- SVG Path Logic ---
   const getPath = (index: number) => {
-    const activeKey = index === 0 ? 'events' : 'mentorship';
+    const keys: Array<'events' | 'mentorship' | 'shifts'> = ['events', 'mentorship', 'shifts'];
+    const activeKey = keys[index];
     const layout = layouts[activeKey];
 
     if (layout.width === 0) return `M 0 ${TAB_HEIGHT} L ${SCREEN_WIDTH} ${TAB_HEIGHT}`;
 
-    // 1. Calculate the raw center
     let centerX = layout.x + (layout.width / 2);
 
-    // 2. Apply the correction offset if it's the Mentorship tab
     if (activeKey === 'mentorship') {
-        centerX -= MENTORSHIP_OFFSET; 
+      centerX -= MENTORSHIP_OFFSET;
     }
 
-    // 3. Calculate start/end based on the corrected center
-    // We also subtract the offset from the width calculation to shrink the hump slightly
-    // if the gap is truly empty space.
-    const effectiveWidth = activeKey === 'mentorship' 
-        ? layout.width - MENTORSHIP_OFFSET 
-        : layout.width;
-        
+    const effectiveWidth = activeKey === 'mentorship'
+      ? layout.width - MENTORSHIP_OFFSET
+      : layout.width;
+
     const humpWidth = effectiveWidth + HUMP_PADDING;
     const startX = centerX - (humpWidth / 2);
     const endX = centerX + (humpWidth / 2);
@@ -95,15 +96,15 @@ export default function EventTabs({ activeTab, onTabPress }: EventTabsProps) {
     const bottomY = TAB_HEIGHT - STROKE_OFFSET;
 
     return `
-      M 0 ${bottomY} 
-      L ${startX - CORNER_RADIUS} ${bottomY} 
-      Q ${startX} ${bottomY} ${startX} ${bottomY - CORNER_RADIUS} 
-      L ${startX} ${topY + CORNER_RADIUS} 
-      Q ${startX} ${topY} ${startX + CORNER_RADIUS} ${topY} 
-      L ${endX - CORNER_RADIUS} ${topY} 
-      Q ${endX} ${topY} ${endX} ${topY + CORNER_RADIUS} 
-      L ${endX} ${bottomY - CORNER_RADIUS} 
-      Q ${endX} ${bottomY} ${endX + CORNER_RADIUS} ${bottomY} 
+      M 0 ${bottomY}
+      L ${startX - CORNER_RADIUS} ${bottomY}
+      Q ${startX} ${bottomY} ${startX} ${bottomY - CORNER_RADIUS}
+      L ${startX} ${topY + CORNER_RADIUS}
+      Q ${startX} ${topY} ${startX + CORNER_RADIUS} ${topY}
+      L ${endX - CORNER_RADIUS} ${topY}
+      Q ${endX} ${topY} ${endX} ${topY + CORNER_RADIUS}
+      L ${endX} ${bottomY - CORNER_RADIUS}
+      Q ${endX} ${bottomY} ${endX + CORNER_RADIUS} ${bottomY}
       L ${SCREEN_WIDTH} ${bottomY}
     `;
   };
@@ -143,6 +144,20 @@ export default function EventTabs({ activeTab, onTabPress }: EventTabsProps) {
         >
           {activeTab === 'mentorship' ? <MentorshipText /> : <PassiveMentorText />}
         </TouchableOpacity>
+
+        {showShifts && (
+          <>
+            <View style={{ width: TAB_GAP }} />
+            <TouchableOpacity
+              style={styles.tabButton}
+              onLayout={(e) => onLayoutTab('shifts', e)}
+              onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); onTabPress('shifts'); }}
+              activeOpacity={0.8}
+            >
+              {activeTab === 'shifts' ? <ActiveShiftsText /> : <PassiveShiftsText />}
+            </TouchableOpacity>
+          </>
+        )}
       </View>
     </View>
   );
@@ -165,3 +180,4 @@ const styles = StyleSheet.create({
     height: '100%',
   },
 });
+
