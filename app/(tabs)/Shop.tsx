@@ -1,6 +1,20 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import api from "../../api";
 import { ShopItem } from "../../types";
+import type { components } from "../../types/generated-types";
+
+const BACKGROUND_IMAGE = require("../../assets/point-shop/point-shop-background.png");
+const SHOPKEEPER_IMAGE = require("../../assets/point-shop/point-shop-shopkeeper-2.png");
+
+type Order = components["schemas"]["Order"];
+
+function orderToCartIds(order: Order): string[] {
+  const ids: string[] = [];
+  Object.entries(order.items).forEach(([itemId, quantity]) => {
+    for (let i = 0; i < quantity; i++) ids.push(itemId);
+  });
+  return ids;
+}
 import { useShopItems } from "../../lib/fetchShopItems";
 import { useProfile } from "../../lib/fetchProfile";
 import {
@@ -8,10 +22,8 @@ import {
   View,
   ScrollView,
   Dimensions,
-  Alert,
   ImageBackground,
   Pressable,
-  Image,
   Modal,
   Animated,
   Text,
@@ -23,12 +35,11 @@ import ShopItemCard from "../../components/point shop/ShopItemCard";
 import CartButton from "../../components/point shop/CartButton";
 import Points from "../../components/point shop/Points";
 import CartModal from "../../components/point shop/CartModal";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 
 import { getConstrainedWidth } from "../../lib/layout";
 
-const { width: windowWidth } = Dimensions.get("window");
 const SCREEN_WIDTH = getConstrainedWidth();
 const CHUNK_SIZE = 2;
 const TUTORIAL_KEY = "@shop_tutorial_completed";
@@ -80,9 +91,6 @@ const chunkItems = (items: ShopItem[]): ShopItem[][] => {
 export default function PointShop() {
   const insets = useSafeAreaInsets();
 
-  const HEADER_Y = insets.top + 8;   // SAME value used by profile button
-  const HEADER_HEIGHT = 90;
-
   const { height: screenHeight } = Dimensions.get("window");
   const screenWidth = getConstrainedWidth();
   
@@ -90,15 +98,7 @@ export default function PointShop() {
   const containerHeight = screenHeight;
   
   const safeAreaAdjustment = insets.top - 57; // baseline of ~57 (average)
-  const coverScale = getCoverScale(containerWidth, containerHeight);
   
-  // Title size in the original image (approximate) - scales with background
-  const TITLE_BASE_WIDTH = 600;  // Base width in image pixels
-  const TITLE_BASE_HEIGHT = 300; // Base height in image pixels
-  const titleWidth = TITLE_BASE_WIDTH * coverScale;
-  const titleHeight = TITLE_BASE_HEIGHT * coverScale;
-  
-  const TITLE_Y = imageYToScreenY(TITLE_IMAGE_Y, containerWidth, containerHeight) + safeAreaAdjustment;
   const POINTS_Y = imageYToScreenY(POINTS_IMAGE_Y, containerWidth, containerHeight) + safeAreaAdjustment;
   
   // Calculate base row positions from image mapping
@@ -129,7 +129,6 @@ export default function PointShop() {
 
   const tutorialAnim = useRef(new Animated.Value(0)).current;
   const errorOpacity = useRef(new Animated.Value(0)).current;
-  const cartEpoch = useRef(0);
 
   useEffect(() => {
     if (isTutorialActive && tutorialStep !== null) {
@@ -161,6 +160,7 @@ export default function PointShop() {
 
   useFocusEffect(
     useCallback(() => {
+      console.log("fetching cart items");
       fetchCartItems();
       refetchProfile();
     }, [refetchProfile])
@@ -188,14 +188,16 @@ export default function PointShop() {
     }
   };
 
+  // Helper function to set cartIds from an Order
+  const setCartFromOrder = (order: Order) => {
+    setCartIds(orderToCartIds(order));
+  };
+
   const addToCart = async (itemId: string): Promise<{ success: boolean; errorMessage?: string }> => {
     if (!isTutorialActive) {
-      const epoch = cartEpoch.current;
       try {
-        await api.post(`/shop/cart/${itemId}`);
-        if (epoch === cartEpoch.current) {
-          setCartIds((ids) => [...ids, itemId]);
-        }
+        const res = await api.post(`/shop/cart/${itemId}`) as { data: Order };
+        setCartFromOrder(res.data);
         return { success: true };
       } catch (error: any) {
         console.error("Failed to add item to cart:", error);
@@ -211,18 +213,13 @@ export default function PointShop() {
   };
 
   const removeFromCart = async (itemId: string): Promise<{ success: boolean; errorMessage?: string }> => {
-    const epoch = cartEpoch.current;
     try {
-      await api.delete(`/shop/cart/${itemId}`);
-      if (epoch === cartEpoch.current) {
-        setCartIds((ids) => {
-          const index = ids.indexOf(itemId);
-          return index === -1 ? ids : [...ids.slice(0, index), ...ids.slice(index + 1)];
-        });
-      }
+      const res = await api.delete(`/shop/cart/${itemId}`) as { data: Order };
+      setCartFromOrder(res.data);
       return { success: true };
     } catch (error: any) {
       console.error("Failed to remove item from cart:", error);
+      fetchCartItems();
       const data = error.response?.data;
       const errorMessage = data?.message || data?.error || "Failed to remove item from cart";
       return { success: false, errorMessage };
@@ -230,20 +227,9 @@ export default function PointShop() {
   };
 
   const fetchCartItems = async () => {
-    cartEpoch.current += 1;
     try {
-      const response = await api.get<any>("/shop/cart");
-      if (response.data && response.data.items) {
-        // Convert items object { itemId: quantity } to array of itemIds
-        const itemsObj = response.data.items as Record<string, number>;
-        const ids: string[] = [];
-        Object.entries(itemsObj).forEach(([itemId, quantity]) => {
-          for (let i = 0; i < quantity; i++) {
-            ids.push(itemId);
-          }
-        });
-        setCartIds(ids);
-      }
+      const response = await api.get("/shop/cart") as { data: Order };
+      setCartFromOrder(response.data);
     } catch (error) {
       console.error("Failed to fetch cart items:", error);
     }
@@ -305,14 +291,14 @@ export default function PointShop() {
   if (isLoading) {
     return (
       <View style={[styles.container, styles.loadingContainer]}>
-        <ImageBackground source={require("../../assets/point-shop/point-shop-background.png")} style={StyleSheet.absoluteFill} resizeMode="cover" />
+        <ImageBackground source={BACKGROUND_IMAGE} style={StyleSheet.absoluteFill} resizeMode="cover" />
         <ActivityIndicator size="large" color="#fff" style={styles.loadingSpinner} />
       </View>
     );
   }
 
   return (
-    <ImageBackground source={require("../../assets/point-shop/point-shop-background.png")} style={styles.container} resizeMode="cover">
+    <ImageBackground source={BACKGROUND_IMAGE} style={styles.container} resizeMode="cover">
       {/* Points */}
       <View style={{ position: "absolute", top: POINTS_Y, width: "100%", alignItems: "center", zIndex: 10 }}>
         <Points points={userPoints} />
@@ -394,7 +380,7 @@ export default function PointShop() {
             ]}
           >
             <Animated.Image
-              source={require("../../assets/point-shop/point-shop-shopkeeper-2.png")}
+              source={SHOPKEEPER_IMAGE}
               style={[
                 styles.shopkeeperImage,
                 {
