@@ -3,18 +3,18 @@ import { Dimensions, Animated, View, Image, Pressable } from "react-native";
 import * as Haptics from "expo-haptics";
 
 import CheckInPng from "../../assets/home/check_in-png.png";
-import ScavengerPng from "../../assets/home/scavenger_hunt-png.png";
-import OpeningPng from "../../assets/home/opening-png.png";
+import OpeningCeremonyPng from "../../assets/home/opening-png.png";
 import HackingPng from "../../assets/home/hacking-png.png";
 import ShowcasePng from "../../assets/home/project-png.png";
-import ClosingPng from "../../assets/home/closing_ceremony_png.png";
+import ClosingCeremonyPng from "../../assets/home/closing-ceremony.png";
+import AuralessEarthPng from "../../assets/home/auraless-earth.png";
 
 import CheckInFinishedPng from "../../assets/home/check_in_finished-png.png";
-import ScavengerFinishedPng from "../../assets/home/scavenger_finished-png.png";
-import OpeningFinishedPng from "../../assets/home/opening_finished-png.png";
+import OpeningCeremonyFinishedPng from "../../assets/home/opening_finished-png.png";
 import HackingFinishedPng from "../../assets/home/hacking_finished-png.png";
 import ShowcaseFinishedPng from "../../assets/home/project_finished-png.png";
-import ClosingFinishedPng from "../../assets/home/closing_finished.png";
+import ClosingCeremonyFinishedPng from "../../assets/home/closing-ceremony-finished.png";
+import AuralessEarthFinishedPng from "../../assets/home/auraless-earth-finished.png";
 
 interface OrbitItemProps {
   radius: number;
@@ -90,25 +90,25 @@ export default function OrbitItem({
       ? eventKey === "checkin"
         ? CheckInFinishedPng
         : eventKey === "scavenger"
-        ? ScavengerFinishedPng
+        ? OpeningCeremonyFinishedPng
         : eventKey === "opening"
-        ? OpeningFinishedPng
-        : eventKey === "showcase"
-        ? ShowcaseFinishedPng
-        : eventKey === "hacking"
         ? HackingFinishedPng
-        : ClosingFinishedPng
+        : eventKey === "showcase"
+        ? ClosingCeremonyFinishedPng
+        : eventKey === "hacking"
+        ? ShowcaseFinishedPng
+        : AuralessEarthFinishedPng
       : eventKey === "checkin"
       ? CheckInPng
       : eventKey === "scavenger"
-      ? ScavengerPng
+      ? OpeningCeremonyPng
       : eventKey === "opening"
-      ? OpeningPng
-      : eventKey === "showcase"
-      ? ShowcasePng
-      : eventKey === "hacking"
       ? HackingPng
-      : ClosingPng;
+      : eventKey === "showcase"
+      ? ClosingCeremonyPng
+      : eventKey === "hacking"
+      ? ShowcasePng
+      : AuralessEarthPng;
 
   
   const pressAnim = useRef(new Animated.Value(0)).current;
