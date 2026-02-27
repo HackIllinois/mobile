@@ -161,6 +161,7 @@ export default function PointShop() {
 
   useFocusEffect(
     useCallback(() => {
+      fetchCartItems();
       refetchProfile();
     }, [refetchProfile])
   );
