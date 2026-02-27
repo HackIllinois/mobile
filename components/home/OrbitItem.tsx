@@ -2,19 +2,19 @@ import React, { useMemo, useRef } from "react";
 import { Dimensions, Animated, View, Image, Pressable } from "react-native";
 import * as Haptics from "expo-haptics";
 
-import CheckInPng from "../../assets/home/check_in-png.png";
-import ScavengerPng from "../../assets/home/scavenger_hunt-png.png";
-import OpeningPng from "../../assets/home/opening-png.png";
-import HackingPng from "../../assets/home/hacking-png.png";
-import ShowcasePng from "../../assets/home/project-png.png";
-import ClosingPng from "../../assets/home/closing_ceremony_png.png";
+const CheckInPng = require("../../assets/home/check_in-png.png");
+const ScavengerPng = require("../../assets/home/scavenger_hunt-png.png");
+const OpeningPng = require("../../assets/home/opening-png.png");
+const HackingPng = require("../../assets/home/hacking-png.png");
+const ShowcasePng = require("../../assets/home/project-png.png");
+const ClosingPng = require("../../assets/home/closing_ceremony_png.png");
 
-import CheckInFinishedPng from "../../assets/home/check_in_finished-png.png";
-import ScavengerFinishedPng from "../../assets/home/scavenger_finished-png.png";
-import OpeningFinishedPng from "../../assets/home/opening_finished-png.png";
-import HackingFinishedPng from "../../assets/home/hacking_finished-png.png";
-import ShowcaseFinishedPng from "../../assets/home/project_finished-png.png";
-import ClosingFinishedPng from "../../assets/home/closing_finished.png";
+const CheckInFinishedPng = require("../../assets/home/check_in_finished-png.png");
+const ScavengerFinishedPng = require("../../assets/home/scavenger_finished-png.png");
+const OpeningFinishedPng = require("../../assets/home/opening_finished-png.png");
+const HackingFinishedPng = require("../../assets/home/hacking_finished-png.png");
+const ShowcaseFinishedPng = require("../../assets/home/project_finished-png.png");
+const ClosingFinishedPng = require("../../assets/home/closing_finished.png");
 
 interface OrbitItemProps {
   radius: number;
