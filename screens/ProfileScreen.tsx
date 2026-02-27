@@ -103,11 +103,15 @@ export default function ProfileScreen() {
           const res = await api.get<AxiosResponse<TeamStanding[]>>('attendee-team/');
           const raw = res.data as unknown as TeamStanding[] | { data: TeamStanding[] };
           const standings: TeamStanding[] = Array.isArray(raw) ? raw : raw.data;
-          standings.sort((a: TeamStanding, b: TeamStanding) => b.points - a.points);
-          const rank = standings.findIndex(
+          const userTeam = standings.find(
             (t: TeamStanding) => t.name.toLowerCase() === profile.team!.toLowerCase()
           );
-          setTeamRank(rank >= 0 ? rank + 1 : null);
+          if (userTeam) {
+            const rank = standings.filter((t: TeamStanding) => t.points > userTeam.points).length + 1;
+            setTeamRank(rank);
+          } else {
+            setTeamRank(null);
+          }
         } catch (error) {
           console.error('Failed to fetch team standings:', error);
         }
