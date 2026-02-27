@@ -30,6 +30,7 @@ import StarryBackground from '../../components/eventScreen/StarryBackground';
 import { useEvents } from '../../lib/fetchEvents';
 import { useSavedEvents } from '../../lib/fetchSavedEvents';
 import { useMentorOfficeHours } from '../../lib/fetchMentorOfficeHours';
+import { useMentorProfiles } from '../../lib/fetchMentorProfiles';
 import { Event } from '../../types';
 
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -78,6 +79,7 @@ export default function EventScreen() {
     error: mentorsError,
     refetch: refetchMentors,
   } = useMentorOfficeHours(isMentors);
+  const { mentorProfiles } = useMentorProfiles(isMentors);
 
   // --- State ---
   const [savedEventIds, setSavedEventIds] = useState<Set<string>>(new Set());
@@ -186,6 +188,10 @@ export default function EventScreen() {
   }, [events]);
 
   const mentorshipSessions: MentorshipSession[] = useMemo(() => {
+    const mentorDescriptions = new Map(
+      mentorProfiles.map((mentor) => [mentor.name.trim().toLowerCase(), mentor.description]),
+    );
+
     return mentorOfficeHours.map((m) => ({
       id: m.mentorId,
       mentorName: m.mentorName,
@@ -193,11 +199,11 @@ export default function EventScreen() {
       startTime: Math.floor(m.startTime / 1000),
       endTime: Math.floor(m.endTime / 1000),
       track: 'Mentor',
-      bio: 'No bio provided yet.',
+      bio: mentorDescriptions.get(m.mentorName.trim().toLowerCase()) || 'No bio provided yet.',
       topics: [],
       contact: '',
     }));
-  }, [mentorOfficeHours]);
+  }, [mentorOfficeHours, mentorProfiles]);
 
   const hasInitialSelection = useRef(false);
   useEffect(() => {
