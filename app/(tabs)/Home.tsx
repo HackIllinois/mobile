@@ -13,11 +13,10 @@ import HomeBackground from "../../assets/home/home_bg.svg";
 import TimerOutline from "../../assets/home/timer_outline.svg";
 
 const CheckInPng = require("../../assets/home/check_in-png.png");
-const ScavengerPng = require("../../assets/home/scavenger_hunt-png.png");
-const OpeningPng = require("../../assets/home/opening-png.png");
+const OpeningCeremonyPng = require("../../assets/home/opening-png.png");
 const HackingPng = require("../../assets/home/hacking-png.png");
 const ShowcasePng = require("../../assets/home/project-png.png");
-const ClosingPng = require("../../assets/home/closing_ceremony_png.png");
+const ClosingCeremonyPng = require("../../assets/home/closing-ceremony.png");
 
 import { getConstrainedWidth } from "../../lib/layout";
 
@@ -93,44 +92,55 @@ const ROCKET_CFG: Partial<Record<StageKey, {
   closing:   { radiusMul: 0.75, centerYMul: 0.00, size: 40 },
 };
 
-const TIMER_PHASES: { label: string; targetDate: Date; activeUntil: Date }[] = [
-  { // check in
-    label: "T-Minus Liftoff",
+const TIMER_PHASES: { subtitle: string; targetDate: Date; activeUntil: Date; rocketStage: StageKey }[] = [
+  {
+    subtitle: "Course Set for Check-in",
     targetDate: new Date("2026-02-27T14:00:00-06:00"),
-    activeUntil: new Date("2026-02-27T14:00:00-06:00"), // show until check-in starts
-  },
-  { // opening ceremony
-    label: "Opening Ceremony",
-    targetDate: new Date("2026-02-27T17:00:00-06:00"),
-    activeUntil: new Date("2026-02-27T17:00:00-06:00"), // show until check-in starts
-  },
-  { // project showcase
-    label: "Project Showcase",
-    targetDate: new Date("2026-03-01T09:00:00-06:00"),
-    activeUntil: new Date("2026-03-01T09:00:00-06:00"), // show until check-in starts
+    activeUntil: new Date("2026-02-27T14:00:00-06:00"),
+    rocketStage: "checkin",   // orbit 4 slot → check-in planet
   },
   {
-    label: "Landing In",
-    targetDate: new Date("2026-03-01T14:00:00-06:00"), // closing ceremony end
-    activeUntil: new Date("2026-03-01T14:00:00-06:00"), // show until event ends
+    subtitle: "Next Stop: Opening Ceremony",
+    targetDate: new Date("2026-02-27T17:00:00-06:00"),
+    activeUntil: new Date("2026-02-27T17:00:00-06:00"),
+    rocketStage: "scavenger", // orbit 3 slot → opening ceremony planet
+  },
+  {
+    subtitle: "Target Orbit: Hacking",
+    targetDate: new Date("2026-02-27T18:00:00-06:00"),
+    activeUntil: new Date("2026-02-27T18:00:00-06:00"),
+    rocketStage: "opening",   // orbit 2 slot → hacking planet
+  },
+  {
+    subtitle: "Engaging Thrusters for Project Showcase",
+    targetDate: new Date("2026-03-01T09:00:00-06:00"),
+    activeUntil: new Date("2026-03-01T09:00:00-06:00"),
+    rocketStage: "hacking",   // orbit 1 slot → showcase planet
+  },
+  {
+    subtitle: "Final Approach to Closing Ceremony",
+    targetDate: new Date("2026-03-01T14:00:00-06:00"),
+    activeUntil: new Date("2026-03-01T14:00:00-06:00"),
+    rocketStage: "showcase",  // orbit 0 slot → closing ceremony planet
   },
 ];
+
+const LAST_PHASE = TIMER_PHASES[TIMER_PHASES.length - 1];
 
 const getActivePhase = (t: Date) => {
   for (let i = 0; i < TIMER_PHASES.length; i++) {
     if (t < TIMER_PHASES[i].activeUntil) return TIMER_PHASES[i];
   }
-  return TIMER_PHASES[TIMER_PHASES.length - 1]; // fallback: last phase
+  return null; // all phases complete
 };
 
 // uncomment debug now and switch now to use debug now to test different times for different states
 
-// const DEBUG_NOW: Date | null =
-//   __DEV__ ? new Date("2026-02-28T19:00:00-06:00") : null;
+const DEBUG_NOW: Date | null =
+  __DEV__ ? new Date("2026-03-01T15:00:00-06:00") : null;
 
-// const now = () => DEBUG_NOW ?? new Date(); 
-// uncomment this ^ to debug
-const now = () => new Date();
+const now = () => DEBUG_NOW ?? new Date();
+// To disable debug: set DEBUG_NOW to null or comment out and restore: const now = () => new Date();
 
 const NAVBAR_HEIGHT = 85;
 
@@ -215,11 +225,12 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const [timerTick, setTimerTick] = useState(0);
   const activePhase = useMemo(() => getActivePhase(now()), [timerTick]);
-  const [timeLeft, setTimeLeft] = useState(() => getTimeRemaining(activePhase.targetDate));
+  const isDone = activePhase === null;
+  const rocketStage = activePhase?.rocketStage ?? LAST_PHASE.rocketStage;
+  const [timeLeft, setTimeLeft] = useState(() => getTimeRemaining((activePhase ?? LAST_PHASE).targetDate));
   // Track where the timer header ends
   const [timerBottom, setTimerBottom] = useState(height * 0.03);
   const [selectedEvent, setSelectedEvent] = useState<EventModalData | null>(null);
-  const [modalVisible, setModalVisible] = useState(false);
 
   const onTimerLayout = (e: any) => {
     const { y, height: h } = e.nativeEvent.layout;
@@ -282,11 +293,11 @@ export default function HomeScreen() {
   })), [anchorY, orbitGap]);
 
   const items: EventItem[] = useMemo(() => [
-    { eventKey: "closing",   x: anchorX, y: anchorY, size: CLOSING_PLANET_SIZE, fixed: true } as FixedEvent,
-    { eventKey: "showcase",  orbit: orbits[0], angle: 140, size: 80,  offsetY: -6,  jigglePx: 14, jigglePeriodMs: 5200 } as OrbitEvent,
+    { eventKey: "closing",   x: anchorX, y: anchorY, size: CLOSING_PLANET_SIZE, fixed: true, offsetY: -5 } as FixedEvent,
+    { eventKey: "showcase",  orbit: orbits[0], angle: 140, size: 95,  offsetY: -6,  jigglePx: 14, jigglePeriodMs: 5200 } as OrbitEvent,
     { eventKey: "hacking",   orbit: orbits[1], angle: 60,  size: 80,               jigglePx: 12, jigglePeriodMs: 6100 } as OrbitEvent,
-    { eventKey: "opening",   orbit: orbits[2], angle: 105, size: 70,               jigglePx: 10, jigglePeriodMs: 6900 } as OrbitEvent,
-    { eventKey: "scavenger", orbit: orbits[3], angle: 70,  size: 100,              jigglePx: 12, jigglePeriodMs: 7600 } as OrbitEvent,
+    { eventKey: "opening",   orbit: orbits[2], angle: 105, size: 80,               jigglePx: 10, jigglePeriodMs: 6900 } as OrbitEvent,
+    { eventKey: "scavenger", orbit: orbits[3], angle: 70,  size: 70,               jigglePx: 12, jigglePeriodMs: 7600 } as OrbitEvent,
     { eventKey: "checkin",   orbit: orbits[4], angle: 100, size: 80,  offsetY: -8, jigglePx: 9,  jigglePeriodMs: 8400 } as OrbitEvent,
   ], [anchorY, orbits]);
 
@@ -309,18 +320,17 @@ export default function HomeScreen() {
     return () => animations.forEach(a => a.stop());
   }, []); 
 
-  const currentIdx = stageIndex(currentStage);
+  const rocketIdx = stageIndex(rocketStage);
 
   const getVariantFor = (eventKey: StageKey): "normal" | "finished" => {
     const idx = stageIndex(eventKey);
-    if (idx < currentIdx) return "finished";
-    if (currentStage === "closing" && eventKey === "closing") return "finished";
+    if (idx < rocketIdx) return "finished";
+    if (isDone && eventKey === "closing") return "finished";
     return "normal";
   };
 
   const rocketTarget = useMemo(() => {
-    if (currentStage === "closing") return null;
-    const target = items.find((it) => it.eventKey === currentStage);
+    const target = items.find((it) => it.eventKey === rocketStage);
     if (!target) return null;
 
     const ox = target.offsetX ?? 0;
@@ -336,12 +346,12 @@ export default function HomeScreen() {
       y: target.orbit.centerY + target.orbit.radius * Math.sin(rad) + oy,
       planetSize: target.size,
     };
-  }, [items, currentStage]);
+  }, [items, rocketStage]);
 
   useEffect(() => {
     const timer = setInterval(() => {
       setTimerTick(t => t + 1);
-      setTimeLeft(getTimeRemaining(getActivePhase(now()).targetDate));
+      setTimeLeft(getTimeRemaining((getActivePhase(now()) ?? LAST_PHASE).targetDate));
     }, 1000);
     return () => clearInterval(timer);
   }, []);
@@ -350,12 +360,12 @@ export default function HomeScreen() {
 
   const eventModalMap = useMemo(() => {
     const planetImage = {
-      checkin: CheckInPng,
-      scavenger: ScavengerPng,
-      opening: OpeningPng,
-      hacking: HackingPng,
-      showcase: ShowcasePng,
-      closing: ClosingPng,
+      checkin:   CheckInPng,
+      scavenger: OpeningCeremonyPng,   // unused in 5-planet flow
+      opening:   OpeningCeremonyPng,   // opening ceremony content → opening ceremony image
+      hacking:   HackingPng,           // hacking content → hacking image
+      showcase:  ShowcasePng,          // showcase content → showcase image
+      closing:   ClosingCeremonyPng,   // closing ceremony content → closing ceremony image
     } as const;
 
     const apiEventByName = new Map(
@@ -402,9 +412,18 @@ export default function HomeScreen() {
     }, {} as Record<StageKey, EventModalData>);
   }, [SCHEDULE, currentStage, apiEvents]);
 
+  // Maps visual slot → actual event content (planets shifted down one orbit after removing scavenger)
+  const PLANET_CONTENT_KEY: Partial<Record<StageKey, StageKey>> = {
+    checkin:   "checkin",
+    scavenger: "opening",   // slot shows opening ceremony image
+    opening:   "hacking",   // slot shows hacking image
+    hacking:   "showcase",  // slot shows project showcase image
+    showcase:  "closing",   // slot shows closing ceremony image
+  };
+
   const handlePlanetPress = (key: StageKey) => {
-    setSelectedEvent(eventModalMap[key] ?? null);
-    setModalVisible(true);
+    const contentKey = PLANET_CONTENT_KEY[key] ?? key;
+    setSelectedEvent(eventModalMap[contentKey] ?? null);
   };
 
   const pushScheduleFocus = (params: { focusEvent?: string; focusEventId?: string }) => {
@@ -433,7 +452,7 @@ export default function HomeScreen() {
 
       {/* Timer */}
       <View style={styles.headerOverlay} onLayout={onTimerLayout} pointerEvents="none">
-        <Text style={styles.timerLabel}>{activePhase.label}</Text>
+        <Text style={styles.timerLabel}>T-MINUS LIFTOFF</Text>
         <View style={styles.timerPill}>
           <TimerOutline width="100%" height="100%" style={StyleSheet.absoluteFill} />
           <Text style={styles.timerText}>
@@ -441,6 +460,7 @@ export default function HomeScreen() {
             {formatTime(timeLeft.minutes)}:{formatTime(timeLeft.seconds)}
           </Text>
         </View>
+        {activePhase?.subtitle ? <Text style={styles.timerSubtitle}>{activePhase.subtitle}</Text> : null}
       </View>
 
       {/* Rings */}
@@ -465,7 +485,6 @@ export default function HomeScreen() {
               offsetX={item.offsetX}
               offsetY={item.offsetY}
               variant={getVariantFor(item.eventKey)}
-              onPress={handlePlanetPress}
             />
           );
         }
@@ -490,7 +509,7 @@ export default function HomeScreen() {
 
       {/* Rocket */}
       {rocketTarget && (() => {
-        const cfg = ROCKET_CFG[currentStage] ?? {};
+        const cfg = ROCKET_CFG[rocketStage] ?? {};
         const radiusMul = cfg.radiusMul ?? 0.75;
         const cx = rocketTarget.x + (cfg.centerXMul ?? 0) * rocketTarget.planetSize;
         const cy = rocketTarget.y + (cfg.centerYMul ?? 0.08) * rocketTarget.planetSize;
@@ -510,7 +529,7 @@ export default function HomeScreen() {
       })()}
 
       <EventInfoModal
-        visible={modalVisible}
+        visible={selectedEvent !== null}
         event={selectedEvent}
         onViewDetails={
           selectedEvent?.id &&
@@ -518,17 +537,13 @@ export default function HomeScreen() {
             getScheduleFocusTarget(selectedEvent)?.focusEventId)
             ? () => {
                 const target = getScheduleFocusTarget(selectedEvent);
-                setModalVisible(false);
                 setSelectedEvent(null);
                 if (!target) return;
                 pushScheduleFocus(target);
               }
             : undefined
         }
-        onClose={() => {
-          setModalVisible(false);
-          setSelectedEvent(null);
-        }}
+        onClose={() => setSelectedEvent(null)}
       />
     </SafeAreaView>
   );
@@ -549,6 +564,14 @@ const styles = StyleSheet.create({
     letterSpacing: 1.5,
     textTransform: "uppercase",
     marginBottom: 8,
+  },
+  timerSubtitle: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    letterSpacing: 1.5,
+    textTransform: "uppercase",
+    marginTop: 8,
+    textAlign: "center",
   },
   timerPill: {
     width: 190,
