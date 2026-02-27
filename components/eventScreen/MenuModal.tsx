@@ -49,7 +49,7 @@ export default function MenuModal({ visible, event, onClose }: MenuModalProps) {
                             ))
                         ) : (
                             <Text style={styles.placeholderText}>
-                                Menu details for this meal will appear here.
+                                Menu details will appear here ~10 minutes prior to the start time.
                             </Text>
                         )}
                     </ScrollView>
