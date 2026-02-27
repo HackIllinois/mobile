@@ -303,7 +303,7 @@ function RootLayoutContent() {
   }
 
   return (
-     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: 'transparent' } }}>
+     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: 'transparent' }, animation: 'fade' }}>
       {!isLoggedIn ? (
         <Stack.Screen name="AuthScreen" />
       ) : (
