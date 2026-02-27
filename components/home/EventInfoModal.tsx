@@ -55,7 +55,7 @@ export default function EventInfoModal({ visible, event, onClose, onViewDetails 
           toValue: 0,
           damping: 18,
           stiffness: 180,
-          mass: 0.8,
+          mass: 0.65,
           useNativeDriver: true,
         }),
       ]).start();
