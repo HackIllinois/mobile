@@ -3,13 +3,13 @@ import Svg, { Text } from 'react-native-svg';
 
 export default function PassiveShifts() {
   return (
-    <Svg width="66" height="12" viewBox="0 0 66 12">
+    <Svg width="66" height="14" viewBox="0 0 66 14">
       <Text
         x="0"
-        y="10"
+        y="11"
         fill="white"
         fillOpacity={0.5}
-        fontSize="11"
+        fontSize="13"
         fontWeight="800"
         fontFamily="Tsukimi-Rounded-Bold"
       >
