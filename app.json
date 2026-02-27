@@ -4,7 +4,7 @@
     "name": "HackIllinois",
     "slug": "hackillinois",
     "owner": "hackillinois",
-    "version": "2026.0.3",
+    "version": "2026.0.6",
     "orientation": "portrait",
     "icon": "./assets/logo.png",
     "userInterfaceStyle": "light",
