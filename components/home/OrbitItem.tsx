@@ -165,7 +165,7 @@ export default function OrbitItem({
     >
       <Pressable
         onPress={handlePress}
-        hitSlop={12}
+        hitSlop={22}
         style={{ width: containerSize, height: containerSize }}
       >
         <View

@@ -32,6 +32,7 @@ import { useSavedEvents } from '../../lib/fetchSavedEvents';
 import { useMentorOfficeHours } from '../../lib/fetchMentorOfficeHours';
 import { useMentorProfiles } from '../../lib/fetchMentorProfiles';
 import { Event } from '../../types';
+import { useStaffShifts } from '../../lib/fetchStaffShifts';
 import * as SecureStore from 'expo-secure-store';
 
 import { useLocalSearchParams, useRouter } from "expo-router";

@@ -41,7 +41,8 @@ const ShopItemCard = memo(({ item, onPress, scale = 1 }: ShopItemCardProps) => {
     }
   };
 
-  const displayQuantity = item.quantity < 0 || item.quantity > 1000 ? 0 : item.quantity;
+  const displayQuantity = item.quantity < 0 ? 0 : item.quantity;
+  const quantityLabel = displayQuantity > 100 ? "100+" : String(displayQuantity);
 
   return (
     <View style={styles.outerContainer}>
@@ -77,7 +78,7 @@ const ShopItemCard = memo(({ item, onPress, scale = 1 }: ShopItemCardProps) => {
             {item.name}
           </Text>
           <View style={styles.priceRow}>
-            <Text style={styles.price}>{displayQuantity} left | </Text>
+            <Text style={styles.price}>{quantityLabel} left | </Text>
             <Image
               source={require("../../assets/point-shop/point-shop-diamonds.png")}
               style={styles.icon}
