@@ -7,6 +7,7 @@ import {
   Image,
   useWindowDimensions,
   StyleSheet,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from 'expo-router';
@@ -283,6 +284,19 @@ export default function ProfileScreen() {
             width: '80%',
             marginBottom: scaleHeight(20),
           }}>Could not load profile.</Text>
+          <Text style={{
+            color: 'rgba(255, 255, 255, 0.9)',
+            fontSize: scaleFontSize(16),
+            fontWeight: '700',
+            textAlign: 'center',
+            width: '80%',
+            marginBottom: scaleHeight(30),
+          }}>
+            If you are an attendee, please make sure you are logged in using the right GitHub Account.{'\n'}{'\n'}
+            If the issue persists, make sure you accepted your invitation on{' '}
+            <Text onPress={() => Linking.openURL('https://hackillinois.org/rsvp')} style={{ textDecorationLine: 'underline' }}>hackillinois.org/rsvp</Text>.{'\n'}{'\n'}
+            For further support, visit the help desk or raise a ticket on Discord.
+          </Text>
           <Text
             numberOfLines={1}
             adjustsFontSizeToFit
@@ -290,19 +304,11 @@ export default function ProfileScreen() {
             color: 'rgba(255, 255, 255, 0.85)',
             fontSize: scaleFontSize(16),
             fontFamily: 'Tsukimi Rounded',
-            fontWeight: '700',
+fontWeight: '600',
             textAlign: 'center',
             width: '80%',
             marginBottom: scaleHeight(15),
           }}>{userRole === 'GUEST' ? 'Guests' : 'Staff'} currently do not have profiles.</Text>
-          <Text style={{
-            color: 'rgba(255, 255, 255, 0.9)',
-            fontSize: scaleFontSize(14),
-            fontWeight: '600',
-            textAlign: 'center',
-            width: '80%',
-            marginBottom: scaleHeight(30),
-          }}>If you are an attendee, please email contact@hackillinois.org for support.</Text>
           <TouchableOpacity style={{
             backgroundColor: 'rgba(24, 1, 97, 0.8)',
             paddingVertical: scaleWidth(12),
