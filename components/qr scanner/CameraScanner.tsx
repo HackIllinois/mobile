@@ -35,23 +35,6 @@ function CameraScannerView({
   const [imageLibraryPermission, requestImageLibraryPermission] = ImagePicker.useMediaLibraryPermissions();
   const [isProcessingImage, setIsProcessingImage] = useState(false);
 
-  // Use a ref to avoid stale closure in PanResponder
-  const onCloseRef = useRef(onClose);
-  onCloseRef.current = onClose;
-
-  const panResponder = useMemo(
-    () => PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderRelease: (_, gestureState) => {
-        if (gestureState.dy > 80 && Math.abs(gestureState.dx) < 50) {
-          onCloseRef.current();
-        }
-      },
-    }),
-    []
-  );
-
   const handleChooseImage = useCallback(async () => {
     Haptics.selectionAsync();
     try {
@@ -131,7 +114,7 @@ function CameraScannerView({
           onPress={onClose}
         />
         {/* Modal overlay with camera inside */}
-        <View style={styles.modalContainer} {...panResponder.panHandlers}>
+        <View style={styles.modalContainer}>
           <CameraView
             onBarcodeScanned={isScanned ? undefined : stableBarcodeHandler}
             barcodeScannerSettings={barcodeScannerSettings}
