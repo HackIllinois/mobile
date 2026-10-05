@@ -1,14 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Animated, Easing, View, StyleSheet, ImageBackground } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Stack } from "expo-router";
 import { useFonts } from "expo-font";
 import { QueryClientProvider } from "@tanstack/react-query";
 import * as Notifications from "expo-notifications";
-import StartupAnimation from "../components/hackrocket/StartupAnimation";
 import OnboardingScreens from "../components/onboarding/OnboardingScreen";
 import LoadingScreen from "../src/components/loading/LoadingScreen";
-import WelcomePage from "../components/onboarding/WelcomePage";
 import * as SecureStore from "expo-secure-store";
 import { AnimationProvider, useAnimations } from "../contexts/OnboardingAnimationContext";
 import { queryClient } from "../lib/queryClient";
@@ -36,16 +34,11 @@ const TESTING_MODE = false;
 
 function RootLayoutContent() {
   const [showLoading, setShowLoading] = useState(true);
-  const [showWelcome, setShowWelcome] = useState(false);
-  const [showAnimation, setShowAnimation] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [showUpdateRequired, setShowUpdateRequired] = useState(false);
   const [versionGateChecked, setVersionGateChecked] = useState(false);
-  const fadeAnim = useRef(new Animated.Value(1)).current;
-  const welcomeFadeAnim = useRef(new Animated.Value(0)).current;
-  const onboardingContentFadeAnim = useRef(new Animated.Value(0)).current;
 
   // Get shared animations from context
   const { cloudX1, cloudX2, starOpacity } = useAnimations();
@@ -168,57 +161,10 @@ function RootLayoutContent() {
 
   const handleLoadingFinish = () => {
     setShowLoading(false);
-    if (showOnboarding) {
-      setShowWelcome(true);
-    }
   };
-
-  useEffect(() => {
-    if (showWelcome) {
-      Animated.timing(welcomeFadeAnim, {
-        toValue: 1,
-        duration: 600,
-        useNativeDriver: true,
-      }).start();
-    }
-  }, [showWelcome]);
-
-  const handleWelcomeStart = () => {
-    setShowAnimation(true);
-    // Fade out welcome page as rocket goes up
-    Animated.timing(welcomeFadeAnim, {
-      toValue: 0,
-      duration: 1500, 
-      useNativeDriver: true,
-    }).start(() => {
-      setShowWelcome(false);
-    });
-  };
-
-  useEffect(() => {
-    if (showAnimation) {
-      fadeAnim.setValue(1);
-
-      // Show onboarding content immediately when animation starts
-      onboardingContentFadeAnim.setValue(1);
-
-      // Fade out animation to reveal onboarding content 
-      const timer = setTimeout(() => {
-        Animated.timing(fadeAnim, {
-          toValue: 0,
-          duration: 800,
-          useNativeDriver: true,
-        }).start(() => {
-          setShowAnimation(false);
-        });
-      }, 1800);
-      return () => clearTimeout(timer);
-    }
-  }, [showAnimation]);
 
   const handleOnboardingFinish = async () => {
     // Update UI immediately for instant response
-    setShowWelcome(false);
     setShowOnboarding(false);
 
     // Save to storage in the background
@@ -247,59 +193,8 @@ function RootLayoutContent() {
     return <LoadingScreen onFinish={handleLoadingFinish} progress={loadingProgress} cloudX1={cloudX1} cloudX2={cloudX2} starOpacity={starOpacity} />;
   }
 
-  if (showWelcome || showAnimation) {
-    return (
-      <>
-        {showAnimation && (
-          <Animated.View
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              opacity: onboardingContentFadeAnim,
-            }}
-          >
-            <OnboardingScreens onFinish={handleOnboardingFinish} cloudX1={cloudX1} cloudX2={cloudX2} starOpacity={starOpacity} />
-          </Animated.View>
-        )}
-        {/* Welcome page layer */}
-        {showWelcome && (
-          <Animated.View
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              opacity: welcomeFadeAnim,
-            }}
-          >
-            <WelcomePage onFinish={handleOnboardingFinish} onStart={handleWelcomeStart} cloudX1={cloudX1} cloudX2={cloudX2} starOpacity={starOpacity} />
-          </Animated.View>
-        )}
-        {/* Animation layer on top */}
-        {showAnimation && (
-          <Animated.View
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              opacity: fadeAnim,
-            }}
-          >
-            <StartupAnimation cloudX1={cloudX1} cloudX2={cloudX2} starOpacity={starOpacity} />
-          </Animated.View>
-        )}
-      </>
-    );
-  }
-
   if (showOnboarding) {
-    return <OnboardingScreens onFinish={handleOnboardingFinish} cloudX1={cloudX1} cloudX2={cloudX2} starOpacity={starOpacity} />;
+    return <OnboardingScreens onFinish={handleOnboardingFinish}/>;
   }
 
   return (
