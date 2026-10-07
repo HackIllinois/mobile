@@ -1,12 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import * as SecureStore from "expo-secure-store";
 import api from "../api";
-
-export type MentorProfileDto = {
-  mentorId: string;
-  name: string;
-  description: string;
-};
+import { MentorProfileDto } from "../types";
 
 async function fetchMentorProfiles(): Promise<MentorProfileDto[] | null> {
   const token = await SecureStore.getItemAsync("jwt");

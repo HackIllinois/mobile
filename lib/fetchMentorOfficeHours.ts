@@ -1,15 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import * as SecureStore from "expo-secure-store";
 import api from "../api";
-
-export type MentorOfficeHourDto = {
-  mentorName: string;
-  location: string;
-  startTime: number; // ms
-  endTime: number;   // ms
-  mentorId: string;
-};
-
+import { MentorOfficeHourDto } from "../types";
 
 async function fetchMentorOfficeHours(): Promise<MentorOfficeHourDto[] | null> {
   const token = await SecureStore.getItemAsync("jwt");
