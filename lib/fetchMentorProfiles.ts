@@ -1,14 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import * as SecureStore from "expo-secure-store";
 import api from "../api";
+import { MentorProfile } from "../types";
 
-export type MentorProfileDto = {
-  mentorId: string;
-  name: string;
-  description: string;
-};
-
-async function fetchMentorProfiles(): Promise<MentorProfileDto[] | null> {
+async function fetchMentorProfiles(): Promise<MentorProfile[] | null> {
   const token = await SecureStore.getItemAsync("jwt");
 
   if (!token) {
@@ -16,12 +11,12 @@ async function fetchMentorProfiles(): Promise<MentorProfileDto[] | null> {
   }
 
   try {
-    const response: any = await api.get<MentorProfileDto[]>("/mentor/info/");
+    const response: any = await api.get<MentorProfile[]>("/mentor/info/");
     const data = response?.data;
 
-    if (Array.isArray(data)) return data as MentorProfileDto[];
-    if (data && Array.isArray(data.data)) return data.data as MentorProfileDto[];
-    if (data && Array.isArray(data.mentors)) return data.mentors as MentorProfileDto[];
+    if (Array.isArray(data)) return data as MentorProfile[];
+    if (data && Array.isArray(data.data)) return data.data as MentorProfile[];
+    if (data && Array.isArray(data.mentors)) return data.mentors as MentorProfile[];
 
     return [];
   } catch (err: any) {
@@ -36,7 +31,7 @@ async function fetchMentorProfiles(): Promise<MentorProfileDto[] | null> {
 }
 
 export function useMentorProfiles(enabled: boolean) {
-  const { data, isLoading, error, refetch } = useQuery<MentorProfileDto[] | null>({
+  const { data, isLoading, error, refetch } = useQuery<MentorProfile[] | null>({
     queryKey: ["mentorProfiles", enabled],
     queryFn: fetchMentorProfiles,
     enabled,
