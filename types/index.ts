@@ -15,6 +15,7 @@ export type Shifts = components["schemas"]["Shifts"];
 export type MentorOfficeHours = components["schemas"]["MentorOfficeHours"];
 export type MentorProfile = components["schemas"]["MentorProfile"];
 export type AttendeeProfile = components["schemas"]["AttendeeProfile"];
+export type VersionResponse = components["schemas"]["VersionResponse"];
 // ... add types as needed
 
 // GET /profile/ plus fields the app adds or reads that the API spec does not list:
@@ -26,9 +27,4 @@ export type UserProfile = AttendeeProfile & {
 
 export type VersionCheckResult = {
   updateRequired: boolean;
-};
-
-export type RequiredVersionResponse = {
-  version?: string;
-  requiredVersion?: string;
 };
