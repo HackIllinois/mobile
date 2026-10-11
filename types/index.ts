@@ -12,46 +12,17 @@ export type AdmissionDecision = components["schemas"]["AdmissionDecision"];
 export type Event = components["schemas"]["Event"];
 export type ShopItem = components["schemas"]["ShopItem"];
 export type Shifts = components["schemas"]["Shifts"];
+export type MentorOfficeHours = components["schemas"]["MentorOfficeHours"];
+export type MentorProfile = components["schemas"]["MentorProfile"];
+export type AttendeeProfile = components["schemas"]["AttendeeProfile"];
 // ... add types as needed
 
-
-export type MentorOfficeHourDto = {
-  mentorName: string;
-  location: string;
-  startTime: number; // ms
-  endTime: number;   // ms
-  mentorId: string;
-};
-
-export type MentorProfileDto = {
-  mentorId: string;
-  name: string;
-  description: string;
-};
-
-export interface UserProfile {
-  userId: string;
-  displayName: string;
-  discordTag: string;
-  avatarUrl: string | null;
+// GET /profile/ plus fields the app adds or reads that the API spec does not list:
+// track is set in fetchProfile from GET /admission/rsvp/; avatarId is read by ProfileScreen.
+export type UserProfile = AttendeeProfile & {
+  track?: "PRO" | "GENERAL";
   avatarId?: string | null;
-  points: number;
-  pointsAccumulated: number;
-  foodWave: number;
-  track?: string;
-  team?: string;
-  teamBadge?: string;
-  tier?: number;
-}
-
-export interface AdmissionRsvpResponse {
-  userId: string;
-  status: string;
-  admittedPro: boolean;
-  response: string;
-  emailSent: boolean;
-  reimbursementValue: number;
-}
+};
 
 export type VersionCheckResult = {
   updateRequired: boolean;

@@ -1,9 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import * as SecureStore from "expo-secure-store";
 import api from "../api";
-import { MentorOfficeHourDto } from "../types";
+import { MentorOfficeHours } from "../types";
 
-async function fetchMentorOfficeHours(): Promise<MentorOfficeHourDto[] | null> {
+async function fetchMentorOfficeHours(): Promise<MentorOfficeHours[] | null> {
   const token = await SecureStore.getItemAsync("jwt");
 
   if (!token) {
@@ -12,12 +12,12 @@ async function fetchMentorOfficeHours(): Promise<MentorOfficeHourDto[] | null> {
   }
 
   try {
-    const response: any = await api.get<MentorOfficeHourDto[]>("/mentor/");
+    const response: any = await api.get<MentorOfficeHours[]>("/mentor/");
     const data = response?.data;
 
-    if (Array.isArray(data)) return data as MentorOfficeHourDto[];
-    if (data && Array.isArray(data.data)) return data.data as MentorOfficeHourDto[];
-    if (data && Array.isArray(data.mentors)) return data.mentors as MentorOfficeHourDto[];
+    if (Array.isArray(data)) return data as MentorOfficeHours[];
+    if (data && Array.isArray(data.data)) return data.data as MentorOfficeHours[];
+    if (data && Array.isArray(data.mentors)) return data.mentors as MentorOfficeHours[];
 
     console.log("[mentor] unexpected response shape", data);
     return [];
@@ -35,7 +35,7 @@ async function fetchMentorOfficeHours(): Promise<MentorOfficeHourDto[] | null> {
 }
 
 export function useMentorOfficeHours(enabled: boolean) {
-  const { data, isLoading, error, refetch } = useQuery<MentorOfficeHourDto[] | null>({
+  const { data, isLoading, error, refetch } = useQuery<MentorOfficeHours[] | null>({
     queryKey: ["mentorOfficeHours", enabled],
     queryFn: fetchMentorOfficeHours,
     enabled,

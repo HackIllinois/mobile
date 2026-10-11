@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Image } from "react-native";
 import * as SecureStore from "expo-secure-store";
 import api from "../api";
-import { AdmissionRsvpResponse, UserProfile } from "../types";
+import { AdmissionDecision, UserProfile } from "../types";
 
 let cachedRoles: string[] | null = null;
 
@@ -38,7 +38,7 @@ export function getNonProfileRoleLabel(): string | null {
 export async function fetchProfile(): Promise<UserProfile> {
   const [profileRes, rsvpRes] = await Promise.allSettled([
     api.get<UserProfile>("profile"),
-    api.get<AdmissionRsvpResponse>("admission/rsvp"),
+    api.get<AdmissionDecision>("admission/rsvp"),
   ]);
 
   if (profileRes.status === "rejected") {
@@ -48,7 +48,7 @@ export async function fetchProfile(): Promise<UserProfile> {
   const profile = (profileRes.value as any).data as UserProfile;
 
   if (rsvpRes.status === "fulfilled") {
-    const rsvp = (rsvpRes.value as any).data as AdmissionRsvpResponse;
+    const rsvp = (rsvpRes.value as any).data as AdmissionDecision;
     profile.track = rsvp.admittedPro ? "PRO" : "GENERAL";
   }
 
