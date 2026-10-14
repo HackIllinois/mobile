@@ -5,10 +5,8 @@ import {
   TouchableOpacity,
   Text,
   ScrollView,
-  Image,
   Alert,
 } from "react-native";
-import * as Haptics from "expo-haptics";
 import { SafeAreaView } from "react-native-safe-area-context";
 import QRCode from "react-native-qrcode-svg";
 import { useEffect, useRef, useState } from "react";
@@ -26,6 +24,7 @@ interface CartModalProps {
   onRemoveItem: (itemId: string) => Promise<{ success: boolean; errorMessage?: string }>;
   onError: (message: string) => void;
   onRefresh: () => void;
+  testMode?: boolean
 }
 
 export default function CartModal({
@@ -37,6 +36,7 @@ export default function CartModal({
   onRemoveItem,
   onError,
   onRefresh,
+  testMode = false,
 }: CartModalProps) {
   const [qrCodeData, setQrCodeData] = useState<string | null>();
   const prevBrightness = useRef<number | null>(null);
@@ -63,7 +63,6 @@ export default function CartModal({
   }, [qrCodeData]);
 
   const handleBackToCart = () => {
-    Haptics.selectionAsync();
     setQrCodeData(null);
     onRefresh();
   };
@@ -100,7 +99,10 @@ export default function CartModal({
   const cartItems = getCartItemsWithQuantities();
 
   const handlePurchasePress = async () => {
-    Haptics.selectionAsync();
+    if(testMode){
+      setQrCodeData("test qr code")
+      return;
+    }
     try {
       const response = await api.get<any>("/shop/cart/qr");
       if (response.data && response.data.QRCode) {
@@ -138,7 +140,7 @@ export default function CartModal({
           onPress={onClose}
         />
         <SafeAreaView style={styles.modalContainer} edges={["bottom"]}>
-          <TouchableOpacity style={styles.closeButton} onPress={() => { Haptics.selectionAsync(); onClose(); }}>
+          <TouchableOpacity style={styles.closeButton} onPress={() => { onClose(); }}>
             <Text style={styles.closeButtonText}>✕</Text>
           </TouchableOpacity>
 
@@ -199,14 +201,7 @@ export default function CartModal({
               <View style={styles.footer}>
                 <View style={styles.totalRow}>
                   <Text style={styles.totalLabel}>Total</Text>
-                  <View style={styles.totalValueContainer}>
-                    <Image
-                      source={require("../../assets/point-shop/point-shop-diamonds.png")}
-                      style={styles.diamondIcon}
-                      resizeMode="contain"
-                    />
-                    <Text style={styles.totalValue}>{totalPoints}</Text>
-                  </View>
+                  <Text style={styles.totalValue}>{totalPoints}</Text>
                 </View>
                 <TouchableOpacity
                   style={[
@@ -243,10 +238,6 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 20,
     height: "75%",
     padding: 20,
-    justifyContent: "space-between",
-    borderWidth: 1,
-    borderColor: "#5a4570",
-    borderBottomWidth: 0,
   },
   closeButton: {
     position: "absolute",
@@ -261,12 +252,10 @@ const styles = StyleSheet.create({
   closeButtonText: {
     fontSize: 24,
     color: "#c4b4d4",
-    fontWeight: "300",
   },
   title: {
     fontFamily: "Tsukimi Rounded",
     fontSize: 20,
-    fontWeight: "700",
     color: "#e8dff0",
     marginBottom: 20,
     letterSpacing: 1,
@@ -303,15 +292,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
     color: "#e8dff0",
-  },
-  totalValueContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  diamondIcon: {
-    width: 24,
-    height: 24,
   },
   totalValue: {
     fontFamily: "Tsukimi Rounded",

@@ -1,6 +1,5 @@
-import { View, Text, Image, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, Pressable } from "react-native";
 import { ShopItem } from "../../types";
-import * as Haptics from "expo-haptics";
 
 interface CartItemProps {
   item: ShopItem;
@@ -16,45 +15,33 @@ export default function CartItem({
   onDecrement,
 }: CartItemProps) {
   const handleIncrement = async () => {
-    Haptics.selectionAsync();
     await onIncrement();
   };
 
   const handleDecrement = async () => {
-    Haptics.selectionAsync();
     await onDecrement();
   };
 
   return (
     <View style={styles.container}>
-      <Image source={{ uri: item.imageURL }} style={styles.image} />
       <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">
         {item.name}
       </Text>
       <View style={styles.quantityContainer}>
-        <TouchableOpacity
+        <Pressable
           style={styles.button}
           onPress={handleDecrement}
-          activeOpacity={0.6}
         >
-          <Image
-            source={require("../../assets/point-shop/point-shop-minus.png")}
-            style={styles.buttonIcon}
-            resizeMode="contain"
-          />
-        </TouchableOpacity>
+          <Text style ={styles.buttonText}>-</Text>
+        </Pressable>
         <Text style={styles.quantity}>{quantity}</Text>
-        <TouchableOpacity
+
+        <Pressable
           style={styles.button}
           onPress={handleIncrement}
-          activeOpacity={0.6}
         >
-          <Image
-            source={require("../../assets/point-shop/point-shop-plus.png")}
-            style={styles.buttonIcon}
-            resizeMode="contain"
-          />
-        </TouchableOpacity>
+          <Text style={styles.buttonText}>+</Text>
+        </Pressable>
       </View>
     </View>
   );
@@ -66,12 +53,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 12,
     paddingHorizontal: 8,
-    backgroundColor: "#4d3f62",
+    backgroundColor: "#000000ff",
     borderRadius: 12,
     marginBottom: 8,
     gap: 12,
-    borderWidth: 1,
-    borderColor: "#5a4570",
   },
   image: {
     width: 50,
@@ -82,6 +67,12 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     fontWeight: "500",
+    color: "#e8dff0",
+  },
+  buttonText :{
+    flex: 1,
+    alignItems: "center",
+    fontSize: 20,
     color: "#e8dff0",
   },
   quantityContainer: {
