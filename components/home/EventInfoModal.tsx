@@ -1,18 +1,12 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Animated,
-  Dimensions,
   Image,
   ImageSourcePropType,
   Modal,
-  PanResponder,
   Pressable,
   StyleSheet,
   Text,
   View,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import * as Haptics from "expo-haptics";
 
 export type EventModalStatus = "upcoming" | "live" | "closing" | "ended";
 
@@ -38,76 +32,9 @@ interface EventInfoModalProps {
   onViewDetails?: (event: EventModalData) => void;
 }
 
-const SHEET_HEIGHT = 420;
-const SCREEN_HEIGHT = Dimensions.get("window").height;
+
 
 export default function EventInfoModal({ visible, event, onClose, onViewDetails }: EventInfoModalProps) {
-  const backdrop = useRef(new Animated.Value(0)).current;
-  const [sheetTravel, setSheetTravel] = useState(SHEET_HEIGHT);
-  const sheetY = useRef(new Animated.Value(SHEET_HEIGHT)).current;
-  const hiddenY = Math.max(SCREEN_HEIGHT, sheetTravel + 24);
-
-  useEffect(() => {
-    if (visible && event) {
-      Animated.parallel([
-        Animated.timing(backdrop, { toValue: 1, duration: 220, useNativeDriver: true }),
-        Animated.spring(sheetY, {
-          toValue: 0,
-          damping: 18,
-          stiffness: 180,
-          mass: 0.65,
-          useNativeDriver: true,
-        }),
-      ]).start();
-      return;
-    }
-
-    Animated.parallel([
-      Animated.timing(backdrop, { toValue: 0, duration: 180, useNativeDriver: true }),
-      Animated.timing(sheetY, { toValue: hiddenY, duration: 180, useNativeDriver: true }),
-    ]).start();
-  }, [backdrop, event, hiddenY, sheetY, visible]);
-
-  const closeAnimated = (afterClose?: unknown) => {
-    Haptics.selectionAsync();
-    Animated.parallel([
-      Animated.timing(backdrop, { toValue: 0, duration: 250, useNativeDriver: true }),
-      Animated.timing(sheetY, { toValue: hiddenY, duration: 280, useNativeDriver: true }),
-    ]).start(({ finished }) => {
-      if (finished) {
-        onClose();
-        if (typeof afterClose === "function") {
-          afterClose();
-        }
-      }
-    });
-  };
-
-  const panResponder = useMemo(
-    () =>
-      PanResponder.create({
-        onMoveShouldSetPanResponder: (_, g) => g.dy > 8 && Math.abs(g.dy) > Math.abs(g.dx),
-        onPanResponderMove: (_, g) => {
-          if (g.dy > 0) {
-            sheetY.setValue(Math.min(g.dy, hiddenY));
-          }
-        },
-        onPanResponderRelease: (_, g) => {
-          if (g.dy > 110 || g.vy > 0.9) {
-            closeAnimated();
-            return;
-          }
-          Animated.spring(sheetY, {
-            toValue: 0,
-            damping: 20,
-            stiffness: 220,
-            useNativeDriver: true,
-          }).start();
-        },
-      }),
-    [hiddenY, sheetY]
-  );
-
   if (!visible || !event) return null;
 
   const statusLabel =
@@ -138,28 +65,18 @@ export default function EventInfoModal({ visible, event, onClose, onViewDetails 
       transparent={true}
       animationType="fade"
       statusBarTranslucent
-      onRequestClose={closeAnimated}
+      onRequestClose={onClose}
     >
       <View style={styles.root}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={closeAnimated}>
-          <Animated.View style={[styles.backdrop, { opacity: backdrop }]} />
-        </Pressable>
-
-        <Animated.View
-          style={[styles.sheetWrap, { transform: [{ translateY: sheetY }] }]}
-          onLayout={(e) => {
-            const h = Math.ceil(e.nativeEvent.layout.height);
-            if (h > 0 && Math.abs(h - sheetTravel) > 1) setSheetTravel(h);
-          }}
-          {...panResponder.panHandlers}
-        >
-          <LinearGradient colors={["rgba(94,65,163,0.94)", "rgba(41,26,84,0.96)"]} style={styles.sheet}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose}/>
+        <View style={styles.sheetWrap}>
+          <View style={styles.sheet}>
             <View style={styles.headerRow}>
-              <View style={styles.iconWrap}>
+              <View>
                 <Image source={event.image} style={styles.icon} resizeMode="contain" />
               </View>
               <View style={styles.headerText}>
-                <Text style={styles.title} numberOfLines={1}>{event.title}</Text>
+                <Text style={styles.title}>{event.title}</Text>
                 <View style={styles.statusPill}>
                   <View style={[styles.statusDot, event.status === "live" ? styles.statusLive : styles.statusMuted]} />
                   <Text style={styles.statusText}>{statusLabel}</Text>
@@ -167,7 +84,7 @@ export default function EventInfoModal({ visible, event, onClose, onViewDetails 
               </View>
             </View>
 
-            <Pressable onPress={closeAnimated} style={styles.closeBtn} accessibilityLabel="Close event details">
+            <Pressable onPress={onClose} style={styles.closeBtn} accessibilityLabel="Close event details">
               <Text style={styles.closeText}>✕</Text>
             </Pressable>
 
@@ -196,27 +113,28 @@ export default function EventInfoModal({ visible, event, onClose, onViewDetails 
               <View style={styles.footer}>
                 <Pressable
                   disabled={primaryDisabled}
-                  style={[styles.primaryBtn, primaryDisabled && styles.primaryBtnDisabled]}
+                  style={[
+                    styles.primaryBtn,
+                    {
+                      backgroundColor: primaryDisabled ? "#565A72" : "#776EFF",
+                      opacity: primaryDisabled ? 0.8 : 1,
+                    },
+                  ]}
                   onPress={() => {
                     if (!onViewDetails) return;
-                    closeAnimated(() => onViewDetails(event));
+                    onClose();
+                    onViewDetails(event);
                   }}
                 >
-                  <LinearGradient
-                    colors={primaryDisabled ? ["#666A88", "#4E516A"] : ["#66A8FF", "#8A65FF"]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.primaryBtnFill}
-                  >
+
                     <Text style={styles.primaryBtnText}>
                       {event.status === "ended" ? "Event Ended" : "View Details"}
                     </Text>
-                  </LinearGradient>
                 </Pressable>
               </View>
             )}
-          </LinearGradient>
-        </Animated.View>
+          </View>
+        </View>
       </View>
     </Modal>
   );
@@ -224,39 +142,17 @@ export default function EventInfoModal({ visible, event, onClose, onViewDetails 
 
 const styles = StyleSheet.create({
   root: { flex: 1, justifyContent: "flex-end" },
-  backdrop: { flex: 1, backgroundColor: "rgba(7, 8, 20, 0.62)" },
   sheetWrap: { paddingHorizontal: 14, paddingBottom: 12 },
   sheet: {
+    backgroundColor: "#353838ff",
     borderRadius: 24,
     paddingHorizontal: 16,
     paddingTop: 10,
     paddingBottom: 16,
     borderWidth: 1,
-    borderColor: "rgba(196, 179, 255, 0.35)",
-    shadowColor: "#B48CFF",
-    shadowOpacity: 0.2,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: -6 },
     minHeight: 360,
   },
-  handle: {
-    alignSelf: "center",
-    width: 42,
-    height: 4,
-    borderRadius: 999,
-    backgroundColor: "rgba(234, 226, 255, 0.45)",
-    marginBottom: 12,
-  },
   headerRow: { flexDirection: "row", alignItems: "flex-start" },
-  iconWrap: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    backgroundColor: "rgba(255,255,255,0.06)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
-  },
   icon: { width: 60, height: 60 },
   headerText: { flex: 1, gap: 6 },
   title: { color: "#FFFFFF", fontSize: 22, fontWeight: "700" },
@@ -316,8 +212,13 @@ const styles = StyleSheet.create({
   },
   tagText: { color: "#DFF0FF", fontSize: 12, fontWeight: "600" },
   footer: { flexDirection: "row", gap: 10, marginTop: 18 },
-  primaryBtn: { flex: 1, borderRadius: 999, overflow: "hidden" },
-  primaryBtnDisabled: { opacity: 0.8 },
-  primaryBtnFill: { minHeight: 46, alignItems: "center", justifyContent: "center", borderRadius: 999 },
+  primaryBtn: {
+    flex: 1,
+    minHeight: 46,
+    borderRadius: 999,
+    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
+  },
   primaryBtnText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
 });
