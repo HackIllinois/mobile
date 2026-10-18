@@ -1,6 +1,4 @@
-import { useEffect, useRef } from "react";
-import { TouchableOpacity, Text, StyleSheet, View, Animated } from "react-native";
-import * as Haptics from "expo-haptics";
+import { Pressable, Text, StyleSheet, View } from "react-native";
 
 interface CartButtonProps {
   onPress?: () => void;
@@ -8,41 +6,13 @@ interface CartButtonProps {
 }
 
 export default function CartButton({ onPress, itemCount }: CartButtonProps) {
-  const slideAnim = useRef(new Animated.Value(150)).current; // Start off-screen to the right
 
-  useEffect(() => {
-    if (itemCount > 0) {
-      // Slide in from right
-      Animated.spring(slideAnim, {
-        toValue: 0,
-        friction: 8,
-        tension: 40,
-        useNativeDriver: true,
-      }).start();
-    } else {
-      // Slide out to right
-      Animated.spring(slideAnim, {
-        toValue: 150,
-        friction: 8,
-        tension: 40,
-        useNativeDriver: true,
-      }).start();
-    }
-  }, [itemCount]);
 
   return (
-    <Animated.View
-      style={[
-        styles.container,
-        {
-          transform: [{ translateX: slideAnim }],
-        },
-      ]}
-    >
-      <TouchableOpacity
+    <View style={ styles.container }>
+      <Pressable
         style={styles.button}
-        onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); onPress?.(); }}
-        activeOpacity={0.7}
+        onPress={() => { onPress?.() }}
       >
         <Text style={styles.text}>Cart</Text>
         {itemCount > 0 && (
@@ -50,8 +20,8 @@ export default function CartButton({ onPress, itemCount }: CartButtonProps) {
             <Text style={styles.badgeText}>{itemCount}</Text>
           </View>
         )}
-      </TouchableOpacity>
-    </Animated.View>
+      </Pressable>
+    </View>
   );
 }
 
@@ -63,20 +33,11 @@ const styles = StyleSheet.create({
     zIndex: 1000,
   },
   button: {
-    backgroundColor: "#66486C",
+    backgroundColor: "#110114ff",
     paddingVertical: 12,
     paddingHorizontal: 20,
-    borderRadius: 25,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 4.65,
-    elevation: 8,
   },
   text: {
     fontFamily: "Tsukimi Rounded",
