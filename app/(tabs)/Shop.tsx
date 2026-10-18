@@ -28,7 +28,6 @@ import CartButton from "../../components/point shop/CartButton";
 import Points from "../../components/point shop/Points";
 import CartModal from "../../components/point shop/CartModal";
 import { useFocusEffect } from "@react-navigation/native";
-const CART_UI_TEST_MODE = true;
 
 export default function PointShop() {
   const { shopItems: shopItemData, loading: shopLoading } = useShopItems();
@@ -47,10 +46,8 @@ export default function PointShop() {
   const raffleItems = shopItemData.filter((item) => item.isRaffle).sort((a, b) => a.price - b.price);
   useFocusEffect(
     useCallback(() => {
-      if (!CART_UI_TEST_MODE) {
-        fetchCartItems();
-        refetchProfile();
-      }
+      fetchCartItems();
+      refetchProfile();
     }, [refetchProfile])
   );
 
@@ -60,11 +57,6 @@ export default function PointShop() {
   };
 
   const addToCart = async (itemId: string): Promise<{ success: boolean; errorMessage?: string }> => {
-    if (CART_UI_TEST_MODE){
-      setCartIds((currentIds)=>[...currentIds, itemId]);
-      return {success: true};
-
-    }
     try {
       const res = await api.post(`/shop/cart/${itemId}`) as { data: Order };
       setCartFromOrder(res.data);
@@ -81,17 +73,6 @@ export default function PointShop() {
   };
 
   const removeFromCart = async (itemId: string): Promise<{ success: boolean; errorMessage?: string }> => {
-    if(CART_UI_TEST_MODE){
-      setCartIds((currentIds) => {
-        const removeItem = currentIds.indexOf(itemId);
-        if(removeItem == -1){
-          return currentIds;
-        }
-        return currentIds.filter((_, index) => index !=removeItem);
-      });
-
-      return {success: true};
-    }
     try {
       const res = await api.delete(`/shop/cart/${itemId}`) as { data: Order };
       setCartFromOrder(res.data);
@@ -188,10 +169,8 @@ export default function PointShop() {
         visible={showCartModal}
         onClose={() => {
           setShowCartModal(false);
-          if(!CART_UI_TEST_MODE){
           refetchProfile();
           fetchCartItems();
-          }
         }}
         cartIds={cartIds}
         shopItemData={shopItemData}
@@ -199,12 +178,9 @@ export default function PointShop() {
         onRemoveItem={removeFromCart}
         onError={showError}
         onRefresh={() => {
-          if(!CART_UI_TEST_MODE){
             refetchProfile();
             fetchCartItems();
-          }
         }}
-        testMode= {CART_UI_TEST_MODE}
       />
           <Text style={styles.text}>{errorMessage}</Text>
     </View>

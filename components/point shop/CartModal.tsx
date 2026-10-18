@@ -24,7 +24,6 @@ interface CartModalProps {
   onRemoveItem: (itemId: string) => Promise<{ success: boolean; errorMessage?: string }>;
   onError: (message: string) => void;
   onRefresh: () => void;
-  testMode?: boolean
 }
 
 export default function CartModal({
@@ -36,7 +35,6 @@ export default function CartModal({
   onRemoveItem,
   onError,
   onRefresh,
-  testMode = false,
 }: CartModalProps) {
   const [qrCodeData, setQrCodeData] = useState<string | null>();
   const prevBrightness = useRef<number | null>(null);
@@ -99,10 +97,6 @@ export default function CartModal({
   const cartItems = getCartItemsWithQuantities();
 
   const handlePurchasePress = async () => {
-    if(testMode){
-      setQrCodeData("test qr code")
-      return;
-    }
     try {
       const response = await api.get<any>("/shop/cart/qr");
       if (response.data && response.data.QRCode) {
