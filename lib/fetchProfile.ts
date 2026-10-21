@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Image } from "react-native";
 import * as SecureStore from "expo-secure-store";
 import api from "../api";
+import { AdmissionDecision, UserProfile } from "../types";
 
 let cachedRoles: string[] | null = null;
 
@@ -34,34 +35,10 @@ export function getNonProfileRoleLabel(): string | null {
   return null;
 }
 
-export interface UserProfile {
-  userId: string;
-  displayName: string;
-  discordTag: string;
-  avatarUrl: string | null;
-  avatarId?: string | null;
-  points: number;
-  pointsAccumulated: number;
-  foodWave: number;
-  track?: string;
-  team?: string;
-  teamBadge?: string;
-  tier?: number;
-}
-
-interface AdmissionRsvpResponse {
-  userId: string;
-  status: string;
-  admittedPro: boolean;
-  response: string;
-  emailSent: boolean;
-  reimbursementValue: number;
-}
-
 export async function fetchProfile(): Promise<UserProfile> {
   const [profileRes, rsvpRes] = await Promise.allSettled([
     api.get<UserProfile>("profile"),
-    api.get<AdmissionRsvpResponse>("admission/rsvp"),
+    api.get<AdmissionDecision>("admission/rsvp"),
   ]);
 
   if (profileRes.status === "rejected") {
@@ -71,7 +48,7 @@ export async function fetchProfile(): Promise<UserProfile> {
   const profile = (profileRes.value as any).data as UserProfile;
 
   if (rsvpRes.status === "fulfilled") {
-    const rsvp = (rsvpRes.value as any).data as AdmissionRsvpResponse;
+    const rsvp = (rsvpRes.value as any).data as AdmissionDecision;
     profile.track = rsvp.admittedPro ? "PRO" : "GENERAL";
   }
 

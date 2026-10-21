@@ -2,10 +2,7 @@ import { Platform } from "react-native";
 import Constants from "expo-constants";
 import VersionCheck from "react-native-version-check";
 import api from "../api";
-
-export type VersionCheckResult = {
-  updateRequired: boolean;
-};
+import { VersionCheckResult, VersionResponse } from "../types";
 
 /**
  * Returns the current app version (Expo/React Native).
@@ -32,13 +29,11 @@ function getCurrentVersion(): string {
 async function fetchRequiredVersion(): Promise<string | null> {
   const path = Platform.OS === "ios" ? "/version/ios" : "/version/android";
   try {
-    const { data } = await api.axiosInstance.get<{ version?: string; requiredVersion?: string }>(path, {
+    const { data } = await api.axiosInstance.get<VersionResponse>(path, {
       timeout: 8000,
     });
-    const version =
-      (data && (typeof data === "object" && ("version" in data) ? data.version : data?.requiredVersion)) ??
-      (typeof data === "string" ? data : null);
-    return version && typeof version === "string" ? version : null;
+    const version = data?.version;
+    return typeof version === "string" && version ? version : null;
   } catch {
     return null;
   }
