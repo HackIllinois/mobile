@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import * as Haptics from 'expo-haptics';
 import { 
   Text, 
   StyleSheet, 
@@ -9,7 +8,6 @@ import {
   ScrollView, 
   View, 
   Pressable, 
-  Dimensions 
 } from 'react-native';
 import { Event } from '../../types';
 import Saved from "../../assets/event/Saved.svg";
@@ -44,7 +42,6 @@ export default function EventDetailModal({ visible, event, onClose, handleSave, 
       visible={visible}
       transparent={true}
       animationType="fade"
-      statusBarTranslucent
       onRequestClose={onClose}
     >
       <View style={styles.backdrop}>
@@ -52,15 +49,12 @@ export default function EventDetailModal({ visible, event, onClose, handleSave, 
         
         {/* WRAPPER: Max Width prevents stretching on iPad */}
         <View style={styles.cardWrapper}>
-          
-          {/* Sakura Pink Background (Rotated Shade) */}
-          <View style={styles.backgroundCard} />
 
           {/* Main Content Card */}
           <View style={styles.mainCard}>
             
               <View style={styles.buttonsContainer}>
-              <TouchableOpacity onPress={() => { Haptics.selectionAsync(); onClose(); }} style={styles.closeButton} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
+              <TouchableOpacity onPress={() => { onClose(); }} style={styles.closeButton} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
                   <Text style={styles.closeText}>✕</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => handleSave(event.eventId)} style={styles.saveButton} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
@@ -74,18 +68,12 @@ export default function EventDetailModal({ visible, event, onClose, handleSave, 
                     <Text style={styles.title}>
                       {event.name}
                     </Text>
-                    
-                    <View style={[
-                      styles.pillRow,
-                      event.name === "Capital One Super Smash Bros Ultimate Tournament" && { marginTop: -28 }
-                    ]}>
-                      <View style={styles.pillPoints}>
-                        <Text style={styles.pillTextBlack}>{event.points || 0}pts</Text>
-                      </View>
-              
-                      <View style={styles.pillTrack}>
-                        <Text style={styles.pillTextWhite}>{event.eventType || 'General'}</Text>
-                      </View>
+                    <View style={styles.pillPoints}>
+                      <Text style={styles.pillTextBlack}>{event.points || 0}pts</Text>
+                    </View>
+            
+                    <View style={styles.pillTrack}>
+                      <Text style={styles.pillTextWhite}>{event.eventType || 'General'}</Text>
                     </View>
                   </View>
 
@@ -122,16 +110,6 @@ export default function EventDetailModal({ visible, event, onClose, handleSave, 
               )}
             </ScrollView>
           </View>
-
-          {/* Paperclip: Anchored to corner */}
-          <View style={styles.paperclipContainer}>
-                <Image
-                  source={require('../../assets/event/paperclip.png')}
-                  style={styles.paperclipImage}
-                  resizeMode="contain"
-              />
-          </View>
-
         </View>
       </View>
 
@@ -184,18 +162,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  // -- Background (The Shade) --
-  backgroundCard: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#FFB7C5', // Sakura Pink
-    borderRadius: 20,
-    // Constant rotation creates the triangular corners
-    transform: [{ rotate: '4deg' }], 
-  },
+
 
   // -- Main Content --
   mainCard: {
@@ -204,27 +171,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#e3e3e3',
     borderRadius: 20,
     padding: 24,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4.65,
-    elevation: 8,
-    zIndex: 2, 
   },
-
-  // -- Paperclip Logic --
-  paperclipContainer: {
-    position: 'absolute',
-    top: 50,  
-    right: -32, 
-    zIndex: 10,
-  },
-  paperclipImage: {
-    width: 50,   
-    height: 90,  
-    transform: [{ rotate: '-10deg' }], 
-  },
-
   // -- Content Styles --
   buttonsContainer: {
     flexDirection: 'row',
@@ -267,14 +214,7 @@ const styles = StyleSheet.create({
     includeFontPadding: false,
     flexShrink: 1,
   },
-  pillWrapper: {
-    marginBottom: 12,     
-    alignSelf: 'flex-start', 
-  },
   // -- Pills --
-  pillRow: {
-    flexDirection: 'row',
-  },
   pillPoints: {
     backgroundColor: '#FFFFFF',
     paddingVertical: 5,
@@ -283,7 +223,7 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 10,
   },
   pillTrack: {
-    backgroundColor: '#56269F',
+    backgroundColor: '#ababacff',
     paddingVertical: 5,
     paddingHorizontal: 12,
     borderTopRightRadius: 10,

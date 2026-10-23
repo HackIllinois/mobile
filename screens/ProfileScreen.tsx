@@ -24,7 +24,7 @@ import QRCodeButtonSvg from '../assets/profile/profile-screen/qr-code-button.svg
 import TeamBadgeSvg from '../assets/profile/profile-screen/team-badge.svg';
 import EditProfileIconSvg from '../assets/profile/profile-screen/edit-profile-icon.svg';
 import BackgroundSvg from '../assets/profile/background.svg';
-import StarryBackground from '../components/eventScreen/StarryBackground';
+import StarryBackground from '../components/eventScreen/Background';
 import {
   useProfile,
   UserProfile,
