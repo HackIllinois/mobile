@@ -1,18 +1,16 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import * as Haptics from 'expo-haptics';
-import Moon from "../../assets/event/Moon.svg";
-import Sun from "../../assets/event/Sun";
-import PinkMoon from "../../assets/event/PinkMoon.svg";
+import { View, Text, TouchableOpacity, StyleSheet, Image} from 'react-native';
 import { getConstrainedWidth } from "../../lib/layout";
 
 const SCREEN_WIDTH = getConstrainedWidth();
+const dayImage = require("../../assets/event/day.png");
+const selectedDayImage = require("../../assets/event/selectedDay.png");
+const savedEventsImage = require("../../assets/event/savedEventsFilter.png");
 
 // --- SIZING CONSTANTS ---
 const MAX_ITEM_SIZE = 130;
-const ITEM_SIZE = Math.min(SCREEN_WIDTH * 0.18, MAX_ITEM_SIZE); // Width of the moon
+const ITEM_SIZE = Math.min(SCREEN_WIDTH * 0.18, MAX_ITEM_SIZE); // Width of the day tabs
 
-const SUN_SCALE = 1.35; 
 
 // --- DYNAMIC FONT SIZES ---
 const FONT_DATE_NUM = ITEM_SIZE * 0.28; 
@@ -46,17 +44,7 @@ export const EventHeader: React.FC<EventHeaderProps> = ({
 
   // 1. Determine how many items are visible
   const showSavedButton = scheduleMode === 'events';
-  const itemCount = eventDays.length + (showSavedButton ? 1 : 0);
-
-  // 2. Calculate Gap Dynamically based on visible items
-  // Formula: (Available Width) / (Number of Gaps)
-  // Available Width = Screen Width - (Total Item Widths) - (Side Padding * 2)
-  const totalItemWidth = ITEM_SIZE * itemCount;
-  const sidePadding = 40; // 20px on each side
-  const numberOfGaps = itemCount > 1 ? itemCount - 1 : 1; // Prevent divide by zero
-
-  const dynamicGap = (SCREEN_WIDTH - totalItemWidth - sidePadding) / numberOfGaps;
-
+  
   const isToday = (d: Date) => {
     const today = new Date();
     return (
@@ -67,7 +55,6 @@ export const EventHeader: React.FC<EventHeaderProps> = ({
   };
 
   const handleDayPress = (dayId: string) => {
-    Haptics.selectionAsync();
     if (selectedDay === dayId) {
       setSelectedDay(null);
     } else {
@@ -76,16 +63,12 @@ export const EventHeader: React.FC<EventHeaderProps> = ({
   };
 
   const handleSavePress = () => {
-    Haptics.selectionAsync();
     setSaveValue(!selectedSave);
   };
 
   return (
     <View style={styles.container}>
-      
-      {/* Container with dynamic gap */}
-      <View style={[styles.tabs, { gap: dynamicGap }]}>
-        
+      <View style={[styles.tabs, { gap: 30 }]}>
         {/* Render Date Buttons */}
         {eventDays.map((day) => {
           const isSelected = selectedDay === day.id;
@@ -95,12 +78,15 @@ export const EventHeader: React.FC<EventHeaderProps> = ({
           return (
             <View key={day.id} style={[styles.dayWrapper, { width: ITEM_SIZE, height: ITEM_SIZE }]}>
               {/* Background Layer */}
-              <View style={styles.svgBackground}>
-                {isSelected ? (
-                  <Sun width={ITEM_SIZE * SUN_SCALE} height={ITEM_SIZE * SUN_SCALE} />
-                ) : (
-                  <Moon width={ITEM_SIZE} height={ITEM_SIZE} />
-                )}
+              <View style={styles.dayBackground}>
+                <Image 
+                  source={isSelected? selectedDayImage : dayImage}
+                  style={{
+                      width: ITEM_SIZE,
+                      height: ITEM_SIZE,
+                      resizeMode: "contain"
+                    }}
+                  />
               </View>
 
               {/* Foreground Layer */}
@@ -125,8 +111,15 @@ export const EventHeader: React.FC<EventHeaderProps> = ({
         {/* Render "Saved" Button (Conditional) */}
         {showSavedButton && (
           <View style={[styles.dayWrapper, { width: ITEM_SIZE, height: ITEM_SIZE }]}>
-            <View style={styles.svgBackground}>
-               <PinkMoon width={ITEM_SIZE} height={ITEM_SIZE} />
+            <View style={styles.dayBackground}>
+               <Image
+                  source={savedEventsImage}
+                  style={{
+                    height: ITEM_SIZE,
+                    width: ITEM_SIZE,
+                    resizeMode: "contain"
+                  }}
+                  />
             </View>
 
             <TouchableOpacity
@@ -134,7 +127,6 @@ export const EventHeader: React.FC<EventHeaderProps> = ({
                 styles.dayButtonOverlay,
                 selectedSave && { 
                   backgroundColor: 'rgba(0, 0, 0, 0.3)', 
-                  borderRadius: ITEM_SIZE / 2 
                 }
               ]}
               onPress={handleSavePress} 
@@ -147,7 +139,6 @@ export const EventHeader: React.FC<EventHeaderProps> = ({
 
       </View>
       
-      {/* <Text style={styles.sectionTitle}>{sectionTitle}</Text> */}
     </View>
   );
 };
@@ -168,7 +159,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  svgBackground: {
+  dayBackground: {
     position: 'absolute',
     width: '100%',
     height: '100%',
@@ -211,16 +202,5 @@ const styles = StyleSheet.create({
   },
   textBlack: {
     color: '#000000', 
-  },
-
-  sectionTitle: {
-    color: 'white',
-    fontSize: 28,
-    fontWeight: 'bold',
-    fontFamily: 'TsukimiRounded_700Bold',
-    marginBottom: 10,
-    marginTop: 15,
-    letterSpacing: 0.2,
-    alignSelf: 'center',
   },
 });

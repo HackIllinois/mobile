@@ -1,11 +1,12 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable, Dimensions, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Dimensions, TouchableOpacity, Image } from 'react-native';
 import { Event } from '../../types';
-import UnsavedEvent from '../../assets/event/EventCard.svg';
-import SavedEvent from '../../assets/event/SavedEventCard.svg';
-import ExpiredEvent from '../../assets/event/ExpiredEventCard.svg';
-import SavedActiveEvent from '../../assets/event/SavedActiveEventCard.svg';
-import ActiveEvent from '../../assets/event/ActiveEventCard.svg';
+import SavedIcon from '../../assets/event/Saved.svg';
+import UnsavedIcon from '../../assets/event/Unsaved.svg';
+
+const RegularEventCard = require('../../assets/event/EventCard.png');
+const ExpiredEvent = require('../../assets/event/ExpiredEventCard.png');
+const ActiveEvent = require('../../assets/event/ActiveEventCard.png');
 
 
 // --- SIZING LOGIC ---
@@ -48,15 +49,11 @@ export function EventCard({ event, onPress, handleSave, saved, onShowMenu, hideS
 
   const expired = endTimeMs < now;
   const active = !expired && startTimeMs <= now;
-  let CardBackground = UnsavedEvent;
+  let CardBackground = RegularEventCard;
   if (expired) {
     CardBackground = ExpiredEvent;
-  } else if (!hideSave && saved && active) {
-    CardBackground = SavedActiveEvent;
   } else if (active) {
     CardBackground = ActiveEvent;
-  } else if (!hideSave && saved) {
-    CardBackground = SavedEvent;
   }
 
   return (
@@ -70,14 +67,14 @@ export function EventCard({ event, onPress, handleSave, saved, onShowMenu, hideS
           pressed && styles.pressed
         ]}
       >
-        {/* A. Background SVG (Stretches to fixed size) */}
-        <View style={StyleSheet.absoluteFill}>
-           <CardBackground 
-              width="100%" 
-              height="100%" 
-              preserveAspectRatio="none" // Forces SVG to match our exact CARD_WIDTH/HEIGHT
-           />
-        </View>
+        <Image
+          source={CardBackground}
+          style={{
+            width: "100%",
+            height: "100%"
+          }}
+          resizeMode = "stretch"
+        />
 
         {/* B. Content Overlay (Absolute positioning over SVG) */}
         <View style={styles.contentOverlay}>
@@ -133,14 +130,20 @@ export function EventCard({ event, onPress, handleSave, saved, onShowMenu, hideS
 
         </View>
 
-        {/* C. Save Button Hit Area */}
+        {/* Shifts should not show save button */}
         {!hideSave && (
           <Pressable
-            style={styles.saveHitArea}
+            style={styles.saveButton}
             onPress={() => handleSave(event.eventId)}
-          />
+            hitSlop={10}
+            >
+            {saved? (
+              <SavedIcon width={24} height={30} />
+            ) : (
+              <UnsavedIcon width={24} height={30} />
+            )}
+          </Pressable>
         )}
-
       </Pressable>
     </View>
   );
@@ -157,13 +160,17 @@ const styles = StyleSheet.create({
     width: CARD_WIDTH,
     height: CARD_HEIGHT,
     position: 'relative', // Context for absolute children
-    
-    // Optional: Drop shadow for the whole card
-    shadowColor: '#000',
-    shadowOpacity: 0.25,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 5,
-    elevation: 6,
+  },
+  // The save buttons
+  saveButton: {
+    position: "absolute",
+    top: 24,
+    zIndex:3,
+    width:44,
+    right: 10,
+    height:44,
+    justifyContent: "center",
+    alignItems: "center",
   },
   
   pressed: {
@@ -173,7 +180,7 @@ const styles = StyleSheet.create({
 
   contentOverlay: {
     position: 'absolute',
-    top: 20,
+    top: 0,
     left: 0,
     right: 0,
     bottom: 0,
@@ -230,14 +237,5 @@ const styles = StyleSheet.create({
     opacity: 0.9,
     fontWeight: '500',
     maxWidth: 300
-  },
-
-  // -- Hit Areas --
-  saveHitArea: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    width: CARD_WIDTH/5, // Generous hit box
-    height: CARD_WIDTH/3.8,
   },
 });

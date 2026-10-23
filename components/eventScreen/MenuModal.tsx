@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, Platform, Pressable } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, Pressable } from 'react-native';
 import { Event } from '../../types';
 
 interface MenuModalProps {
@@ -21,10 +21,8 @@ export default function MenuModal({ visible, event, onClose }: MenuModalProps) {
       onRequestClose={onClose}
     >
       <View style={styles.backdrop}>
-        <Pressable style={styles.backdropPressable} onPress={onClose} />        
+        <Pressable style={styles.backdropPressable} onPress={onClose} />  
         <View style={styles.cardWrapper}>
-            
-            <View style={styles.backgroundCard} />
             <View style={styles.mainCard}>
                 
                 <TouchableOpacity onPress={onClose} style={styles.closeButton} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
@@ -77,25 +75,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  backgroundCard: {
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-    backgroundColor: '#FFB7C5', 
-    borderRadius: 20,
-    transform: [{ rotate: '173deg' }],
-  },
   mainCard: {
     width: '100%',
     height: '100%',
     backgroundColor: '#e3e3e3',
     borderRadius: 20,
     padding: 24,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4.65,
-    elevation: 8,
   },
   closeButton: {
     paddingBottom: 10,
@@ -106,19 +91,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#000',
     opacity: 0.5
-  },
-  paperclip: {
-    position: 'absolute',
-    top: -15,
-    right: 30,
-    width: 20,
-    height: 60,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: '#444',
-    transform: [{ rotate: '15deg' }],
-    backgroundColor: 'transparent',
-    opacity: 0.6
   },
   headerSection: {
     marginBottom: 15,
@@ -166,9 +138,4 @@ const styles = StyleSheet.create({
     color: '#333',
     marginBottom: 4,
   },
-  itemDesc: {
-    fontSize: 14,
-    color: '#666',
-    paddingLeft: 10,
-  }
 });
