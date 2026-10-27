@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { Tabs, usePathname, useRouter } from "expo-router";
-import * as Haptics from "expo-haptics";
-import { TouchableOpacity, View, StyleSheet, Alert, Text, Dimensions } from "react-native";
+import { TouchableOpacity, View, StyleSheet, Alert, Text } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as SecureStore from "expo-secure-store";
 import ProfileSvg from "../../assets/profile.svg";
@@ -9,13 +8,6 @@ import LogoutButtonSvg from "../../assets/profile/profile-screen/logout-button.s
 import { CurvedTabBar } from "../../components/CurvedTabBar";
 import { queryClient } from "../../lib/queryClient";
 import { fetchProfile, prefetchAvatarImage, loadCachedRoles, clearCachedRoles, hasNonProfileRole } from "../../lib/fetchProfile";
-import HomeSvg from "../../assets/navbar/Home.svg";
-import CalendarSvg from "../../assets/navbar/Calendar.svg";
-import QrCodeSvg from "../../assets/navbar/Camera.svg";
-import ShopSvg from "../../assets/navbar/Shop.svg";
-import DuelsSvg from "../../assets/navbar/Duels.svg";
-
-import { getConstrainedWidth } from "../../lib/layout";
 
 const TITLE_MAP: Record<string, string> = {
   "/Event": "SCHEDULE",
@@ -25,9 +17,6 @@ const TITLE_MAP: Record<string, string> = {
 
 };
 
-const window = Dimensions.get("window");
-const width = getConstrainedWidth();
-const height = window.height;
 
 export default function Layout() {
   const pathname = usePathname();
@@ -54,12 +43,10 @@ export default function Layout() {
   }, []);
 
   const handleProfilePress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     router.push("/Profile");
   };
 
   const handleLogout = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     Alert.alert(
       "Log Out",
       "Are you sure you want to log out?",
@@ -90,52 +77,14 @@ export default function Layout() {
           }}
           tabBar={(props) => <CurvedTabBar {...props} />}
         >
-          <Tabs.Screen
-            name="Home"
-            options={{
-              tabBarIcon: ({ color, size }) => (
-                <HomeSvg width={90} height={90} />
-              ),
-            }}
-          />
-
-          <Tabs.Screen
-            name="Shop"
-            options={{
-              tabBarIcon: ({ color, size }) => (
-                <ShopSvg width={90} height={90} />
-              ),
-            }}
-          />
-          <Tabs.Screen
-            name="Scan"
-            options={{
-              tabBarIcon: ({ color, size }) => (
-                <QrCodeSvg width={90} height={90} />
-              ),
-            }}
-          />
-          <Tabs.Screen
-            name="Event"
-            options={{
-              tabBarIcon: ({ color, size }) => (
-                <CalendarSvg width={90} height={90} />
-              ),
-            }}
-          />
-          <Tabs.Screen
-            name="Duels"
-            options={{
-              tabBarIcon: ({ color, size }) => (
-                <DuelsSvg width={90} height={90} />
-              ),
-            }}
-          />
+          <Tabs.Screen name="Home" />
+          <Tabs.Screen name="Shop" />
+          <Tabs.Screen name="Scan" />
+          <Tabs.Screen name="Event" />
+          <Tabs.Screen name="Duels" />
           <Tabs.Screen
             name="Profile"
-            options={{
-              tabBarButton: () => null // Exclude from tab bar, accessed via Link
-            }}
+            options={{ href: null }}
           />
         </Tabs>
 
@@ -143,9 +92,7 @@ export default function Layout() {
         <View style={[styles.headerRow, { top: insets.top }]}>
           {title ? (
             <View style={{ marginTop: -6 }}>
-              <Text style={[styles.headerTitle, styles.glowWide]}>{title}</Text>
-              <Text style={[styles.headerTitle, styles.glowMid]}>{title}</Text>
-              <Text style={[styles.headerTitle, styles.titleFront]}>{title}</Text>
+              <Text style={styles.headerTitle}>{title}</Text>
             </View>
           ) : (
             <View />
@@ -182,27 +129,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 25,
-    fontFamily: 'Tsukimi-Rounded-Bold',
-  },
-  glowWide: {
-    position: 'absolute',
-    color: 'transparent',
-    textShadowColor: 'rgba(243, 77, 255, 0.4)',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 15,
-  },
-  glowMid: {
-    position: 'absolute',
-    color: 'transparent',
-    textShadowColor: 'rgba(243, 77, 255, 0.6)',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 8,
-  },
-  titleFront: {
-    color: '#FFFFFF',
-    textShadowColor: 'rgba(243, 77, 255, 0.9)',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 4,
+    color: "#4d4c4cff"
   },
   logoutButton: {
     marginRight: -7,
