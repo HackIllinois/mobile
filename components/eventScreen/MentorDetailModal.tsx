@@ -84,7 +84,6 @@ export default function MentorDetailModal({
         <Pressable style={styles.backdropPressable} onPress={onClose} />
 
         <View style={styles.cardWrapper}>
-          <View style={styles.backgroundCard} />
           <View style={styles.mainCard}>
             <TouchableOpacity
               onPress={onClose}
@@ -168,14 +167,6 @@ const styles = StyleSheet.create({
     position: "relative",
     justifyContent: "center",
     alignItems: "center",
-  },
-  backgroundCard: {
-    position: "absolute",
-    width: "100%",
-    height: "90%",
-    backgroundColor: "#F5C6FF",
-    borderRadius: 20,
-    transform: [{ rotate: "173deg" }],
   },
   mainCard: {
     width: "100%",

@@ -5,12 +5,11 @@ import {
   StyleSheet,
   ActivityIndicator,
   RefreshControl,
-  Animated,
   Dimensions,
   Pressable,
-  TouchableOpacity
+  TouchableOpacity,
+  Animated,
 } from 'react-native';
-import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -18,13 +17,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { EventHeader, EventDay } from '../../components/eventScreen/EventHeader';
 import EventTabs from '../../components/eventScreen/EventTabs'; 
 import { EventCard } from '../../components/eventScreen/EventCard';
-import { useWindowDimensions } from "react-native";
 
 
 import EventDetailModal from '../../components/eventScreen/EventDetailModal';
 import MentorDetailModal from '../../components/eventScreen/MentorDetailModal';
 import MenuModal from '../../components/eventScreen/MenuModal';
-import StarryBackground from '../../components/eventScreen/StarryBackground';
+import Background from '../../components/eventScreen/Background';
 
 // --- Hooks & Utils ---
 import { useEvents } from '../../lib/fetchEvents';
@@ -53,10 +51,10 @@ type MentorshipSession = {
 };
 
 // --- Constants ---
-const { width, height } = Dimensions.get('window');
+const { height } = Dimensions.get('window');
 const HEADER_HEIGHT_EXPANDED = 145; 
-const TABS_HEIGHT = 40;
-const IS_TABLET = width > 768;
+const TABS_HEIGHT = 60;
+
 
 
 export default function EventScreen() {
@@ -129,27 +127,22 @@ export default function EventScreen() {
 
   // --- Handlers ---
   const handleEventPress = (event: Event) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setSelectedEvent(event);
     setModalVisible(true);
   };
 
   const handleShowMenu = (event: Event) => {
-    Haptics.selectionAsync();
     setSelectedEventForMenu(event);
     setMenuModalVisible(true);
   };
 
   const handleMentorPress = (session: MentorshipSession) => {
-    //
-    Haptics.selectionAsync();
     setSelectedMentorSession(session);
     setMentorModalVisible(true);
   };
 
   // Unified Refresh Logic
   const onRefresh = useCallback(async () => {
-    Haptics.selectionAsync();
     setIsRefreshing(true);
 
     if (scheduleMode === 'events') {
@@ -164,7 +157,6 @@ export default function EventScreen() {
   }, [refetchEvents, refetchMentors, refetchShifts, scheduleMode]);
 
   const handleSave = async (eventId: string) => {
-    Haptics.selectionAsync();
     setSavedEventIds((prev) => {
       const next = new Set(prev);
       if (next.has(eventId)) next.delete(eventId);
@@ -243,7 +235,7 @@ export default function EventScreen() {
   }, [scheduleMode, events, mentorshipSessions, shifts]);
 
   const filteredItems = useMemo(() => {
-    let data: any[] = activeItems as any[];
+    let data = [...activeItems];
     
     if (selectedDay) {
       data = data.filter((item) => new Date(item.startTime * 1000).toDateString() === selectedDay);
@@ -268,14 +260,19 @@ export default function EventScreen() {
     const todayString = new Date(now * 1000).toDateString();
     if (selectedDay !== todayString) return;
 
-    const LOOKBACK_SECONDS = 30 * 60; // 30 minutes
+    const LOOKBACK_SECONDS = 30 * 60;
 
     let targetIndex = filteredItems.findIndex((item: any) => {
       const endTime = item.endTime
-        ? (item.endTime > 9999999999 ? item.endTime / 1000 : item.endTime)
+        ? item.endTime > 9999999999
+          ? item.endTime / 1000
+          : item.endTime
         : item.startTime + 3600;
-      const startedRecently = item.startTime >= now - LOOKBACK_SECONDS;
-      return startedRecently && endTime > now;
+        return (
+          item.startTime <= now &&
+          item.startTime >= now - LOOKBACK_SECONDS &&
+          endTime > now
+        );
     });
 
     // Fallback: next event that hasn't started yet
@@ -358,7 +355,7 @@ export default function EventScreen() {
     return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
   };
 
-  const renderMentorCard = (m: MentorshipSession, showTimeHeader: boolean, timeHeaderText: string) => {
+  const renderMentorCard = (m: MentorshipSession) => {
     return (
       <>
         <Pressable onPress={() => handleMentorPress(m)} style={styles.mentorCard}>
@@ -387,8 +384,6 @@ export default function EventScreen() {
 
   const renderEvent = ({ item, index }: { item: any; index: number }) => {
     const previousItem = filteredItems[index - 1];
-    const showTime = index === 0 || previousItem?.startTime !== item.startTime;
-    const timeHeaderText = formatTime(item.startTime);
 
     // Check if we need to show a day header (only when viewing all events)
     const currentDate = new Date(item.startTime * 1000);
@@ -428,81 +423,74 @@ export default function EventScreen() {
             <Text style={styles.dayHeader}>{dayHeaderText}</Text>
           </View>
         )}
-        {renderMentorCard(m, showTime, timeHeaderText)}
+        {renderMentorCard(m)}
       </View>
     );
   };
 
-  // --- Animation Interpolations ---
   const tabsTranslateY = scrollY.interpolate({
     inputRange: [0, 80],
     outputRange: [0, -TABS_HEIGHT],
-    extrapolate: 'clamp',
+    extrapolate: "clamp",
   });
+
   const tabsOpacity = scrollY.interpolate({
     inputRange: [0, 40],
     outputRange: [1, 0],
-    extrapolate: 'clamp',
+    extrapolate: "clamp",
   });
+
   const headerTranslateY = scrollY.interpolate({
     inputRange: [0, 80],
     outputRange: [0, -TABS_HEIGHT],
-    extrapolate: 'clamp',
-  });
-  const headerOpacity = scrollY.interpolate({
-    inputRange: [0, 100],
-    outputRange: [1, 0.6], 
-    extrapolate: 'clamp',
+    extrapolate: "clamp",
   });
 
   // --- Loading/Error/Empty States ---
   const isLoading = (eventsLoading && scheduleMode === 'events') || (mentorsLoading && scheduleMode === 'mentorship') || (shiftsLoading && scheduleMode === 'shifts');
   const isError = (eventsError && scheduleMode === 'events') || (mentorsError && scheduleMode === 'mentorship') || (shiftsError && scheduleMode === 'shifts');
-  const isEmpty = !isLoading && !isRefreshing && filteredItems.length === 0;
 
   return (
-    <StarryBackground scrollY={scrollY}>
+    <Background>
       <View style={[styles.container, { paddingTop: insets.top + 55 }]}>
         {/* --- Sticky Header Section --- */}
         <View style={[styles.stickyHeaderContainer, { top: insets.top + 45 }]}>
-            <Animated.View style={{
-                opacity: tabsOpacity,
-                transform: [{ translateY: tabsTranslateY }],
-                zIndex: -1
-            }}>
-                <EventTabs
-                  activeTab={scheduleMode}
-                  onTabPress={(mode) => {
-                    setScheduleMode(mode as ScheduleMode);
-                    setSaveValue(false);
-                    setSelectedDay(null);
-                  }}
-                  showShifts={isStaff}
-                />
-            </Animated.View>
+          <Animated.View style={{
+            opacity: tabsOpacity,
+            transform: [{ translateY: tabsTranslateY }],
+          }}>
+              <EventTabs
+                activeTab={scheduleMode}
+                onTabPress={(mode) => {
+                  setScheduleMode(mode as ScheduleMode);
+                  setSaveValue(false);
+                  setSelectedDay(null);
+                }}
+                showShifts={isStaff}
+              />
+          </Animated.View>
 
-            <Animated.View style={{
-                opacity: headerOpacity,
-                transform: [{ translateY: headerTranslateY }]
-            }}>
-                <EventHeader
-                    eventDays={eventDays}
-                    selectedDay={selectedDay}
-                    setSelectedDay={setSelectedDay}
-                    selectedSave={selectedSave}
-                    setSaveValue={setSaveValue}
-                    scheduleMode={scheduleMode}
-                />
-            </Animated.View>
+          <Animated.View style={{
+            transform: [{ translateY: headerTranslateY}],
+          }}>
+              <EventHeader
+                  eventDays={eventDays}
+                  selectedDay={selectedDay}
+                  setSelectedDay={setSelectedDay}
+                  selectedSave={selectedSave}
+                  setSaveValue={setSaveValue}
+                  scheduleMode={scheduleMode}
+              />
+          </Animated.View>
         </View>
 
         {/* --- Render Content Logic --- */}
         {isRefreshing ? (
-             <View style={[styles.emptyContainer, { marginTop: 300 }]}>
-                <ActivityIndicator color="#7229a3" size="large" />
-                <Text style={styles.emptyText}>Refreshing...</Text>
-             </View>
-        ) : isLoading && isEmpty ? (
+             <View style={{ marginTop: 300 }}>
+                <ActivityIndicator size="large" color="#FFF" />
+                <Text style={styles.emptyText}>Loading...</Text>
+              </View>
+        ) : isLoading && filteredItems.length ===0 ? (
              <View style={{ marginTop: 300 }}>
                  <ActivityIndicator size="large" color="#FFF" />
                  <Text style={styles.emptyText}>Loading...</Text>
@@ -527,8 +515,8 @@ export default function EventScreen() {
                 ]}
                 showsVerticalScrollIndicator={false}
                 onScroll={Animated.event(
-                    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-                    { useNativeDriver: true }
+                  [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                  { useNativeDriver: true },
                 )}
                 scrollEventThrottle={16}
                 refreshControl={
@@ -594,7 +582,7 @@ export default function EventScreen() {
         />
 
       </View>
-    </StarryBackground>
+    </Background>
   );
 }
 
@@ -603,13 +591,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   
-  titleContainer: {
-    position: 'absolute',
-    left: 0,
-    zIndex: 101, 
-    marginLeft: 10,
-  },
-
   stickyHeaderContainer: {
     position: 'absolute',
     left: 0,
@@ -628,14 +609,6 @@ const styles = StyleSheet.create({
     marginBottom: 0, 
   },
   
-  timeHeader: {
-    fontSize: 20,
-    color: 'rgba(255, 255, 255, 0.6)',
-    textAlign: 'center',
-    marginBottom: 10,
-    marginTop: 10,
-    fontWeight: '700',
-  },
 
   // --- Day Header Style ---
   dayHeader: {
