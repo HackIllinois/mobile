@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import * as Haptics from 'expo-haptics';
+import type { Permission } from 'react-native';
 import { View, Text, TextInput, Button, FlatList, Alert, Pressable, StyleSheet, Dimensions, PermissionsAndroid, Platform, Image, ImageBackground, GestureResponderEvent, Modal, Animated } from 'react-native';
 
 // Asset imports
@@ -435,7 +436,7 @@ export default function Duels() {
   useEffect(() => {
     const checkPermissions = async () => {
       if (Platform.OS === 'android') {
-        const permissions = [];
+        const permissions: Permission[] = [];
 
         // Android 12+ (API 31+) requires these specific Bluetooth permissions
         if (Platform.Version >= 31) {
