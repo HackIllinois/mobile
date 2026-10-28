@@ -27,11 +27,11 @@ import BackgroundSvg from '../assets/profile/background.svg';
 import StarryBackground from '../components/eventScreen/StarryBackground';
 import {
   useProfile,
-  UserProfile,
   loadCachedRoles,
   hasNonProfileRole,
   getNonProfileRoleLabel,
 } from '../lib/fetchProfile';
+import { UserProfile } from '../types';
 import * as Haptics from 'expo-haptics';
 import { MAX_APP_WIDTH } from '../lib/layout';
 import { queryClient } from '../lib/queryClient';
