@@ -44,6 +44,8 @@ export const EventHeader: React.FC<EventHeaderProps> = ({
 
   // 1. Determine how many items are visible
   const showSavedButton = scheduleMode === 'events';
+  const itemCount = eventDays.length + (showSavedButton ? 1 : 0);
+  const gap = Math.max(0, (SCREEN_WIDTH - ITEM_SIZE * itemCount - 40) / Math.max(1, itemCount - 1));
   
   const isToday = (d: Date) => {
     const today = new Date();
@@ -68,7 +70,7 @@ export const EventHeader: React.FC<EventHeaderProps> = ({
 
   return (
     <View style={styles.container}>
-      <View style={[styles.tabs, { gap: 30 }]}>
+      <View style={[styles.tabs, { gap }]}>
         {/* Render Date Buttons */}
         {eventDays.map((day) => {
           const isSelected = selectedDay === day.id;
