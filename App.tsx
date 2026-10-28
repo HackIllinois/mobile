@@ -2,9 +2,8 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import AuthScreen from "./app/AuthScreen";
 import MainScreen from "./MainScreen";
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { StatusBar } from "expo-status-bar";
-import StartupAnimation from "./components/hackrocket/StartupAnimation";
 import { StyleSheet, Text, View, Button } from "react-native";
 import QRScannerScreen from "./screens/UserQRScannerScreen";
 import PointShop from "./screens/PointShop";
@@ -27,16 +26,6 @@ function HomeScreen({ navigation }: { navigation: any }) {
 }
 
 export default function App() {
-  const [showAnimation, setShowAnimation] = useState(true);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setShowAnimation(false), 2500);
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (showAnimation) {
-    return <StartupAnimation />;
-  }
   return (
     <NavigationContainer ref={navigationRef}>
       <Stack.Navigator>
