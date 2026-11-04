@@ -1,9 +1,8 @@
-import React, { useEffect, useRef } from 'react';
-import { View, TouchableOpacity, Pressable, Modal, ActivityIndicator, Animated, useWindowDimensions } from 'react-native';
+import React, { useEffect, useState} from 'react';
+import { View, TouchableOpacity, Pressable, Modal, ActivityIndicator, useWindowDimensions, Text } from 'react-native';
 import { MAX_APP_WIDTH } from '../../lib/layout';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import * as Brightness from 'expo-brightness';
 import QRCode from 'react-native-qrcode-svg';
 import RefreshButtonSvg from '../../assets/profile/qr-screen/refresh-button.svg';
 
@@ -13,9 +12,9 @@ interface QRCodeModalProps {
   qrLoading: boolean;
   onClose: () => void;
   onRefresh: () => void;
-  displayName?: string; // Kept for backwards compatibility but no longer displayed
   refreshCooldown: boolean;
   cooldownStartedAt: number | null;
+  qrError?: string | null;
 }
 
 const COOLDOWN_MS = 5000;
@@ -28,43 +27,27 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
   onRefresh,
   refreshCooldown,
   cooldownStartedAt,
+  qrError
 }) => {
   const { width: windowWidth, height } = useWindowDimensions();
   const width = Math.min(windowWidth, MAX_APP_WIDTH);
-  const localProgressAnim = useRef(new Animated.Value(0)).current;
-  const animationRef = useRef<Animated.CompositeAnimation | null>(null);
-  const prevBrightness = useRef<number | null>(null);
+  const [remainingTime, setRemainingTime] = useState(0);
 
-  useEffect(() => {
-    if (visible) {
-      Brightness.getBrightnessAsync().then((b) => {
-        prevBrightness.current = b;
-        Brightness.setBrightnessAsync(1);
-      });
-    } else {
-      if (prevBrightness.current !== null) {
-        Brightness.setBrightnessAsync(prevBrightness.current);
-        prevBrightness.current = null;
-      }
-    }
-  }, [visible]);
-
-  useEffect(() => {
-    animationRef.current?.stop();
-    if (!refreshCooldown || cooldownStartedAt === null) {
-      localProgressAnim.setValue(0);
+  useEffect(() =>{
+    if(!visible || !refreshCooldown || cooldownStartedAt === null ){
+      setRemainingTime(0);
       return;
     }
-    const elapsed = Date.now() - cooldownStartedAt;
-    const remaining = Math.max(0, COOLDOWN_MS - elapsed);
-    localProgressAnim.setValue(Math.min(1, elapsed / COOLDOWN_MS));
-    animationRef.current = Animated.timing(localProgressAnim, {
-      toValue: 1,
-      duration: remaining,
-      useNativeDriver: false,
-    });
-    animationRef.current.start();
-  }, [visible, refreshCooldown, cooldownStartedAt]);
+
+    const updateTimer = () =>{
+      const elapsed = Date.now() - cooldownStartedAt;
+      setRemainingTime(Math.max(0, Math.ceil((COOLDOWN_MS-elapsed)/1000)));
+    }
+    updateTimer();
+
+    const timer = setInterval(updateTimer, 250);
+    return () => clearInterval(timer);
+  }, [visible, cooldownStartedAt, refreshCooldown])
 
   const figmaWidth = 393;
   const figmaHeight = 852;
@@ -104,18 +87,13 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
         onPress={onClose}
       >
         <Pressable onPress={(e) => e.stopPropagation()} style={{
-          backgroundColor: '#FFEAFE',
+          backgroundColor: 'rgba(109, 106, 106, 0.82)',
           borderRadius: scaleWidth(30),
           width: MODAL_WIDTH,
           height: MODAL_HEIGHT,
           alignItems: 'center',
           justifyContent: 'center',
           position: 'relative',
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.25,
-          shadowRadius: scaleWidth(3.84),
-          elevation: 5,
         }}>
           {/* Close Button - moved to left where reload was */}
           <TouchableOpacity
@@ -148,15 +126,12 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
                 backgroundColor="#FFEAFE"
                 color="#000000"
               />
-            ) : (
-              <View style={{
-                width: QR_SIZE,
-                height: QR_SIZE,
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}>
+            ) : qrLoading? (
                 <ActivityIndicator size="large" color="#888" />
-              </View>
+            ) : (
+              <Text style={{ color: '#333', textAlign: 'center' }}>
+                QR code unavailable
+              </Text>
             )}
           </View>
 
@@ -182,23 +157,32 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
                     height={btnH}
                     opacity={qrLoading || refreshCooldown ? 0.5 : 1}
                   />
-                  {refreshCooldown && (
-                    <Animated.View style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      bottom: 0,
-                      width: localProgressAnim.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: ['0%', '100%'],
-                      }),
-                      backgroundColor: 'rgba(20, 8, 50, 0.55)',
-                    }} />
-                  )}
                 </View>
               </TouchableOpacity>
             );
           })()}
+          {refreshCooldown && remainingTime > 0 && (
+            <View style={{ alignItems: "center"}}>
+              <Text style={{ fontSize: 14, color: '#333' }}>
+                Please wait {remainingTime} seconds before refreshing.
+              </Text>
+            </View>
+          )}
+          {qrError && (
+            <Text
+              style={{
+                color: '#FFFFFF',
+                fontSize: 14,
+                marginTop: 8,
+                textAlign: 'center',
+              }}
+            >
+              {qrError}
+              {qrCode
+                ? ' The displayed code may have expired.'
+                : ''}
+            </Text>
+          )}
         </Pressable>
       </Pressable>
     </Modal>
