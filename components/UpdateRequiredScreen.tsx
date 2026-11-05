@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { MAX_APP_WIDTH } from "../lib/layout";
 import { getStoreUrl } from "../lib/versionCheck";
-import BackgroundSvg from '../assets/profile/background.svg';
+//import BackgroundSvg from '../assets/profile/background.svg'; come clean this screen later
 
 
 export default function UpdateRequiredScreen() {
@@ -29,12 +29,6 @@ export default function UpdateRequiredScreen() {
 
   return (
     <View style={styles.container}>
-      <BackgroundSvg
-        width={width}
-        height={height + 10} // Added 10px to the height to avoid some weird clipping
-        preserveAspectRatio="xMidYMid slice"
-        style={styles.background}
-      />
       <View style={styles.content}>
         <Text style={styles.title}>A New Version is Available!</Text>
         <Text style={styles.subtitle}>
@@ -57,6 +51,7 @@ export default function UpdateRequiredScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#555555ff"
   },
   background: {
     ...StyleSheet.absoluteFillObject,

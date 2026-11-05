@@ -1,29 +1,16 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   Modal,
-  Animated,
   useWindowDimensions,
   ActivityIndicator,
-  Pressable,
+  StyleSheet,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 import api from '../../api';
 
-import ChooseTitleSvg from '../../assets/profile/avatar-screen/choose-title.svg';
-import UfoTractorBeamSvg from '../../assets/profile/avatar-screen/ufo-tractor-beam.svg';
-import SelectAvatarButtonsSvg from '../../assets/profile/avatar-screen/select-avatar-buttons.svg';
-import BackgroundSvg from '../../assets/profile/background.svg';
-import NavbarBackground from '../../assets/navbar/Background.svg';
-import HomeIcon from '../../assets/navbar/Home.svg';
-import EventsIcon from '../../assets/navbar/Calendar.svg';
-import QrCodeIcon from '../../assets/navbar/Camera.svg';
-import PointsIcon from '../../assets/navbar/Shop.svg';
-import DuelsIcon from '../../assets/navbar/Duels.svg';
-import * as Haptics from 'expo-haptics';
-import { MAX_APP_WIDTH } from '../../lib/layout';
 
 import { AVATARS } from './avatarConfig';
 
@@ -51,56 +38,14 @@ export const AvatarSelectionModal: React.FC<AvatarSelectionModalProps> = ({
   onClose,
   onAvatarSelected,
 }) => {
-  const { width: windowWidth, height } = useWindowDimensions();
-  const width = Math.min(windowWidth, MAX_APP_WIDTH);
-  const router = useRouter();
+  const { height } = useWindowDimensions();
+  const avatarHeight = Math.min(400, height * 0.45);
 
-  const figmaWidth = 393;
-  const figmaHeight = 852;
-  const scaleWidth = (size: number) => (width / figmaWidth) * size;
-  const scaleHeight = (size: number) => (height / figmaHeight) * size;
-  const scaleFontSize = (size: number) => Math.min(scaleWidth(size), scaleHeight(size));
-
-  const HEADER_WIDTH = scaleWidth(222);
-  const HEADER_HEIGHT = scaleWidth(51);
-  const HEADER_TOP = scaleWidth(55);
-  const HEADER_LEFT = scaleWidth(31);
-
-  const BUTTON_BORDER_WIDTH = scaleWidth(248);
-  const BUTTON_BORDER_HEIGHT = scaleWidth(40);
-  const BUTTON_BORDER_TOP = scaleWidth(125);
-  const BUTTON_BORDER_LEFT = scaleWidth(74);
-
-  const AVATAR_WIDTH = scaleWidth(156);
-  const AVATAR_HEIGHT = scaleWidth(300);
-  const AVATAR_TOP = scaleWidth(300);
-  const AVATAR_LEFT = scaleWidth(118);
-
-  const NAV_BUTTONS_WIDTH = scaleWidth(317);
-  const NAV_BUTTONS_HEIGHT = scaleWidth(48);
-  const NAV_BUTTONS_TOP = scaleWidth(667);
-  const NAV_BUTTONS_LEFT = scaleWidth(38);
-
-  const UFO_BEAM_WIDTH = scaleWidth(244);
-  const UFO_BEAM_HEIGHT = scaleWidth(382);
-  const UFO_BEAM_TOP = scaleWidth(270);
-  const UFO_BEAM_LEFT = scaleWidth(78);
-
-  const LEFT_AVATAR_WIDTH = scaleWidth(85.456);
-  const LEFT_AVATAR_HEIGHT = scaleWidth(190);
-  const LEFT_AVATAR_TOP = scaleWidth(352);
-  const LEFT_AVATAR_LEFT = scaleWidth(10);
-
-  const RIGHT_AVATAR_WIDTH = scaleWidth(100.976);
-  const RIGHT_AVATAR_HEIGHT = scaleWidth(204);
-  const RIGHT_AVATAR_TOP = scaleWidth(338);
-  const RIGHT_AVATAR_LEFT = scaleWidth(280);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const floatAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (visible && currentAvatarId) {
@@ -115,43 +60,19 @@ export const AvatarSelectionModal: React.FC<AvatarSelectionModalProps> = ({
     }
   }, [visible, currentAvatarId]);
 
-  useEffect(() => {
-    if (visible) {
-      const floatAnimation = Animated.loop(
-        Animated.sequence([
-          Animated.timing(floatAnim, {
-            toValue: -10,
-            duration: 2000,
-            useNativeDriver: true,
-          }),
-          Animated.timing(floatAnim, {
-            toValue: 0,
-            duration: 2000,
-            useNativeDriver: true,
-          }),
-        ])
-      );
-      floatAnimation.start();
-      return () => floatAnimation.stop();
-    }
-  }, [visible, floatAnim]);
-
   const handlePreviousAvatar = () => {
-    Haptics.selectionAsync();
     setCurrentIndex((prevIndex) =>
       prevIndex === 0 ? AVATARS.length - 1 : prevIndex - 1
     );
   };
 
   const handleNextAvatar = () => {
-    Haptics.selectionAsync();
     setCurrentIndex((prevIndex) =>
       (prevIndex + 1) % AVATARS.length
     );
   };
 
   const handleSelect = async () => {
-    Haptics.selectionAsync();
     setIsUpdating(true);
     setError(null);
 
@@ -176,342 +97,150 @@ export const AvatarSelectionModal: React.FC<AvatarSelectionModalProps> = ({
   };
 
   const AvatarComponent = AVATARS[currentIndex].component;
-  const previousIndex = currentIndex === 0 ? AVATARS.length - 1 : currentIndex - 1;
-  const nextIndex = (currentIndex + 1) % AVATARS.length;
-  const PreviousAvatarComponent = AVATARS[previousIndex].component;
-  const NextAvatarComponent = AVATARS[nextIndex].component;
 
   return (
-    <Modal
+   <Modal
       visible={visible}
-      transparent={false}
       animationType="fade"
-      onRequestClose={onClose}
       presentationStyle="fullScreen"
+      onRequestClose={onClose}
     >
-      <View style={{
-        flex: 1,
-        width: width,
-        height: height,
-        backgroundColor: '#F5F5F5',
-        position: 'relative',
-      }}>
-          <View style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: width,
-            height: height,
-            zIndex: 0,
-          }}>
-            <BackgroundSvg
-              width={width}
-              height={height}
-              preserveAspectRatio="xMidYMid slice"
-            />
+      <SafeAreaProvider>
+        <SafeAreaView style={styles.screen}>
+          <View style={styles.header}>
+            <Text style={styles.headerText}>
+              Choose your avatar!
+            </Text>
           </View>
 
-          {/* Header */}
-          <Text style={{
-            position: 'absolute',
-            top: HEADER_TOP,
-            left: HEADER_LEFT,
-            width: HEADER_WIDTH,
-            height: HEADER_HEIGHT,
-            fontSize: scaleFontSize(26),
-            fontWeight: 'bold',
-            color: '#FFFFFF',
-            textAlign: 'left',
-            letterSpacing: scaleWidth(1.5),
-            fontFamily: 'Tsukimi Rounded',
-            zIndex: 5,
-          }}>PROFILE</Text>
-
-          {/* Choose Title */}
-          <View style={{
-            position: 'absolute',
-            top: BUTTON_BORDER_TOP,
-            left: BUTTON_BORDER_LEFT,
-            width: BUTTON_BORDER_WIDTH,
-            height: BUTTON_BORDER_HEIGHT,
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 5,
-          }}>
-            <ChooseTitleSvg
-              width={BUTTON_BORDER_WIDTH}
-              height={BUTTON_BORDER_HEIGHT}
-            />
-          </View>
-
-          {/* UFO Beam */}
-          <View style={{
-            position: 'absolute',
-            top: UFO_BEAM_TOP,
-            left: UFO_BEAM_LEFT,
-            width: UFO_BEAM_WIDTH,
-            height: UFO_BEAM_HEIGHT,
-            opacity: 0.5,
-            zIndex: 1,
-          }}>
-            <UfoTractorBeamSvg
-              width={UFO_BEAM_WIDTH}
-              height={UFO_BEAM_HEIGHT}
-            />
-          </View>
-
-          {/* Previous Avatar */}
-          <TouchableOpacity
-            style={{
-              position: 'absolute',
-              top: LEFT_AVATAR_TOP,
-              left: LEFT_AVATAR_LEFT,
-              width: LEFT_AVATAR_WIDTH,
-              height: LEFT_AVATAR_HEIGHT,
-              justifyContent: 'center',
-              alignItems: 'center',
-              opacity: 0.5,
-              zIndex: 1,
-            }}
-            onPress={handlePreviousAvatar}
-            disabled={isUpdating}
-            activeOpacity={0.7}
-          >
-            <PreviousAvatarComponent
-              width={LEFT_AVATAR_WIDTH}
-              height={LEFT_AVATAR_HEIGHT}
-            />
-          </TouchableOpacity>
-
-          {/* Center Avatar */}
-          <Animated.View
-            style={{
-              position: 'absolute',
-              top: AVATAR_TOP,
-              left: AVATAR_LEFT + scaleWidth(AVATARS[currentIndex].modalOffsetX ?? 0),
-              width: AVATAR_WIDTH,
-              height: AVATAR_HEIGHT,
-              justifyContent: 'center',
-              alignItems: 'center',
-              zIndex: 2,
-              transform: [{ translateY: floatAnim }],
-            }}
-          >
-            <AvatarComponent
-              width={AVATAR_WIDTH}
-              height={AVATAR_HEIGHT}
-            />
-          </Animated.View>
-
-          {/* Next Avatar */}
-          <TouchableOpacity
-            style={{
-              position: 'absolute',
-              top: RIGHT_AVATAR_TOP,
-              left: RIGHT_AVATAR_LEFT,
-              width: RIGHT_AVATAR_WIDTH,
-              height: RIGHT_AVATAR_HEIGHT,
-              justifyContent: 'center',
-              alignItems: 'center',
-              opacity: 0.5,
-              zIndex: 1,
-            }}
-            onPress={handleNextAvatar}
-            disabled={isUpdating}
-            activeOpacity={0.7}
-          >
-            <NextAvatarComponent
-              width={RIGHT_AVATAR_WIDTH}
-              height={RIGHT_AVATAR_HEIGHT}
-            />
-          </TouchableOpacity>
-
-          {/* Navigation Buttons */}
-          <View style={{
-            position: 'absolute',
-            top: NAV_BUTTONS_TOP,
-            left: NAV_BUTTONS_LEFT,
-            width: NAV_BUTTONS_WIDTH,
-            height: NAV_BUTTONS_HEIGHT,
-            zIndex: 3,
-          }}>
-            <SelectAvatarButtonsSvg
-              width={NAV_BUTTONS_WIDTH}
-              height={NAV_BUTTONS_HEIGHT}
-            />
-            {/* Left arrow */}
-            <TouchableOpacity
-              style={{
-                position: 'absolute',
-                left: 0,
-                top: 0,
-                width: NAV_BUTTONS_WIDTH / 3,
-                height: NAV_BUTTONS_HEIGHT,
-              }}
+          {/* Choose an avatar */}
+          <View style={styles.selector}>
+            <TouchableOpacity 
               onPress={handlePreviousAvatar}
               disabled={isUpdating}
-            />
-            {/* Center select button */}
-            <TouchableOpacity
-              style={{
-                position: 'absolute',
-                left: NAV_BUTTONS_WIDTH / 3,
-                top: 0,
-                width: NAV_BUTTONS_WIDTH / 3,
-                height: NAV_BUTTONS_HEIGHT,
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}
-              onPress={handleSelect}
-              disabled={isUpdating}
-            >
-              {isUpdating && (
-                <ActivityIndicator
-                  size="small"
-                  color="#FFFFFF"
-                  style={{
-                    position: 'absolute',
-                  }}
-                />
-              )}
+              style={styles.arrowButton}
+              >
+                <Text style={styles.arrow}>‹</Text>
             </TouchableOpacity>
-            {/* Right arrow */}
-            <TouchableOpacity
-              style={{
-                position: 'absolute',
-                right: 0,
-                top: 0,
-                width: NAV_BUTTONS_WIDTH / 3,
-                height: NAV_BUTTONS_HEIGHT,
-              }}
-              onPress={handleNextAvatar}
-              disabled={isUpdating}
-            />
-          </View>
-
-          {error && (
-            <View style={{
-              position: 'absolute',
-              bottom: scaleWidth(100),
-              left: scaleWidth(40),
-              right: scaleWidth(40),
-              backgroundColor: 'rgba(255, 0, 0, 0.9)',
-              borderRadius: scaleWidth(10),
-              padding: scaleWidth(12),
-              zIndex: 10,
-            }}>
-              <Text style={{
-                color: '#FFFFFF',
-                fontSize: scaleFontSize(14),
-                fontWeight: '600',
-                textAlign: 'center',
-              }}>{error}</Text>
-            </View>
-          )}
-
-          {/* Navbar - matches CurvedTabBar */}
-          <View style={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            width: width,
-            height: 85,
-            zIndex: 5,
-          }}>
-            <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
-              <NavbarBackground
-                width={width}
-                height={85}
-                preserveAspectRatio="none"
+            <View style={styles.avatar}>
+              <AvatarComponent
+                width="100%"
+                height={avatarHeight}
               />
             </View>
-            {/* Home */}
-            <Pressable
-              style={{
-                position: 'absolute',
-                left: width * 0.10 - 30,
-                top: 0,
-                width: 60,
-                height: '100%',
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}
-              onPress={() => { onClose(); router.navigate('/Home'); }}
-            >
-              <HomeIcon width={40} height={40} color="rgba(255, 255, 255, 0.6)" />
-            </Pressable>
-            {/* Event */}
-            <Pressable
-              style={{
-                position: 'absolute',
-                left: width * 0.28 - 30,
-                top: 0,
-                width: 60,
-                height: '100%',
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}
-              onPress={() => { onClose(); router.navigate('/Event'); }}
-            >
-              <EventsIcon width={40} height={40} color="rgba(255, 255, 255, 0.6)" />
-            </Pressable>
-            {/* Scan (center) */}
-            <Pressable
-              style={{
-                position: 'absolute',
-                left: (width / 2) - 42.5,
-                top: -35,
-                width: 85,
-                height: 85,
-                borderRadius: 42.5,
-                backgroundColor: '#3b1d61',
-                borderWidth: 5,
-                borderColor: '#000',
-                justifyContent: 'center',
-                alignItems: 'center',
-                zIndex: 10,
-                shadowColor: '#000',
-                shadowOpacity: 0.4,
-                shadowRadius: 8,
-                shadowOffset: { width: 0, height: 4 },
-                elevation: 8,
-              }}
-              onPress={() => { onClose(); router.navigate('/Scan'); }}
-            >
-              <QrCodeIcon width={85} height={85} color="#DF4F44" />
-            </Pressable>
-            {/* Shop */}
-            <Pressable
-              style={{
-                position: 'absolute',
-                left: width * 0.72 - 30,
-                top: 0,
-                width: 60,
-                height: '100%',
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}
-              onPress={() => { onClose(); router.navigate('/Shop'); }}
-            >
-              <PointsIcon width={40} height={40} color="rgba(255, 255, 255, 0.6)" />
-            </Pressable>
-            {/* Duels */}
-            <Pressable
-              style={{
-                position: 'absolute',
-                left: width * 0.90 - 30,
-                top: 0,
-                width: 60,
-                height: '100%',
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}
-              onPress={() => { onClose(); router.navigate('/Duels'); }}
-            >
-              <DuelsIcon width={40} height={40} color="rgba(255, 255, 255, 0.6)" />
-            </Pressable>
+            <TouchableOpacity 
+              onPress={handleNextAvatar}
+              disabled={isUpdating}
+              style={styles.arrowButton}
+              >
+                <Text style={styles.arrow}>›</Text>
+            </TouchableOpacity>
           </View>
-      </View>
+
+          {/* Handle errors */}
+          {error && (
+            <Text style={{textAlign: "center", color: "#f80000ff"}}>{error}</Text>
+          )}
+          
+          {/* Save Avatar */}
+          <TouchableOpacity 
+            onPress={handleSelect}
+            disabled={isUpdating}
+            style={[styles.saveButton,
+              isUpdating && styles.disabled,
+            ]}
+            >
+              {isUpdating? (
+                <ActivityIndicator color= "#1d1ab5ff"/>
+              ) : (
+                <Text style={styles.buttonText}>
+                  Save Avatar
+                </Text>
+              )}
+            </TouchableOpacity>
+            
+          {/* Close button */}
+          <TouchableOpacity
+            onPress={onClose}
+            disabled={isUpdating}
+            style={styles.cancelButton}
+          >
+            <Text style={styles.buttonText}>Cancel</Text>
+          </TouchableOpacity>
+        </SafeAreaView>
+      </SafeAreaProvider>
     </Modal>
   );
+
+ 
+
 };
+ const styles =  StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: '#1a0040',
+    },
+    header: {
+      paddingTop: 20,
+      alignItems: "center",
+    },
+    headerText: {
+      alignItems: "center",
+      fontSize: 20,
+      color: "#ffff",
+    },
+    selector: {
+      flex: 1,
+      width: '100%',
+      maxWidth: 400,
+      alignSelf: 'center',
+      paddingHorizontal: 16,
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    arrowButton:{
+      width: 48,
+      height: 60,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    arrow: {
+      fontSize: 40,
+      alignItems: 'center',
+      color: "#fff"
+    },
+    avatar: {
+      flex: 1,
+      minWidth: 0,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    saveButton: {
+      alignItems: "center",
+      alignSelf: "center",
+      justifyContent: "center",
+      width: "50%",
+      padding: 15,
+      borderWidth: 5,
+      borderRadius: 10,
+      borderColor: "#ffff"
+    },
+    disabled: {
+      opacity: 0.5
+    }, 
+    buttonText: {
+      fontSize: 13,
+      color: "#ffff"
+    },
+    cancelButton: {
+      marginTop: 10,
+      alignItems: "center",
+      alignSelf: "center",
+      justifyContent: "center",
+      width: "30%",
+      padding: 15,
+      borderWidth: 5,
+      borderRadius: 10,
+      borderColor: "#ffff"
+    }
+});
