@@ -1,57 +1,66 @@
 import React, { useState } from "react";
 import {
-  View,
-  TouchableOpacity,
   ActivityIndicator,
-  StyleSheet,
   Alert,
-  useWindowDimensions,
+  Button,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import * as WebBrowser from "expo-web-browser";
 import * as SecureStore from "expo-secure-store";
 import { useRouter } from "expo-router";
 import { AxiosResponse } from "axios";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import LoginBackground from "../assets/login/login-background.svg";
-import WelcomeToSvg from "../assets/login/welcome-to.svg";
-import HackIllinoisSvg from "../assets/login/hackillinois.svg";
-import LoginSvg from "../assets/login/login.svg";
-import AttendeeButtonSvg from "../assets/login/attendee-button.svg";
-import OrSvg from "../assets/login/-or-.svg";
-import StaffButtonSvg from "../assets/login/staff-button.svg";
-import GuestButtonSvg from "../assets/login/guest-button.svg";
 
 import api from "../api";
-import { MAX_APP_WIDTH } from "../lib/layout";
 import { queryClient } from "../lib/queryClient";
 import { fetchProfile, prefetchAvatarImage, setCachedRoles } from "../lib/fetchProfile";
 import { prefetchShopImages } from "../lib/fetchShopItems";
-import { fetchSavedEvents } from "../lib/fetchSavedEvents";
 import { registerForPushNotificationsAsync } from "../lib/notifications";
 
 WebBrowser.maybeCompleteAuthSession();
-
-// Figma design dimensions
-const FIGMA_WIDTH = 440;
-const FIGMA_HEIGHT = 956;
 
 interface AuthRolesResponse {
   id: string;
   roles: string[];
 }
 
-export default function AuthScreen({ navigation }: any) {
-  const { width: windowWidth, height } = useWindowDimensions();
-  const width = Math.min(windowWidth, MAX_APP_WIDTH);
-  const [loadingGoogle, setLoadingGoogle] = useState(false);
-  const [loadingGitHub, setLoadingGitHub] = useState(false);
-  const [loadingGuest, setLoadingGuest] = useState(false);
+export default function AuthScreen() {
+  type LoginMethod = "github" | "google" | "guest";
+
+  // If trying to login, store in method of logging in: activeMethod
+  const [activeMethod, setActiveMethod] = useState<LoginMethod | null>(null);
+  const isLoading = activeMethod !== null; 
   const router = useRouter();
 
-  const scaleWidth = (size: number) => (width / FIGMA_WIDTH) * size;
-  const scaleHeight = (size: number) => (height / FIGMA_HEIGHT) * size;
+
   const redirectUri = "hackillinois://auth";
 
+  const signInWithProvider = async (provider: "github" | "google") => {
+    if (isLoading) return;
+    setActiveMethod(provider);
+    try{
+      const authUrl = `${api.axiosInstance.defaults.baseURL}/auth/login/${provider}?redirect=${encodeURIComponent(redirectUri)}`;
+      const result = await WebBrowser.openAuthSessionAsync(
+        authUrl,
+        redirectUri,
+        { preferEphemeralSession: true }
+      );
+      if(result.type === "cancel" || result.type === "dismiss") {
+        Alert.alert("Login canceled or failed");
+        return;
+      }
+      await handleAuthResult(result);
+    } catch (err){
+      await SecureStore.deleteItemAsync("jwt");
+      await SecureStore.deleteItemAsync("userRoles");
+      Alert.alert("Login failed", "Please try again.")
+    } finally {
+      setActiveMethod(null);
+    }
+  };
   const handleAuthResult = async (result: any) => {
     // console.log("Auth Result:", result);
     if (result.type === "success" && result.url) {
@@ -118,8 +127,9 @@ export default function AuthScreen({ navigation }: any) {
   };
 
   const handleGuestLogin = async () => {
+    if(isLoading) return;
     try {
-      setLoadingGuest(true);
+      setActiveMethod("guest");
       await SecureStore.setItemAsync("isGuest", "true");
       await SecureStore.setItemAsync("userRoles", JSON.stringify(["GUEST"]));
       setCachedRoles(["GUEST"]);
@@ -130,234 +140,60 @@ export default function AuthScreen({ navigation }: any) {
       await SecureStore.deleteItemAsync("userRoles");
       Alert.alert("Guest login failed", "Please try again.");
     } finally {
-      setLoadingGuest(false);
+      setActiveMethod(null);
     }
   };
-
-  const handleGoogleLogin = async () => {
-    try {
-      setLoadingGoogle(true);
-
-      const authUrl = `${api.axiosInstance.defaults.baseURL}/auth/login/google?redirect=${encodeURIComponent(
-        redirectUri
-      )}`;
-
-      const result = await WebBrowser.openAuthSessionAsync(
-        authUrl,
-        redirectUri,
-        { preferEphemeralSession: true }
-      );
-
-      await handleAuthResult(result);
-    } catch (err) {
-      console.error(err);
-      await SecureStore.deleteItemAsync("jwt");
-      await SecureStore.deleteItemAsync("userRoles");
-      Alert.alert("Login failed", "Please try again.");
-    } finally {
-      setLoadingGoogle(false);
-    }
-  };
-
-  const handleGitHubLogin = async () => {
-    try {
-      setLoadingGitHub(true);
-      const authUrl = `${api.axiosInstance.defaults.baseURL}/auth/login/github?redirect=${encodeURIComponent(
-        redirectUri
-      )}`;
-      const result = await WebBrowser.openAuthSessionAsync(
-        authUrl,
-        redirectUri,
-        { preferEphemeralSession: true }
-      );
-      await handleAuthResult(result);
-    } catch (err) {
-      console.error(err);
-      await SecureStore.deleteItemAsync("jwt");
-      await SecureStore.deleteItemAsync("userRoles");
-      Alert.alert("GitHub login failed", "Please try again.");
-    } finally {
-      setLoadingGitHub(false);
-    }
-  };
-
-  const isLoading = loadingGoogle || loadingGitHub || loadingGuest;
 
   return (
-    <View style={styles.container}>
-      {/* Full-page background */}
-      <View style={styles.backgroundContainer}>
-        <LoginBackground
-          width={width}
-          height={height}
-          preserveAspectRatio="xMidYMid slice"
-        />
-      </View>
+  <SafeAreaView style={styles.screen}>
+    <View style={styles.content}>
+      <Text style={styles.title}>
+        Welcome to HackIllinois
+      </Text>
 
-      {/* Welcome To */}
-      <View
-        style={{
-          position: "absolute",
-          top: scaleHeight(188),
-          left: scaleWidth(110),
-          width: scaleWidth(221),
-          height: scaleHeight(34),
-        }}
-      >
-        <WelcomeToSvg
-          width={scaleWidth(221)}
-          height={scaleHeight(34)}
-          preserveAspectRatio="xMidYMid meet"
-        />
-      </View>
-
-      {/* HackIllinois */}
-      <View
-        style={{
-          position: "absolute",
-          top: scaleHeight(241),
-          left: scaleWidth(69),
-          width: scaleWidth(302),
-          height: scaleHeight(129),
-        }}
-      >
-        <HackIllinoisSvg
-          width={scaleWidth(302)}
-          height={scaleHeight(129)}
-          preserveAspectRatio="xMidYMid meet"
-        />
-      </View>
-
-      {/* Login */}
-      <View
-        style={{
-          position: "absolute",
-          top: scaleHeight(583),
-          left: scaleWidth(171),
-          width: scaleWidth(96),
-          height: scaleHeight(34),
-        }}
-      >
-        <LoginSvg
-          width={scaleWidth(96)}
-          height={scaleHeight(34)}
-          preserveAspectRatio="xMidYMid meet"
-        />
-      </View>
-
-      {/* Attendee Button (GitHub login) */}
-      <TouchableOpacity
-        style={{
-          position: "absolute",
-          top: scaleHeight(634),
-          left: scaleWidth(102),
-          width: scaleWidth(236),
-          height: scaleHeight(47),
-        }}
-        onPress={handleGitHubLogin}
-        disabled={loadingGoogle || loadingGitHub || loadingGuest}
-        activeOpacity={0.7}
-      >
-        {loadingGitHub ? (
-          <View style={styles.loadingOverlay}>
-            <ActivityIndicator color="#fff" />
-          </View>
-        ) : (
-          <AttendeeButtonSvg
-            width={scaleWidth(236)}
-            height={scaleHeight(47)}
-            preserveAspectRatio="xMidYMid meet"
-          />
-        )}
-      </TouchableOpacity>
-
-      {/* -OR- divider */}
-      <View
-        style={{
-          position: "absolute",
-          top: scaleHeight(693),
-          left: scaleWidth(197),
-          width: scaleWidth(45),
-          height: scaleHeight(15),
-        }}
-      >
-        <OrSvg
-          width={scaleWidth(45)}
-          height={scaleHeight(15)}
-          preserveAspectRatio="xMidYMid meet"
-        />
-      </View>
-
-      {/* Staff button */}
-      <TouchableOpacity
-        style={{
-          position: "absolute",
-          top: scaleHeight(720),
-          left: scaleWidth(114),
-          width: scaleWidth(212),
-          height: scaleHeight(45),
-        }}
-        onPress={handleGoogleLogin}
-        disabled={loadingGoogle || loadingGitHub || loadingGuest}
-        activeOpacity={0.7}
-      >
-        {loadingGoogle ? (
-          <View style={styles.loadingOverlay}>
-            <ActivityIndicator color="#fff" />
-          </View>
-        ) : (
-          <StaffButtonSvg
-            width={scaleWidth(212)}
-            height={scaleHeight(45)}
-            preserveAspectRatio="xMidYMid meet"
-          />
-        )}
-      </TouchableOpacity>
-
-      {/* Guest Button */}
-      <TouchableOpacity
-        style={{
-          position: "absolute",
-          top: scaleHeight(780),
-          left: scaleWidth(114),
-          width: scaleWidth(212),
-          height: scaleHeight(45),
-        }}
+      <Button
+        title="Attendee login with GitHub"
+        onPress={() => void signInWithProvider("github")}
+        disabled={isLoading}
+      />
+      <Button
+        title="Staff login with Google"
+        onPress={() => void signInWithProvider("google")}
+        disabled={isLoading}
+      />
+      <Button
+        title="Continue as guest"
         onPress={handleGuestLogin}
         disabled={isLoading}
-        activeOpacity={0.7}
-      >
-        {loadingGuest ? (
-          <View style={styles.loadingOverlay}>
-            <ActivityIndicator color="#fff" />
-          </View>
-        ) : (
-          <GuestButtonSvg
-            width={scaleWidth(212)}
-            height={scaleHeight(45)}
-            preserveAspectRatio="xMidYMid meet"
-          />
-        )}
-      </TouchableOpacity>
+      />
+
+      <View style={styles.spinnerSlot}>
+        {isLoading && <ActivityIndicator accessibilityLabel="Signing in" />}
+      </View>
     </View>
-  );
+  </SafeAreaView>
+);
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#000",
+  screen: { 
+    flex: 1, 
+    backgroundColor: 
+    "white" 
   },
-  backgroundContainer: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  loadingOverlay: {
-    flex: 1,
+  content: {
+    flexGrow: 1,
     justifyContent: "center",
-    alignItems: "center",
+    padding: 24,
+    gap: 16,
+  },
+  title: { 
+    fontSize: 24, 
+    fontWeight: "600", 
+    textAlign: "center" 
+  },
+  spinnerSlot: { 
+    minHeight: 24, 
+    justifyContent: "center" 
   },
 });

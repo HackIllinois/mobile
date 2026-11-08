@@ -1,92 +1,58 @@
 import React, { useEffect } from "react";
 import {
+  Alert,
+  Button,
   StyleSheet,
   View,
   Text,
-  TouchableOpacity,
   Linking,
   Platform,
   BackHandler,
-  useWindowDimensions
 } from "react-native";
-import { MAX_APP_WIDTH } from "../lib/layout";
 import { getStoreUrl } from "../lib/versionCheck";
-//import BackgroundSvg from '../assets/profile/background.svg'; come clean this screen later
 
 
 export default function UpdateRequiredScreen() {
-  const { width: windowWidth, height } = useWindowDimensions();
-  const width = Math.min(windowWidth, MAX_APP_WIDTH);
+  const storeName = Platform.OS === "android" ? "Google Play" : "App Store";
 
   useEffect(() => {
     const sub = BackHandler.addEventListener("hardwareBackPress", () => true);
     return () => sub.remove();
   }, []);
 
-  const openStore = () => {
-    Linking.openURL(getStoreUrl()).catch(() => {});
+  const openStore = async () => {
+    try {
+      await Linking.openURL(getStoreUrl());
+    } catch {
+      Alert.alert(`Couldn't open ${storeName}`, "Please try again.");
+    }
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.title}>A New Version is Available!</Text>
-        <Text style={styles.subtitle}>
-          Please update the app to continue.
-        </Text>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={openStore}
-          activeOpacity={0.85}
-        >
-          <Text style={styles.buttonText}>
-            {Platform.OS === "ios" ? "Open App Store" : "Open Google Play"}
-          </Text>
-        </TouchableOpacity>
-      </View>
+    <View style={styles.screen}>
+      <Text style={styles.title} accessibilityRole="header">
+        Update required
+      </Text>
+      <Text style={styles.message}>Please update the app to continue.</Text>
+      <Button title={`Open ${storeName}`} onPress={() => void openStore()} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
-    backgroundColor: "#555555ff"
-  },
-  background: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  content: {
-    flex: 1,
+    backgroundColor: "white",
     justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 32,
+    padding: 24,
+    gap: 16,
   },
   title: {
-    fontFamily: "Tsukimi-Rounded-Bold",
-    fontSize: 26,
-    color: "#FFFFFF",
-    textAlign: "center",
-    marginBottom: 12,
+    fontSize: 24, 
+    fontWeight: "600", 
+    textAlign: "center"
   },
-  subtitle: {
-    fontFamily: "Montserrat-Bold",
-    fontSize: 16,
-    color: "rgba(255, 255, 255, 0.9)",
-    textAlign: "center",
-    marginBottom: 32,
-  },
-  button: {
-    backgroundColor: "rgba(255, 255, 255, 0.95)",
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderRadius: 12,
-    minWidth: 200,
-    alignItems: "center",
-  },
-  buttonText: {
-    fontFamily: "Montserrat-Bold",
-    fontSize: 16,
-    color: "#11104A",
+  message: { 
+    textAlign: "center"
   },
 });
