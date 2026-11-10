@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   backdropPressable: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   
   // -- Main Layout Container --
@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   expandOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(0,0,0,0.1)',
     justifyContent: 'flex-end',
     alignItems: 'center',

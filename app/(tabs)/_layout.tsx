@@ -82,10 +82,8 @@ export default function Layout() {
           <Tabs.Screen name="Scan" />
           <Tabs.Screen name="Event" />
           <Tabs.Screen name="Duels" />
-          <Tabs.Screen
-            name="Profile"
-            options={{ href: null }}
-          />
+          {/* The custom tab bar omits Profile. Router 58 redirects away from hidden routes. */}
+          <Tabs.Screen name="Profile" />
         </Tabs>
 
         {/* Header */}
@@ -103,7 +101,10 @@ export default function Layout() {
               <Text style={styles.logoutLabel}>LOGOUT</Text>
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity onPress={handleProfilePress}>
+            <TouchableOpacity
+              accessibilityLabel="Profile"
+              onPress={handleProfilePress}
+            >
               <ProfileSvg width={45} height={45} />
             </TouchableOpacity>
           )}

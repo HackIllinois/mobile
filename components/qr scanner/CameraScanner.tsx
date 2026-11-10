@@ -118,7 +118,7 @@ function CameraScannerView({
           <CameraView
             onBarcodeScanned={isScanned ? undefined : stableBarcodeHandler}
             barcodeScannerSettings={barcodeScannerSettings}
-            style={StyleSheet.absoluteFillObject}
+            style={StyleSheet.absoluteFill}
           />
 
           <View style={styles.topSection}>
@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',

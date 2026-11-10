@@ -27,10 +27,11 @@ import ShopItemCard from "../../components/point shop/ShopItemCard";
 import CartButton from "../../components/point shop/CartButton";
 import Points from "../../components/point shop/Points";
 import CartModal from "../../components/point shop/CartModal";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect } from "expo-router/react-navigation";
 
 export default function PointShop() {
-  const { shopItems: shopItemData, loading: shopLoading } = useShopItems();
+  const { shopItems, loading: shopLoading } = useShopItems();
+  const shopItemData: ShopItem[] = shopItems;
   const { profile, refetch: refetchProfile } = useProfile();
   const userPoints = profile?.points ?? 0;
 

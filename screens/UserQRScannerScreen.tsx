@@ -105,7 +105,7 @@ export default function UserQRScannerScreen() {
       <CameraView
         onBarcodeScanned={scanned ? undefined : stableBarcodeHandler}
         barcodeScannerSettings={barcodeScannerSettings}
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
       />
 
       <View style={styles.overlay}>
@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(64, 26, 121, 0.7)',
   },
   loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',
