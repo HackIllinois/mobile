@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, Pressable} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import { BottomTabBarProps } from 'expo-router/js-tabs';
 import HomeIcon from '../assets/navbar/Home.svg';
 import EventsIcon from '../assets/navbar/Calendar.svg';
 import QrCodeIcon from '../assets/navbar/Camera.svg';
@@ -21,7 +21,7 @@ const TAB_CONFIG = [
 
 export const CurvedTabBar = ({
   state,
-  navigation,
+  navigateToTab,
 }: BottomTabBarProps) => {
   const insets = useSafeAreaInsets();
   return (
@@ -37,7 +37,7 @@ export const CurvedTabBar = ({
         return (
           <Pressable
             key={name}
-            onPress={() => navigation.navigate(name)}
+            onPress={() => navigateToTab(state.routes[routeIndex].key)}
             style={styles.tab}>
               <View style={isFocused? styles.activeIcon : undefined}>
                 <Icon

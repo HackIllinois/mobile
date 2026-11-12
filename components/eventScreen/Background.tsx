@@ -7,7 +7,7 @@ interface BackgroundProps {
 export default function Background({ children }: BackgroundProps) {
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#ffffffff"/>
+      <StatusBar barStyle="dark-content" />
         {children}
     </View>
   );

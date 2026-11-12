@@ -402,7 +402,7 @@ export default function StaffQRScannerScreen() {
         <BackgroundSvg
           width={SCREEN_WIDTH}
           height={SCREEN_HEIGHT}
-          style={[StyleSheet.absoluteFillObject, { transform: [{ scale: 1.1 }] }]}
+          style={[StyleSheet.absoluteFill, { transform: [{ scale: 1.1 }] }]}
           preserveAspectRatio="xMidYMid slice"
         />
         <SafeAreaView style={styles.safeArea}>

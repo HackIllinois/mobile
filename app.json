@@ -8,12 +8,6 @@
     "orientation": "portrait",
     "icon": "./assets/logo.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/splash_screen.png",
-      "resizeMode": "cover",
-      "backgroundColor": "#11104A"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "org.hackillinois.ios",
@@ -30,7 +24,6 @@
       "adaptiveIcon": {
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true,
       "package": "org.hackillinois.android.release",
       "googleServicesFile": "./google-services.json"
     },
@@ -43,13 +36,25 @@
       "expo-web-browser",
       "expo-font",
       [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash_screen.png",
+          "resizeMode": "cover",
+          "backgroundColor": "#11104A",
+          "ios": {
+            "enableFullScreenImage_legacy": true
+          }
+        }
+      ],
+      [
         "expo-notifications",
         {
           "icon": "./assets/logo.png",
           "color": "#ffffff"
         }
       ],
-      "./plugins/withWindowBackgroundColor"
+      "./plugins/withWindowBackgroundColor",
+      "expo-status-bar"
     ],
     "extra": {
       "router": {},
