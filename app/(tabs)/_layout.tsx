@@ -1,29 +1,28 @@
 import { useEffect } from "react";
 import { Tabs, usePathname, useRouter } from "expo-router";
 import { TouchableOpacity, View, StyleSheet, Alert, Text } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 import * as SecureStore from "expo-secure-store";
 import ProfileSvg from "../../assets/profile.svg";
 import LogoutButtonSvg from "../../assets/profile/profile-screen/logout-button.svg";
 import { CurvedTabBar } from "../../components/CurvedTabBar";
+import { tabBackgrounds } from "../../lib/layout";
 import { queryClient } from "../../lib/queryClient";
 import { fetchProfile, prefetchAvatarImage, loadCachedRoles, clearCachedRoles, hasNonProfileRole } from "../../lib/fetchProfile";
 
-const TITLE_MAP: Record<string, string> = {
-  "/Event": "SCHEDULE",
-  "/Shop": "POINT SHOP",
-  "/Scan": "SCANNER",
-  "/Profile": "PROFILE",
-
+const TITLE_MAP: Partial<Record<keyof typeof tabBackgrounds, string>> = {
+  Event: "SCHEDULE",
+  Shop: "POINT SHOP",
+  Scan: "SCANNER",
+  Profile: "PROFILE",
 };
 
 
 export default function Layout() {
   const pathname = usePathname();
-  const insets = useSafeAreaInsets();
   const router = useRouter();
-  const isProfileScreen = pathname === "/Profile";
-  const title = TITLE_MAP[pathname] || null;
+  const activeTab = pathname.slice(1) as keyof typeof tabBackgrounds;
+  const backgroundColor = tabBackgrounds[activeTab] ?? tabBackgrounds.Home;
 
   useEffect(() => {
     loadCachedRoles().then(() => {
@@ -69,68 +68,69 @@ export default function Layout() {
   };
 
   return (
-      <View style={styles.container}>
-        <Tabs
-          screenOptions={{
-            headerShown: false,
-            tabBarShowLabel: false,
-          }}
-          tabBar={(props) => <CurvedTabBar {...props} />}
-        >
-          <Tabs.Screen name="Home" />
-          <Tabs.Screen name="Shop" />
-          <Tabs.Screen name="Scan" />
-          <Tabs.Screen name="Event" />
-          <Tabs.Screen name="Duels" />
-          {/* The custom tab bar omits Profile. Router 58 redirects away from hidden routes. */}
-          <Tabs.Screen name="Profile" />
-        </Tabs>
+    <SafeAreaView edges={["left", "right"]} style={[styles.container, { backgroundColor }]}>
+      <Tabs
+        screenOptions={({ route }) => {
+          const tab = route.name as keyof typeof tabBackgrounds;
+          const headerColor = tab === "Home" || tab === "Shop" ? "#4d4c4c" : "#fff";
 
-        {/* Header */}
-        <View style={[styles.headerRow, { top: insets.top }]}>
-          {title ? (
-            <View style={{ marginTop: -6 }}>
-              <Text style={styles.headerTitle}>{title}</Text>
-            </View>
-          ) : (
-            <View />
-          )}
-          {isProfileScreen ? (
-            <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
-              <LogoutButtonSvg width={70} height={28} />
-              <Text style={styles.logoutLabel}>LOGOUT</Text>
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              accessibilityLabel="Profile"
-              onPress={handleProfilePress}
-            >
-              <ProfileSvg width={45} height={45} />
-            </TouchableOpacity>
-          )}
-        </View>
-
-      </View>
+          return {
+            sceneStyle: { backgroundColor: tabBackgrounds[tab] },
+            header: () => (
+              <SafeAreaView edges={["top"]} style={{ backgroundColor: tabBackgrounds[tab] }}>
+                <View style={styles.headerRow}>
+                  <Text style={[styles.headerTitle, { color: headerColor }]}>{TITLE_MAP[tab]}</Text>
+                  {tab === "Profile" ? (
+                    <TouchableOpacity
+                      accessibilityRole="button"
+                      onPress={handleLogout}
+                      style={styles.logoutButton}
+                    >
+                      <LogoutButtonSvg width={70} height={28} />
+                      <Text style={styles.logoutLabel}>LOGOUT</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity
+                      accessibilityLabel="Profile"
+                      accessibilityRole="button"
+                      onPress={handleProfilePress}
+                    >
+                      <ProfileSvg width={45} height={45} color={headerColor} />
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </SafeAreaView>
+            ),
+          };
+        }}
+        tabBar={(props) => <CurvedTabBar {...props} />}
+      >
+        <Tabs.Screen name="Home" />
+        <Tabs.Screen name="Shop" />
+        <Tabs.Screen name="Scan" />
+        <Tabs.Screen name="Event" />
+        <Tabs.Screen name="Duels" />
+        {/* The custom tab bar omits Profile. Router 58 redirects away from hidden routes. */}
+        <Tabs.Screen name="Profile" />
+      </Tabs>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
   },
   headerRow: {
-    position: 'absolute',
-    left: 20,
-    right: 10,
-    zIndex: 100,
+    paddingLeft: 20,
+    paddingRight: 10,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
   headerTitle: {
     fontSize: 25,
-    color: "#4d4c4cff"
+    flexShrink: 1,
   },
   logoutButton: {
     marginRight: -7,

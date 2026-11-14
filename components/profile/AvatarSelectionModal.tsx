@@ -3,12 +3,13 @@ import {
   View,
   Text,
   TouchableOpacity,
-  Modal,
-  useWindowDimensions,
   ActivityIndicator,
   StyleSheet,
+  ScrollView,
 } from 'react-native';
-import { SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
+import { ModalWindow } from '../layout/ModalLayout';
+import { SafeAreaView } from "react-native-safe-area-context";
+import { layoutStyles } from "../../lib/layout";
 import api from '../../api';
 
 
@@ -38,10 +39,6 @@ export const AvatarSelectionModal: React.FC<AvatarSelectionModalProps> = ({
   onClose,
   onAvatarSelected,
 }) => {
-  const { height } = useWindowDimensions();
-  const avatarHeight = Math.min(400, height * 0.45);
-
-
   const [currentIndex, setCurrentIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -96,151 +93,131 @@ export const AvatarSelectionModal: React.FC<AvatarSelectionModalProps> = ({
     }
   };
 
-  const AvatarComponent = AVATARS[currentIndex].component;
+  const { component: AvatarComponent, modalDimensions } = AVATARS[currentIndex];
+  const avatarRatio = modalDimensions.width / modalDimensions.height;
 
   return (
-   <Modal
+    <ModalWindow
       visible={visible}
       animationType="fade"
       presentationStyle="fullScreen"
-      onRequestClose={onClose}
+      onClose={onClose}
     >
-      <SafeAreaProvider>
-        <SafeAreaView style={styles.screen}>
-          <View style={styles.header}>
-            <Text style={styles.headerText}>
-              Choose your avatar!
-            </Text>
-          </View>
+      <SafeAreaView style={[layoutStyles.fill, styles.screen]}>
+        <ScrollView contentContainerStyle={[layoutStyles.column, styles.content]}>
+          <Text style={styles.headerText}>Choose your avatar!</Text>
 
-          {/* Choose an avatar */}
           <View style={styles.selector}>
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={handlePreviousAvatar}
               disabled={isUpdating}
               style={styles.arrowButton}
-              >
-                <Text style={styles.arrow}>‹</Text>
+              accessibilityLabel="Previous avatar"
+            >
+              <Text style={styles.arrow}>‹</Text>
             </TouchableOpacity>
-            <View style={styles.avatar}>
-              <AvatarComponent
-                width="100%"
-                height={avatarHeight}
-              />
+            <View style={[styles.avatar, { aspectRatio: avatarRatio }]}>
+              <AvatarComponent width="100%" height="100%" />
             </View>
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={handleNextAvatar}
               disabled={isUpdating}
               style={styles.arrowButton}
-              >
-                <Text style={styles.arrow}>›</Text>
+              accessibilityLabel="Next avatar"
+            >
+              <Text style={styles.arrow}>›</Text>
             </TouchableOpacity>
           </View>
 
-          {/* Handle errors */}
-          {error && (
-            <Text style={{textAlign: "center", color: "#f80000ff"}}>{error}</Text>
-          )}
-          
-          {/* Save Avatar */}
-          <TouchableOpacity 
+          {error && <Text style={styles.errorText}>{error}</Text>}
+
+          <TouchableOpacity
             onPress={handleSelect}
             disabled={isUpdating}
-            style={[styles.saveButton,
-              isUpdating && styles.disabled,
-            ]}
-            >
-              {isUpdating? (
-                <ActivityIndicator color= "#1d1ab5ff"/>
-              ) : (
-                <Text style={styles.buttonText}>
-                  Save Avatar
-                </Text>
-              )}
-            </TouchableOpacity>
-            
-          {/* Close button */}
-          <TouchableOpacity
-            onPress={onClose}
-            disabled={isUpdating}
-            style={styles.cancelButton}
+            style={[styles.saveButton, isUpdating && styles.disabled]}
           >
+            {isUpdating ? (
+              <ActivityIndicator color="#1d1ab5ff" />
+            ) : (
+              <Text style={styles.buttonText}>Save Avatar</Text>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity onPress={onClose} disabled={isUpdating} style={styles.cancelButton}>
             <Text style={styles.buttonText}>Cancel</Text>
           </TouchableOpacity>
-        </SafeAreaView>
-      </SafeAreaProvider>
-    </Modal>
+        </ScrollView>
+      </SafeAreaView>
+    </ModalWindow>
   );
-
- 
-
 };
- const styles =  StyleSheet.create({
-    screen: {
-      flex: 1,
-      backgroundColor: '#1a0040',
-    },
-    header: {
-      paddingTop: 20,
-      alignItems: "center",
-    },
-    headerText: {
-      alignItems: "center",
-      fontSize: 20,
-      color: "#ffff",
-    },
-    selector: {
-      flex: 1,
-      width: '100%',
-      maxWidth: 400,
-      alignSelf: 'center',
-      paddingHorizontal: 16,
-      flexDirection: 'row',
-      alignItems: 'center',
-    },
-    arrowButton:{
-      width: 48,
-      height: 60,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    arrow: {
-      fontSize: 40,
-      alignItems: 'center',
-      color: "#fff"
-    },
-    avatar: {
-      flex: 1,
-      minWidth: 0,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    saveButton: {
-      alignItems: "center",
-      alignSelf: "center",
-      justifyContent: "center",
-      width: "50%",
-      padding: 15,
-      borderWidth: 5,
-      borderRadius: 10,
-      borderColor: "#ffff"
-    },
-    disabled: {
-      opacity: 0.5
-    }, 
-    buttonText: {
-      fontSize: 13,
-      color: "#ffff"
-    },
-    cancelButton: {
-      marginTop: 10,
-      alignItems: "center",
-      alignSelf: "center",
-      justifyContent: "center",
-      width: "30%",
-      padding: 15,
-      borderWidth: 5,
-      borderRadius: 10,
-      borderColor: "#ffff"
-    }
+
+const styles = StyleSheet.create({
+  screen: {
+    backgroundColor: '#1a0040',
+  },
+  content: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 16,
+    gap: 12,
+  },
+  headerText: {
+    textAlign: 'center',
+    fontSize: 20,
+    color: '#fff',
+  },
+  selector: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  arrowButton: {
+    width: 48,
+    height: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  arrow: {
+    fontSize: 40,
+    color: '#fff',
+  },
+  avatar: {
+    flex: 1,
+    minWidth: 0,
+    maxWidth: 156,
+  },
+  saveButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    maxWidth: 200,
+    padding: 12,
+    borderWidth: 5,
+    borderRadius: 10,
+    borderColor: '#fff',
+  },
+  disabled: {
+    opacity: 0.5,
+  },
+  buttonText: {
+    fontSize: 13,
+    textAlign: 'center',
+    color: '#fff',
+  },
+  cancelButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    maxWidth: 140,
+    padding: 12,
+    borderWidth: 5,
+    borderRadius: 10,
+    borderColor: '#fff',
+  },
+  errorText: {
+    textAlign: 'center',
+    color: '#FFB4B4',
+  },
 });

@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   Button,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -12,6 +13,7 @@ import * as SecureStore from "expo-secure-store";
 import { useRouter } from "expo-router";
 import { AxiosResponse } from "axios";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { layoutStyles } from "../lib/layout";
 
 
 import api from "../api";
@@ -145,46 +147,44 @@ export default function AuthScreen() {
   };
 
   return (
-  <SafeAreaView style={styles.screen}>
-    <View style={styles.content}>
-      <Text style={styles.title}>
-        Welcome to HackIllinois
-      </Text>
+    <SafeAreaView style={[layoutStyles.fill, styles.screen]}>
+      <ScrollView contentContainerStyle={[layoutStyles.column, styles.content]}>
+        <Text style={styles.title}>
+          Welcome to HackIllinois
+        </Text>
 
-      <Button
-        title="Attendee login with GitHub"
-        onPress={() => void signInWithProvider("github")}
-        disabled={isLoading}
-      />
-      <Button
-        title="Staff login with Google"
-        onPress={() => void signInWithProvider("google")}
-        disabled={isLoading}
-      />
-      <Button
-        title="Continue as guest"
-        onPress={handleGuestLogin}
-        disabled={isLoading}
-      />
+        <Button
+          title="Attendee login with GitHub"
+          onPress={() => void signInWithProvider("github")}
+          disabled={isLoading}
+        />
+        <Button
+          title="Staff login with Google"
+          onPress={() => void signInWithProvider("google")}
+          disabled={isLoading}
+        />
+        <Button
+          title="Continue as guest"
+          onPress={handleGuestLogin}
+          disabled={isLoading}
+        />
 
-      <View style={styles.spinnerSlot}>
-        {isLoading && <ActivityIndicator accessibilityLabel="Signing in" />}
-      </View>
-    </View>
-  </SafeAreaView>
-);
+        <View style={styles.spinnerSlot}>
+          {isLoading && <ActivityIndicator accessibilityLabel="Signing in" />}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
 }
 
 const styles = StyleSheet.create({
-  screen: { 
-    flex: 1, 
-    backgroundColor: 
-    "white" 
+  screen: {
+    backgroundColor: "white",
   },
   content: {
     flexGrow: 1,
     justifyContent: "center",
-    padding: 24,
+    paddingVertical: 24,
     gap: 16,
   },
   title: { 

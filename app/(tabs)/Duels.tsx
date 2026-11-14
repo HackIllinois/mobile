@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import * as Haptics from 'expo-haptics';
 import type { Permission } from 'react-native';
-import { View, Text, TextInput, Button, FlatList, Alert, Pressable, StyleSheet, Dimensions, PermissionsAndroid, Platform, Image, ImageBackground, GestureResponderEvent, Modal, Animated } from 'react-native';
+import { View, Text, TextInput, Button, FlatList, Alert, Pressable, StyleSheet, ScrollView, useWindowDimensions, PermissionsAndroid, Platform, Image, ImageBackground, GestureResponderEvent, Animated } from 'react-native';
 
 // Asset imports
 const backgroundImage = require('../../assets/duels/duels-background.png');
@@ -14,7 +14,9 @@ const tutorialImage2 = require('../../assets/duels/duels-controls-2.png');
 const tutorialImage3 = require('../../assets/duels/duels-controls-3.png');
 const sawbladeImage = require('../../assets/duels/duels-sawblade.png');
 import LogoutButtonSvg from '../../assets/profile/profile-screen/logout-button.svg';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ModalWindow } from '../../components/layout/ModalLayout';
+import { layoutStyles } from '../../lib/layout';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../../api';
@@ -248,21 +250,11 @@ export default function Duels() {
     ammoRef.current = ammo;
   });
   
-  // Screen dimensions
   const insets = useSafeAreaInsets();
-  const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
-  
-  // Calculate tab bar height (same formula as CurvedTabBar.tsx)
-  const tabBarHeight = Math.max(screenHeight * 0.125, 55);
-  
-  // Game area dimensions - account for top safe area and tab bar
-  const gameWidth = screenWidth;
-  const gameHeight = screenHeight - insets.top - tabBarHeight;
-  const screenRatio = screenWidth / gameHeight;
-  
-  // Calculate border margins as normalized values (pixels / dimension)
-  const borderMarginX = BORDER_MARGIN_PX / gameWidth;
-  const borderMarginY = BORDER_MARGIN_PX / gameHeight;
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  const screenRatio = windowWidth / Math.max(1, windowHeight - insets.top - insets.bottom);
+  const [arenaSize, setArenaSize] = useState({ width: 0, height: 0 });
+  const { width: gameWidth, height: gameHeight } = arenaSize;
 
   // Profile state - fetch displayName and userId from API
   const [displayName, setDisplayName] = useState<string | null>(null);
@@ -708,8 +700,10 @@ export default function Duels() {
   // GAME LOOP
   // ======================
   useEffect(() => {
-    if (gamePhase !== 'playing') return;
+    if (gamePhase !== 'playing' || !gameWidth || !gameHeight) return;
 
+    const borderMarginX = BORDER_MARGIN_PX / gameWidth;
+    const borderMarginY = BORDER_MARGIN_PX / gameHeight;
     let lastTime = Date.now();
     let animationId: number;
 
@@ -893,7 +887,7 @@ export default function Duels() {
 
     animationId = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(animationId);
-  }, [gamePhase]);
+  }, [gamePhase, gameWidth, gameHeight]);
 
   // Cleanup reload timeouts on unmount (Step 8: memory leak fix)
   useEffect(() => {
@@ -1091,42 +1085,44 @@ export default function Duels() {
     const buttonsDisabled = profileLoading || !displayName;
     
     return (
-      <ImageBackground source={backgroundImage} style={styles.container} resizeMode="cover">
-        <View>
-          <Text style={[styles.title, styles.glowWide]}>DUELS</Text>
-          <Text style={[styles.title, styles.glowMid]}>DUELS</Text>
-          <Text style={[styles.title, styles.titleFront]}>DUELS</Text>
-        </View>
-        <Text style={styles.subtitle}>
-          {profileLoading ? 'Loading profile...' : displayName ? `Playing as: ${displayName}` : 'You must login to play duels'}
-        </Text>
-        <LobbyButton
-          label="HOST LOBBY"
-          accentColor="rgba(74, 26, 107, 0.6)"
-          disabled={buttonsDisabled}
-          onPress={() => {
-            if (!displayName) return;
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            LocalConnectionModule.InitPeerName(displayName);
-            LocalConnectionModule.startAdvertising();
-            setRole('host');
-            setScreen('hosting');
-          }}
-        />
-        <View style={{ height: 15 }} />
-        <LobbyButton
-          label="JOIN LOBBY"
-          accentColor="rgba(107, 26, 74, 0.6)"
-          disabled={buttonsDisabled}
-          onPress={() => {
-            if (!displayName) return;
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            LocalConnectionModule.InitPeerName(displayName);
-            LocalConnectionModule.startScanning();
-            setRole('guest');
-            setScreen('browsing');
-          }}
-        />
+      <ImageBackground source={backgroundImage} style={layoutStyles.fill} resizeMode="cover">
+        <ScrollView contentContainerStyle={[layoutStyles.column, styles.lobbyContent]}>
+          <View>
+            <Text style={[styles.title, styles.glowWide]}>DUELS</Text>
+            <Text style={[styles.title, styles.glowMid]}>DUELS</Text>
+            <Text style={[styles.title, styles.titleFront]}>DUELS</Text>
+          </View>
+          <Text style={styles.subtitle}>
+            {profileLoading ? 'Loading profile...' : displayName ? `Playing as: ${displayName}` : 'You must login to play duels'}
+          </Text>
+          <LobbyButton
+            label="HOST LOBBY"
+            accentColor="rgba(74, 26, 107, 0.6)"
+            disabled={buttonsDisabled}
+            onPress={() => {
+              if (!displayName) return;
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              LocalConnectionModule.InitPeerName(displayName);
+              LocalConnectionModule.startAdvertising();
+              setRole('host');
+              setScreen('hosting');
+            }}
+          />
+          <View style={{ height: 15 }} />
+          <LobbyButton
+            label="JOIN LOBBY"
+            accentColor="rgba(107, 26, 74, 0.6)"
+            disabled={buttonsDisabled}
+            onPress={() => {
+              if (!displayName) return;
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              LocalConnectionModule.InitPeerName(displayName);
+              LocalConnectionModule.startScanning();
+              setRole('guest');
+              setScreen('browsing');
+            }}
+          />
+        </ScrollView>
       </ImageBackground>
     );
   }
@@ -1134,22 +1130,24 @@ export default function Duels() {
   // Hosting screen
   if (screen === 'hosting') {
     return (
-      <ImageBackground source={backgroundImage} style={styles.container} resizeMode="cover">
-        <Text style={styles.title}>HOSTING</Text>
-        <Text style={styles.subtitle}>Lobby: {displayName}</Text>
-        <Text style={styles.waitingText}>Waiting for players...</Text>
-        <View style={{ height: 20 }} />
-        <Pressable
-          style={styles.cancelButton}
-          onPress={() => {
-            Haptics.selectionAsync();
-            LocalConnectionModule.stopAdvertising();
-            setRole(null);
-            setScreen('home');
-          }}
-        >
-          <Text style={styles.cancelButtonText}>STOP HOSTING</Text>
-        </Pressable>
+      <ImageBackground source={backgroundImage} style={layoutStyles.fill} resizeMode="cover">
+        <ScrollView contentContainerStyle={[layoutStyles.column, styles.lobbyContent]}>
+          <Text style={styles.title}>HOSTING</Text>
+          <Text style={styles.subtitle}>Lobby: {displayName}</Text>
+          <Text style={styles.waitingText}>Waiting for players...</Text>
+          <View style={{ height: 20 }} />
+          <Pressable
+            style={styles.cancelButton}
+            onPress={() => {
+              Haptics.selectionAsync();
+              LocalConnectionModule.stopAdvertising();
+              setRole(null);
+              setScreen('home');
+            }}
+          >
+            <Text style={styles.cancelButtonText}>STOP HOSTING</Text>
+          </Pressable>
+        </ScrollView>
       </ImageBackground>
     );
   }
@@ -1170,53 +1168,53 @@ export default function Duels() {
     };
 
     return (
-      <ImageBackground source={backgroundImage} style={[styles.container, { justifyContent: 'flex-start', paddingTop: insets.top + 40 }]} resizeMode="cover">
-        <Text style={styles.title}>LOBBIES</Text>
-        {joiningLobby && (
-          <Text style={styles.waitingText}>Joining lobby...</Text>
-        )}
-        <FlatList
-          data={lobbies}
-          keyExtractor={(item) => item.endpointId}
-          renderItem={({ item }) => (
-            <Pressable
-              style={[
-                styles.lobbyItem,
-                joiningLobby && styles.lobbyItemDisabled,
-                joiningLobby === item.endpointId && styles.lobbyItemJoining
-              ]}
-              onPress={() => handleJoinLobby(item.endpointId)}
-              disabled={!!joiningLobby}
-            >
-              <Text style={styles.lobbyItemText}>
-                {item.endpointName}
-                {joiningLobby === item.endpointId && ' (joining...)'}
-              </Text>
-            </Pressable>
+      <ImageBackground source={backgroundImage} style={layoutStyles.fill} resizeMode="cover">
+        <View style={[layoutStyles.fill, layoutStyles.column, styles.browseContent]}>
+          <Text style={styles.title}>LOBBIES</Text>
+          {joiningLobby && (
+            <Text style={styles.waitingText}>Joining lobby...</Text>
           )}
-          ListEmptyComponent={<Text style={styles.waitingText}>Searching...</Text>}
-          style={{ flex: 1, width: '100%' }}
-          contentContainerStyle={{ paddingHorizontal: 20 }}
-        />
-        <Pressable
-          style={styles.cancelButton}
-          onPress={() => {
-            Haptics.selectionAsync();
-            // Clear any pending join timeout
-            if (joinTimeoutRef.current) {
-              clearTimeout(joinTimeoutRef.current);
-              joinTimeoutRef.current = null;
-            }
-            setJoiningLobby(null);
-            LocalConnectionModule.stopScanning();
-            setLobbies([]);
-            setRole(null);
-            setScreen('home');
-          }}
-        >
-          <Text style={styles.cancelButtonText}>BACK</Text>
-        </Pressable>
-        <View style={{ height: insets.bottom + 20 }} />
+          <FlatList
+            data={lobbies}
+            keyExtractor={(item) => item.endpointId}
+            renderItem={({ item }) => (
+              <Pressable
+                style={[
+                  styles.lobbyItem,
+                  joiningLobby && styles.lobbyItemDisabled,
+                  joiningLobby === item.endpointId && styles.lobbyItemJoining
+                ]}
+                onPress={() => handleJoinLobby(item.endpointId)}
+                disabled={!!joiningLobby}
+              >
+                <Text style={styles.lobbyItemText}>
+                  {item.endpointName}
+                  {joiningLobby === item.endpointId && ' (joining...)'}
+                </Text>
+              </Pressable>
+            )}
+            ListEmptyComponent={<Text style={styles.waitingText}>Searching...</Text>}
+            style={{ flex: 1, width: '100%' }}
+          />
+          <Pressable
+            style={styles.cancelButton}
+            onPress={() => {
+              Haptics.selectionAsync();
+              // Clear any pending join timeout
+              if (joinTimeoutRef.current) {
+                clearTimeout(joinTimeoutRef.current);
+                joinTimeoutRef.current = null;
+              }
+              setJoiningLobby(null);
+              LocalConnectionModule.stopScanning();
+              setLobbies([]);
+              setRole(null);
+              setScreen('home');
+            }}
+          >
+            <Text style={styles.cancelButtonText}>BACK</Text>
+          </Pressable>
+        </View>
       </ImageBackground>
     );
   }
@@ -1226,28 +1224,30 @@ export default function Duels() {
     // Waiting phase - show start button for host, waiting message for guest
     if (gamePhase === 'waiting') {
       return (
-        <ImageBackground source={backgroundImage} style={styles.container} resizeMode="cover">
-          <Text style={styles.title}>CONNECTED</Text>
-          <Text style={styles.subtitle}>Opponent: {connectedPeer}</Text>
-          <View style={{ height: 30 }} />
-          {role === 'host' ? (
-            guestRatio ? (
-              <Pressable style={styles.startButton} onPress={initiateTutorial}>
-                <Text style={styles.startButtonText}>START GAME</Text>
-              </Pressable>
+        <ImageBackground source={backgroundImage} style={layoutStyles.fill} resizeMode="cover">
+          <ScrollView contentContainerStyle={[layoutStyles.column, styles.lobbyContent]}>
+            <Text style={styles.title}>CONNECTED</Text>
+            <Text style={styles.subtitle}>Opponent: {connectedPeer}</Text>
+            <View style={{ height: 30 }} />
+            {role === 'host' ? (
+              guestRatio ? (
+                <Pressable style={styles.startButton} onPress={initiateTutorial}>
+                  <Text style={styles.startButtonText}>START GAME</Text>
+                </Pressable>
+              ) : (
+                <Text style={styles.waitingText}>Waiting for opponent to be ready...</Text>
+              )
             ) : (
-              <Text style={styles.waitingText}>Waiting for opponent to be ready...</Text>
-            )
-          ) : (
-            <Text style={styles.waitingText}>Waiting for host to start...</Text>
-          )}
-          <View style={{ height: 30 }} />
-          <Pressable
-            style={styles.cancelButton}
-            onPress={disconnect}
-          >
-            <Text style={styles.cancelButtonText}>DISCONNECT</Text>
-          </Pressable>
+              <Text style={styles.waitingText}>Waiting for host to start...</Text>
+            )}
+            <View style={{ height: 30 }} />
+            <Pressable
+              style={styles.cancelButton}
+              onPress={disconnect}
+            >
+              <Text style={styles.cancelButtonText}>DISCONNECT</Text>
+            </Pressable>
+          </ScrollView>
         </ImageBackground>
       );
     }
@@ -1256,21 +1256,23 @@ export default function Duels() {
     if (gamePhase === 'game_over') {
       const isWinner = finalWinner === 'player';
       return (
-        <ImageBackground source={backgroundImage} style={styles.container} resizeMode="cover">
-          <Text style={[styles.gameOverTitle, isWinner ? styles.winText : styles.loseText]}>
-            {isWinner ? 'VICTORY!' : 'DEFEAT!'}
-          </Text>
-          <Text style={styles.finalScoreText}>
-            Final Score: {myScore} - {opponentScore}
-          </Text>
-          <View style={{ height: 30 }} />
-          <Pressable style={styles.startButton} onPress={goBackToLobby}>
-            <Text style={styles.startButtonText}>BACK TO LOBBY</Text>
-          </Pressable>
-          <View style={{ height: 20 }} />
-          <Pressable style={styles.cancelButton} onPress={disconnect}>
-            <Text style={styles.cancelButtonText}>DISCONNECT</Text>
-          </Pressable>
+        <ImageBackground source={backgroundImage} style={layoutStyles.fill} resizeMode="cover">
+          <ScrollView contentContainerStyle={[layoutStyles.column, styles.lobbyContent]}>
+            <Text style={[styles.gameOverTitle, isWinner ? styles.winText : styles.loseText]}>
+              {isWinner ? 'VICTORY!' : 'DEFEAT!'}
+            </Text>
+            <Text style={styles.finalScoreText}>
+              Final Score: {myScore} - {opponentScore}
+            </Text>
+            <View style={{ height: 30 }} />
+            <Pressable style={styles.startButton} onPress={goBackToLobby}>
+              <Text style={styles.startButtonText}>BACK TO LOBBY</Text>
+            </Pressable>
+            <View style={{ height: 20 }} />
+            <Pressable style={styles.cancelButton} onPress={disconnect}>
+              <Text style={styles.cancelButtonText}>DISCONNECT</Text>
+            </Pressable>
+          </ScrollView>
         </ImageBackground>
       );
     }
@@ -1278,211 +1280,220 @@ export default function Duels() {
 
     // Playing phase (or win/lose)
     return (
-      <Modal visible={true} animationType="slide" statusBarTranslucent>
-      <ImageBackground source={backgroundImage} style={[styles.gameContainer, { paddingTop: insets.top }]} resizeMode="cover">
-        {/* Win/Lose/Tie overlay */}
-        {(gamePhase === 'win' || gamePhase === 'lose' || gamePhase === 'tie') && (
-          <View style={styles.overlay}>
-            <Text style={[
-              styles.overlayText, 
-              gamePhase === 'win' ? styles.winText : gamePhase === 'lose' ? styles.loseText : styles.tieText
-            ]}>
-              {gamePhase === 'win' ? 'YOU WIN!' : gamePhase === 'lose' ? 'YOU LOSE!' : 'TIE!'}
-            </Text>
-            <Text style={styles.scoreText}>
-              {myScore} - {opponentScore}
-            </Text>
-          </View>
-        )}
-
-        {/* Tutorial Overlay */}
-        {gamePhase === 'tutorial' && (
-          <Pressable 
-            style={styles.tutorialOverlay} 
-            onPress={() => {
-              if (tutorialStep < 3) {
-                const nextStep = tutorialStep + 1;
-                setTutorialStep(nextStep);
-                if (nextStep === 3) {
-                  const msg: GameMessage = { type: 'tutorial_complete' };
-                  LocalConnectionModule.sendData(JSON.stringify(msg));
-                }
-              }
-            }}
-          >
-            <View style={styles.tutorialContent}>
-              {tutorialStep < 3 ? (
-                <Image 
-                  source={tutorialStep === 0 ? tutorialImage1 : tutorialStep === 1 ? tutorialImage2 : tutorialImage3} 
-                  style={styles.tutorialImage} 
-                  resizeMode="contain" 
-                />
-              ) : (
-                <Text style={styles.waitingText}>Waiting for other player...</Text>
+      <ModalWindow visible animationType="slide" onClose={disconnect}>
+        <ImageBackground source={backgroundImage} style={layoutStyles.fill} resizeMode="cover">
+          <SafeAreaView style={layoutStyles.fill}>
+            <View style={layoutStyles.fill}>
+              {/* Win/Lose/Tie overlay */}
+              {(gamePhase === 'win' || gamePhase === 'lose' || gamePhase === 'tie') && (
+                <View style={styles.overlay}>
+                  <Text style={[
+                    styles.overlayText,
+                    gamePhase === 'win' ? styles.winText : gamePhase === 'lose' ? styles.loseText : styles.tieText
+                  ]}>
+                    {gamePhase === 'win' ? 'YOU WIN!' : gamePhase === 'lose' ? 'YOU LOSE!' : 'TIE!'}
+                  </Text>
+                  <Text style={styles.scoreText}>
+                    {myScore} - {opponentScore}
+                  </Text>
+                </View>
               )}
+
+              {/* Tutorial Overlay */}
+              {gamePhase === 'tutorial' && (
+                <Pressable
+                  style={styles.tutorialOverlay}
+                  onPress={() => {
+                    if (tutorialStep < 3) {
+                      const nextStep = tutorialStep + 1;
+                      setTutorialStep(nextStep);
+                      if (nextStep === 3) {
+                        const msg: GameMessage = { type: 'tutorial_complete' };
+                        LocalConnectionModule.sendData(JSON.stringify(msg));
+                      }
+                    }
+                  }}
+                >
+                  <View style={styles.tutorialContent}>
+                    {tutorialStep < 3 ? (
+                      <Image
+                        source={tutorialStep === 0 ? tutorialImage1 : tutorialStep === 1 ? tutorialImage2 : tutorialImage3}
+                        style={styles.tutorialImage}
+                        resizeMode="contain"
+                      />
+                    ) : (
+                      <Text style={styles.waitingText}>Waiting for other player...</Text>
+                    )}
+                  </View>
+                </Pressable>
+              )}
+
+              {/* Game area */}
+              <View
+                style={styles.gameArea}
+                onLayout={({ nativeEvent: { layout } }) => {
+                  setArenaSize({ width: layout.width, height: layout.height });
+                }}
+              >
+                {/* My ship */}
+                <Image
+                  source={userShipImage}
+                  style={[
+                    styles.ship,
+                    {
+                      left: myShipRef.current.x * gameWidth - SHIP_DISPLAY_SIZE / 2,
+                      top: myShipRef.current.y * gameHeight - SHIP_DISPLAY_SIZE / 2,
+                      transform: [{ rotate: `${myShipRef.current.angle + Math.PI / 2}rad` }]
+                    }
+                  ]}
+                  resizeMode="contain"
+                />
+
+                {/* Opponent ship */}
+                <Image
+                  source={enemyShipImage}
+                  style={[
+                    styles.ship,
+                    {
+                      left: opponentShipRef.current.x * gameWidth - SHIP_DISPLAY_SIZE / 2,
+                      top: opponentShipRef.current.y * gameHeight - SHIP_DISPLAY_SIZE / 2,
+                      transform: [{ rotate: `${opponentShipRef.current.angle + Math.PI / 2}rad` }]
+                    }
+                  ]}
+                  resizeMode="contain"
+                />
+
+                {/* Sawblade obstacle */}
+                <Image
+                  source={sawbladeImage}
+                  style={{
+                    position: 'absolute',
+                    width: OBSTACLE_DISPLAY_SIZE,
+                    height: OBSTACLE_DISPLAY_SIZE,
+                    left: obstacleRef.current.x * gameWidth - OBSTACLE_DISPLAY_SIZE / 2,
+                    top: obstacleRef.current.y * gameHeight - OBSTACLE_DISPLAY_SIZE / 2,
+                    transform: [{ rotate: `${obstacleRef.current.rotation}rad` }],
+                  }}
+                  resizeMode="contain"
+                />
+
+                {/* My bullets */}
+                {myBulletsRef.current.map(b => (
+                  <Image
+                    key={b.id}
+                    source={bulletImage}
+                    style={[
+                      styles.bullet,
+                      {
+                        left: b.x * gameWidth - BULLET_DISPLAY_SIZE / 2,
+                        top: b.y * gameHeight - BULLET_DISPLAY_SIZE / 2,
+                        transform: [{ rotate: `${b.angle + Math.PI / 2}rad` }]
+                      }
+                    ]}
+                    resizeMode="contain"
+                  />
+                ))}
+
+                {/* Opponent bullets */}
+                {opponentBulletsRef.current.map(b => (
+                  <Image
+                    key={b.id}
+                    source={bulletImage}
+                    style={[
+                      styles.bullet,
+                      {
+                        left: b.x * gameWidth - BULLET_DISPLAY_SIZE / 2,
+                        top: b.y * gameHeight - BULLET_DISPLAY_SIZE / 2,
+                        transform: [{ rotate: `${b.angle + Math.PI / 2}rad` }]
+                      }
+                    ]}
+                    resizeMode="contain"
+                  />
+                ))}
+
+                {/* "You" indicator on first round start */}
+                {showYouIndicator && (
+                  <Animated.View
+                    pointerEvents="none"
+                    style={{
+                      position: 'absolute',
+                      left: myShipRef.current.x * gameWidth - 35,
+                      top: myShipRef.current.y * gameHeight - 35,
+                      alignItems: 'center',
+                      opacity: youIndicatorOpacity,
+                    }}
+                  >
+                    <View style={{
+                      width: 70,
+                      height: 70,
+                      borderRadius: 35,
+                      borderWidth: 2,
+                      borderColor: 'rgba(255, 255, 255, 0.6)',
+                      backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                    }} />
+                    <Text style={{
+                      color: 'rgba(255, 255, 255, 0.9)',
+                      fontSize: 12,
+                      fontFamily: 'Tsukimi-Rounded-Bold',
+                      marginTop: 4,
+                    }}>You</Text>
+                  </Animated.View>
+                )}
+              </View>
+
+              {/* Multitouch Controls Container */}
+              <View
+                style={styles.controlsContainer}
+                onStartShouldSetResponder={() => true}
+                onMoveShouldSetResponder={() => true}
+                onResponderGrant={(e: GestureResponderEvent) => {
+                  const touches = Array.from(e.nativeEvent.touches || []);
+                  const hasLeft = touches.some(t => t.pageX < windowWidth / 2);
+                  const hasRight = touches.some(t => t.pageX >= windowWidth / 2);
+                  if (hasLeft) shoot();
+                  if (hasRight) setIsRotating(true);
+                }}
+                onResponderMove={(e: GestureResponderEvent) => {
+                  const touches = Array.from(e.nativeEvent.touches || []);
+                  setIsRotating(touches.some(t => t.pageX >= windowWidth / 2));
+                }}
+                onResponderRelease={(e: GestureResponderEvent) => {
+                  const touches = Array.from(e.nativeEvent.touches || []);
+                  setIsRotating(touches.some(t => t.pageX >= windowWidth / 2));
+                }}
+                onResponderTerminate={() => setIsRotating(false)}
+                hitSlop={{ top: 60, bottom: 20 }}
+              >
+                {/* Shoot Button (Left) */}
+                <View style={styles.shootButtonContainer}>
+                  <Image source={buttonImage} style={styles.buttonImage} resizeMode="stretch" />
+                </View>
+
+                {/* Ammo indicator */}
+                <View style={styles.ammoContainerCenter}>
+                  <Text style={styles.ammoText}>{ammo}/{MAX_AMMO}</Text>
+                  {reloading > 0 && (
+                    <Text style={styles.reloadingText}>reloading...</Text>
+                  )}
+                </View>
+
+                {/* Rotate Button (Right) */}
+                <View style={styles.rotateButtonContainer}>
+                  <Image source={buttonImage} style={[styles.buttonImage, styles.buttonImageFlipped]} resizeMode="stretch" />
+                </View>
+              </View>
+
+              {/* Dismiss button */}
+              <Pressable
+                style={styles.dismissButton}
+                onPress={disconnect}
+              >
+                <LogoutButtonSvg width={22} height={26} />
+              </Pressable>
             </View>
-          </Pressable>
-        )}
-        
-        {/* Game area */}
-        <View style={styles.gameArea}>
-          {/* My ship */}
-          <Image
-            source={userShipImage}
-            style={[
-              styles.ship,
-              {
-                left: myShipRef.current.x * gameWidth - SHIP_DISPLAY_SIZE / 2,
-                top: myShipRef.current.y * gameHeight - SHIP_DISPLAY_SIZE / 2,
-                transform: [{ rotate: `${myShipRef.current.angle + Math.PI / 2}rad` }]
-              }
-            ]}
-            resizeMode="contain"
-          />
-
-          {/* Opponent ship */}
-          <Image
-            source={enemyShipImage}
-            style={[
-              styles.ship,
-              {
-                left: opponentShipRef.current.x * gameWidth - SHIP_DISPLAY_SIZE / 2,
-                top: opponentShipRef.current.y * gameHeight - SHIP_DISPLAY_SIZE / 2,
-                transform: [{ rotate: `${opponentShipRef.current.angle + Math.PI / 2}rad` }]
-              }
-            ]}
-            resizeMode="contain"
-          />
-
-          {/* Sawblade obstacle */}
-          <Image
-            source={sawbladeImage}
-            style={{
-              position: 'absolute',
-              width: OBSTACLE_DISPLAY_SIZE,
-              height: OBSTACLE_DISPLAY_SIZE,
-              left: obstacleRef.current.x * gameWidth - OBSTACLE_DISPLAY_SIZE / 2,
-              top: obstacleRef.current.y * gameHeight - OBSTACLE_DISPLAY_SIZE / 2,
-              transform: [{ rotate: `${obstacleRef.current.rotation}rad` }],
-            }}
-            resizeMode="contain"
-          />
-
-          {/* My bullets */}
-          {myBulletsRef.current.map(b => (
-            <Image
-              key={b.id}
-              source={bulletImage}
-              style={[
-                styles.bullet,
-                {
-                  left: b.x * gameWidth - BULLET_DISPLAY_SIZE / 2,
-                  top: b.y * gameHeight - BULLET_DISPLAY_SIZE / 2,
-                  transform: [{ rotate: `${b.angle + Math.PI / 2}rad` }]
-                }
-              ]}
-              resizeMode="contain"
-            />
-          ))}
-
-          {/* Opponent bullets */}
-          {opponentBulletsRef.current.map(b => (
-            <Image
-              key={b.id}
-              source={bulletImage}
-              style={[
-                styles.bullet,
-                {
-                  left: b.x * gameWidth - BULLET_DISPLAY_SIZE / 2,
-                  top: b.y * gameHeight - BULLET_DISPLAY_SIZE / 2,
-                  transform: [{ rotate: `${b.angle + Math.PI / 2}rad` }]
-                }
-              ]}
-              resizeMode="contain"
-            />
-          ))}
-
-          {/* "You" indicator on first round start */}
-          {showYouIndicator && (
-            <Animated.View
-              pointerEvents="none"
-              style={{
-                position: 'absolute',
-                left: myShipRef.current.x * gameWidth - 35,
-                top: myShipRef.current.y * gameHeight - 35,
-                alignItems: 'center',
-                opacity: youIndicatorOpacity,
-              }}
-            >
-              <View style={{
-                width: 70,
-                height: 70,
-                borderRadius: 35,
-                borderWidth: 2,
-                borderColor: 'rgba(255, 255, 255, 0.6)',
-                backgroundColor: 'rgba(255, 255, 255, 0.08)',
-              }} />
-              <Text style={{
-                color: 'rgba(255, 255, 255, 0.9)',
-                fontSize: 12,
-                fontFamily: 'Tsukimi-Rounded-Bold',
-                marginTop: 4,
-              }}>You</Text>
-            </Animated.View>
-          )}
-        </View>
-        
-        {/* Multitouch Controls Container */}
-        <View 
-          style={styles.controlsContainer}
-          onStartShouldSetResponder={() => true}
-          onMoveShouldSetResponder={() => true}
-          onResponderGrant={(e: GestureResponderEvent) => {
-            const touches = Array.from(e.nativeEvent.touches || []);
-            const hasLeft = touches.some(t => t.pageX < screenWidth / 2);
-            const hasRight = touches.some(t => t.pageX >= screenWidth / 2);
-            if (hasLeft) shoot();
-            if (hasRight) setIsRotating(true);
-          }}
-          onResponderMove={(e: GestureResponderEvent) => {
-            const touches = Array.from(e.nativeEvent.touches || []);
-            setIsRotating(touches.some(t => t.pageX >= screenWidth / 2));
-          }}
-          onResponderRelease={(e: GestureResponderEvent) => {
-            const touches = Array.from(e.nativeEvent.touches || []);
-            setIsRotating(touches.some(t => t.pageX >= screenWidth / 2));
-          }}
-          onResponderTerminate={() => setIsRotating(false)}
-          hitSlop={{ top: 60, bottom: 20 }}
-        >
-          {/* Shoot Button (Left) */}
-          <View style={styles.shootButtonContainer}>
-            <Image source={buttonImage} style={styles.buttonImage} resizeMode="stretch" />
-          </View>
-          
-          {/* Ammo indicator */}
-          <View style={styles.ammoContainerCenter}>
-            <Text style={styles.ammoText}>{ammo}/{MAX_AMMO}</Text>
-            {reloading > 0 && (
-              <Text style={styles.reloadingText}>reloading...</Text>
-            )}
-          </View>
-          
-          {/* Rotate Button (Right) */}
-          <View style={styles.rotateButtonContainer}>
-            <Image source={buttonImage} style={[styles.buttonImage, styles.buttonImageFlipped]} resizeMode="stretch" />
-          </View>
-        </View>
-
-        {/* Dismiss button */}
-        <Pressable
-          style={[styles.dismissButton, { top: insets.top + 10 }]}
-          onPress={disconnect}
-        >
-          <LogoutButtonSvg width={22} height={26} />
-        </Pressable>
-      </ImageBackground>
-      </Modal>
+          </SafeAreaView>
+        </ImageBackground>
+      </ModalWindow>
     );
   }
 
@@ -1496,15 +1507,20 @@ const styles = StyleSheet.create({
   dismissButton: {
     position: 'absolute',
     left: 16,
+    top: 10,
     zIndex: 300,
     padding: 8,
     opacity: 0.8,
   },
-  container: {
-    flex: 1,
+  lobbyContent: {
+    flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    paddingVertical: 20,
+  },
+  browseContent: {
+    alignItems: 'center',
+    paddingVertical: 20,
   },
   title: {
     fontSize: 25,
@@ -1622,9 +1638,6 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     letterSpacing: 2,
   },
-  gameContainer: {
-    flex: 1,
-  },
   gameArea: {
     flex: 1,
     position: 'relative',
@@ -1652,14 +1665,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   shootButtonContainer: {
-    width: 140,
-    height: 140,
+    width: '32%',
+    maxWidth: 140,
+    aspectRatio: 1,
     opacity: 0.7,
     overflow: 'hidden',
   },
   rotateButtonContainer: {
-    width: 140,
-    height: 140,
+    width: '32%',
+    maxWidth: 140,
+    aspectRatio: 1,
     opacity: 0.7,
     overflow: 'hidden',
   },

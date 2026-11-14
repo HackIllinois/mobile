@@ -1,23 +1,22 @@
-import { StyleSheet, Button, View } from "react-native";
+import { StyleSheet, Button, ScrollView } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { layoutStyles } from "../../lib/layout";
 
 type OnboardingProps = {
   onFinish: () => void;
 };
 
-export default function OnboardingScreens({onFinish}: OnboardingProps) {
-    return(
-        <View style={styles.container}>
-            <Button
-            title={"Finish Onboarding"}
-            onPress={onFinish}
-        />
-        </View>
-    );
+export default function OnboardingScreens({ onFinish }: OnboardingProps) {
+  return (
+    <SafeAreaView style={[layoutStyles.fill, styles.screen]}>
+      <ScrollView contentContainerStyle={[layoutStyles.column, styles.content]}>
+        <Button title="Finish Onboarding" onPress={onFinish} />
+      </ScrollView>
+    </SafeAreaView>
+  );
 }
+
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        paddingVertical: 100,
-        backgroundColor: "#FFFFFF"
-    }
+  screen: { backgroundColor: "#FFFFFF" },
+  content: { flexGrow: 1, justifyContent: "center" },
 });

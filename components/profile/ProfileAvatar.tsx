@@ -1,6 +1,5 @@
 import React from 'react';
-import { Image, TouchableOpacity, useWindowDimensions } from 'react-native';
-import { MAX_APP_WIDTH } from '../../lib/layout';
+import { Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { AVATARS, getAvatarById, getCharacterIdFromUrl } from './avatarConfig';
 
 interface ProfileAvatarProps {
@@ -9,13 +8,12 @@ interface ProfileAvatarProps {
   onPress: () => void;
 }
 
+const AVATAR_HEIGHT = 152;
+
 export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({ avatarUrl, avatarId, onPress }) => {
-  const { width: windowWidth } = useWindowDimensions();
-  const scale = Math.min(windowWidth, MAX_APP_WIDTH, 393) / 393;
   const avatar = getAvatarById(avatarId || getCharacterIdFromUrl(avatarUrl)) ?? AVATARS[0];
   const LocalAvatar = avatar.component;
-  const height = 220 * scale;
-  const width = height * avatar.profileDimensions.width / avatar.profileDimensions.height;
+  const aspectRatio = avatar.profileDimensions.width / avatar.profileDimensions.height;
 
   return (
     <TouchableOpacity
@@ -23,13 +21,17 @@ export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({ avatarUrl, avatarI
       activeOpacity={0.8}
       accessibilityRole="button"
       accessibilityLabel="Change avatar"
-      style={{ width, height }}
+      style={{ width: AVATAR_HEIGHT * aspectRatio, maxWidth: "100%", height: AVATAR_HEIGHT }}
     >
       {avatarUrl ? (
-        <Image source={{ uri: avatarUrl }} style={{ width, height }} resizeMode="contain" />
+        <Image source={{ uri: avatarUrl }} style={styles.image} resizeMode="contain" />
       ) : (
-        <LocalAvatar width={width} height={height} />
+        <LocalAvatar width="100%" height="100%" />
       )}
     </TouchableOpacity>
   );
 };
+
+const styles = StyleSheet.create({
+  image: { width: "100%", height: "100%" },
+});

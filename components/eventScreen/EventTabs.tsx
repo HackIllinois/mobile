@@ -64,7 +64,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 60,
     flexDirection: 'row',
-    gap: 20,
+    gap: 8,
     justifyContent: 'flex-start',
   },
   tabButton: {
@@ -72,7 +72,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#575656ff",
     alignItems: 'center',
     height: 50,
-    width: 100,
+    flex: 1,
+    maxWidth: 100,
     borderRadius: 10,
     borderColor: "transparent",
     borderWidth: 5,
@@ -83,7 +84,7 @@ const styles = StyleSheet.create({
     borderBottomColor: "#0051ffff",
   },
   text: {
-    flex: 1,
+    textAlign: 'center',
     color: '#ffffff',
   }
 });

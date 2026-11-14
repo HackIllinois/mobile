@@ -2,14 +2,16 @@ import React, { useEffect } from "react";
 import {
   Alert,
   Button,
+  ScrollView,
   StyleSheet,
-  View,
   Text,
   Linking,
   Platform,
   BackHandler,
 } from "react-native";
 import { getStoreUrl } from "../lib/versionCheck";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { layoutStyles } from "../lib/layout";
 
 
 export default function UpdateRequiredScreen() {
@@ -29,22 +31,26 @@ export default function UpdateRequiredScreen() {
   };
 
   return (
-    <View style={styles.screen}>
-      <Text style={styles.title} accessibilityRole="header">
-        Update required
-      </Text>
-      <Text style={styles.message}>Please update the app to continue.</Text>
-      <Button title={`Open ${storeName}`} onPress={() => void openStore()} />
-    </View>
+    <SafeAreaView style={[layoutStyles.fill, styles.screen]}>
+      <ScrollView contentContainerStyle={[layoutStyles.column, styles.content]}>
+        <Text style={styles.title} accessibilityRole="header">
+          Update required
+        </Text>
+        <Text style={styles.message}>Please update the app to continue.</Text>
+        <Button title={`Open ${storeName}`} onPress={() => void openStore()} />
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   screen: {
-    flex: 1,
     backgroundColor: "white",
+  },
+  content: {
+    flexGrow: 1,
     justifyContent: "center",
-    padding: 24,
+    paddingVertical: 24,
     gap: 16,
   },
   title: {

@@ -1,14 +1,7 @@
 import React, { useState } from 'react';
-import { 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
-  Modal, 
-  Image, 
-  ScrollView, 
-  View, 
-  Pressable, 
-} from 'react-native';
+import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ModalLayout, ModalWindow } from '../layout/ModalLayout';
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Event } from '../../types';
 import Saved from "../../assets/event/Saved.svg";
 import Unsaved from "../../assets/event/Unsaved.svg";
@@ -38,148 +31,86 @@ export default function EventDetailModal({ visible, event, onClose, handleSave, 
   if (!event) return null;
 
   return (
-    <Modal
+    <ModalLayout
       visible={visible}
-      transparent={true}
-      animationType="fade"
-      onRequestClose={onClose}
+      onClose={onClose}
+      header={(
+        <View style={styles.buttonsContainer}>
+          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <Text style={styles.closeText}>✕</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => handleSave(event.eventId)}
+            style={styles.saveButton}
+          >
+            {saved ? <Saved height={45} /> : <Unsaved height={45} />}
+          </TouchableOpacity>
+        </View>
+      )}
     >
-      <View style={styles.backdrop}>
-        <Pressable style={styles.backdropPressable} onPress={onClose} />
-        
-        {/* WRAPPER: Max Width prevents stretching on iPad */}
-        <View style={styles.cardWrapper}>
-
-          {/* Main Content Card */}
-          <View style={styles.mainCard}>
-            
-              <View style={styles.buttonsContainer}>
-              <TouchableOpacity onPress={() => { onClose(); }} style={styles.closeButton} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
-                  <Text style={styles.closeText}>✕</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleSave(event.eventId)} style={styles.saveButton} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
-                  {saved ? <Saved height={45} /> : <Unsaved height={45} />}
-              </TouchableOpacity>
-            </View>
-            <ScrollView showsVerticalScrollIndicator={false}> 
-              
-              <View style={styles.headerSection}>
-                  <View style={styles.titleContainer}>
-                    <Text style={styles.title}>
-                      {event.name}
-                    </Text>
-                    <View style={styles.pillPoints}>
-                      <Text style={styles.pillTextBlack}>{event.points || 0}pts</Text>
-                    </View>
-            
-                    <View style={styles.pillTrack}>
-                      <Text style={styles.pillTextWhite}>{event.eventType || 'General'}</Text>
-                    </View>
-                  </View>
-
-                  <Text style={styles.infoText}>
-                      {formatTime(event.startTime)} - {formatTime(event.endTime)}
-                  </Text>
-                  <Text style={styles.infoText}>
-                      {event.locations[0]?.description || 'Siebel 1st Floor'}
-                  </Text>
-
-                  <Text style={styles.descriptionLabel}>
-                        {event.description}
-                  </Text>
-              </View>
-
-              {/* Simple Map Image (No Zoom) */}
-              {event.mapImageUrl && (
-                <View>
-                  <TouchableOpacity 
-                    style={styles.mapContainer} 
-                    onPress={() => setIsMapFullScreen(true)}
-                    activeOpacity={0.9}
-                  >
-                    <Image
-                        source={{ uri: event.mapImageUrl }}
-                        style={styles.mapImage}
-                        resizeMode="contain"
-                    />
-                    <View style={styles.expandOverlay}>
-                    </View>
-                  </TouchableOpacity>
-                  <Text style={styles.expandText}>Tap To Enlarge</Text>
-                </View>
-              )}
-            </ScrollView>
+      <View style={styles.headerSection}>
+        <View style={styles.titleContainer}>
+          <Text style={styles.title}>{event.name}</Text>
+          <View style={styles.pillPoints}>
+            <Text style={styles.pillTextBlack}>{event.points || 0}pts</Text>
+          </View>
+          <View style={styles.pillTrack}>
+            <Text style={styles.pillTextWhite}>{event.eventType || 'General'}</Text>
           </View>
         </View>
+
+        <Text style={styles.infoText}>
+          {formatTime(event.startTime)} - {formatTime(event.endTime)}
+        </Text>
+        <Text style={styles.infoText}>{event.locations[0]?.description || 'Siebel 1st Floor'}</Text>
+        <Text style={styles.descriptionLabel}>{event.description}</Text>
       </View>
 
-      {/* Full Screen Map Modal */}
       {event.mapImageUrl && (
-        <Modal
-          visible={isMapFullScreen}
-          transparent={false}
-          animationType="slide"
-          onRequestClose={() => setIsMapFullScreen(false)}
-        >
-          <View style={styles.fullScreenContainer}>
-            <TouchableOpacity 
-              style={styles.fullScreenCloseButton} 
-              onPress={() => setIsMapFullScreen(false)}
-            >
-              <Text style={styles.fullScreenCloseText}>✕ Close</Text>
-            </TouchableOpacity>
-            
-            <Image
-              source={{ uri: event.mapImageUrl }}
-              style={styles.fullScreenImage}
-              resizeMode="contain"
-            />
-          </View>
-        </Modal>
+        <>
+          <TouchableOpacity
+            style={styles.mapContainer}
+            onPress={() => setIsMapFullScreen(true)}
+            activeOpacity={0.9}
+          >
+            <Image source={{ uri: event.mapImageUrl }} style={styles.mapImage} resizeMode="contain" />
+            <View style={styles.expandOverlay} />
+          </TouchableOpacity>
+          <Text style={styles.expandText}>Tap To Enlarge</Text>
+
+          <ModalWindow
+            visible={visible && isMapFullScreen}
+            animationType="slide"
+            onClose={() => setIsMapFullScreen(false)}
+          >
+            <SafeAreaView style={styles.fullScreenContainer}>
+              <TouchableOpacity
+                style={styles.fullScreenCloseButton}
+                onPress={() => setIsMapFullScreen(false)}
+              >
+                <Text style={styles.fullScreenCloseText}>✕ Close</Text>
+              </TouchableOpacity>
+              <Image
+                source={{ uri: event.mapImageUrl }}
+                style={styles.fullScreenImage}
+                resizeMode="contain"
+              />
+            </SafeAreaView>
+          </ModalWindow>
+        </>
       )}
-    </Modal>
+    </ModalLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)', 
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  backdropPressable: {
-    ...StyleSheet.absoluteFill,
-  },
-  
-  // -- Main Layout Container --
-  cardWrapper: {
-    width: '85%',
-    height: '70%',
-    maxWidth: 400, 
-    position: 'relative',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-
-
-  // -- Main Content --
-  mainCard: {
-    width: '100%',
-    height: '100%', 
-    backgroundColor: '#e3e3e3',
-    borderRadius: 20,
-    padding: 24,
-  },
   // -- Content Styles --
   buttonsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     width: '100%',
-    height: 40,
-    zIndex: 10,
+    minHeight: 48,
   },
   saveButton: {
     height: 50,
@@ -246,8 +177,9 @@ const styles = StyleSheet.create({
   mapContainer: {
     marginTop: 15,
     width: '100%',
-    height: 200,
-    borderRadius: 12,    
+    aspectRatio: 1.6,
+    maxHeight: 220,
+    borderRadius: 12,
     backgroundColor: '#fff',
     borderWidth: 1,
     borderColor: '#ddd',
@@ -277,18 +209,14 @@ const styles = StyleSheet.create({
   fullScreenContainer: {
     flex: 1,
     backgroundColor: '#000',
-    justifyContent: 'center',
-    alignItems: 'center',
+    padding: 12,
   },
   fullScreenCloseButton: {
-    position: 'absolute',
-    top: 50,
-    right: 20,
+    alignSelf: 'flex-end',
     backgroundColor: 'rgba(255,255,255,0.2)',
     paddingHorizontal: 15,
     paddingVertical: 8,
     borderRadius: 20,
-    zIndex: 10,
   },
   fullScreenCloseText: {
     color: '#FFF',
@@ -296,7 +224,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   fullScreenImage: {
+    flex: 1,
     width: '100%',
-    height: '100%',
   },
 });

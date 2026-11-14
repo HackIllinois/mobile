@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable, Dimensions, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, Pressable, TouchableOpacity, Image } from 'react-native';
 import { Event } from '../../types';
 import SavedIcon from '../../assets/event/Saved.svg';
 import UnsavedIcon from '../../assets/event/Unsaved.svg';
@@ -7,18 +7,6 @@ import UnsavedIcon from '../../assets/event/Unsaved.svg';
 const RegularEventCard = require('../../assets/event/EventCard.png');
 const ExpiredEvent = require('../../assets/event/ExpiredEventCard.png');
 const ActiveEvent = require('../../assets/event/ActiveEventCard.png');
-
-
-// --- SIZING LOGIC ---
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
-// 1. Define the width based on device screen (with margins)
-const CARD_MARGIN = 20;
-const CARD_WIDTH = Math.min(SCREEN_WIDTH - (CARD_MARGIN * 2), 450); // Cap at 450px for readability
-
-// 2. Define a fixed height so ALL cards are exactly the same size.
-//    200px is usually a good "ticket" height for Title + Pills + Time + Loc
-const CARD_HEIGHT = 200; 
 
 interface EventCardProps {
   event: Event;
@@ -58,8 +46,6 @@ export function EventCard({ event, onPress, handleSave, saved, onShowMenu, hideS
 
   return (
     <View style={styles.outerContainer}>
-
-      {/* Main Card Wrapper (Fixed Size) */}
       <Pressable
         onPress={() => onPress(event)}
         style={({ pressed }) => [
@@ -69,15 +55,11 @@ export function EventCard({ event, onPress, handleSave, saved, onShowMenu, hideS
       >
         <Image
           source={CardBackground}
-          style={{
-            width: "100%",
-            height: "100%"
-          }}
+          style={styles.cardBackground}
           resizeMode = "stretch"
         />
 
-        {/* B. Content Overlay (Absolute positioning over SVG) */}
-        <View style={styles.contentOverlay}>
+        <View style={styles.cardContent}>
 
           <View>
             {/* Title */}
@@ -157,9 +139,14 @@ const styles = StyleSheet.create({
   },
   // The Card itself
   cardWrapper: {
-    width: CARD_WIDTH,
-    height: CARD_HEIGHT,
-    position: 'relative', // Context for absolute children
+    width: "100%",
+    maxWidth: 450,
+    minHeight: 200,
+  },
+  cardBackground: {
+    ...StyleSheet.absoluteFill,
+    width: '100%',
+    height: '100%',
   },
   // The save buttons
   saveButton: {
@@ -178,13 +165,8 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.98 }],
   },
 
-  contentOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    paddingHorizontal: 24, // Inner padding
+  cardContent: {
+    paddingHorizontal: 24,
     paddingVertical: 20,
     justifyContent: 'flex-start',
   },
@@ -202,6 +184,7 @@ const styles = StyleSheet.create({
   // -- Pills --
   pillRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     marginBottom: 8,
   },
   pillPoints: {
@@ -217,6 +200,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderTopRightRadius: 10,
     borderBottomRightRadius: 10,
+    flexShrink: 1,
   },
   pillTextBlack: { color: '#000', fontWeight: '800', fontSize: 13 },
   pillTextWhite: { color: '#FFF', fontWeight: '800', fontSize: 13, textTransform: 'uppercase' },

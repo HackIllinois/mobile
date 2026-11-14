@@ -4,7 +4,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Stack } from "expo-router";
 import { useFonts } from "expo-font";
 import { QueryClientProvider } from "@tanstack/react-query";
-import * as Notifications from "expo-notifications";
 import OnboardingScreens from "../components/onboarding/OnboardingScreen";
 import LoadingScreen from "../src/components/loading/LoadingScreen";
 import * as SecureStore from "expo-secure-store";
@@ -16,16 +15,6 @@ import { fetchProfile, prefetchAvatarImage } from "../lib/fetchProfile";
 import { setupNotificationListeners } from "../lib/notifications";
 import { checkVersion } from "../lib/versionCheck";
 import UpdateRequiredScreen from "../components/UpdateRequiredScreen";
-
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
 
 // Onboarding testing:
 // true = show onboarding every reload
@@ -282,7 +271,6 @@ function AnimationInitializer() {
   return null;
 }
 
-import { MAX_APP_WIDTH } from "../lib/layout";
 
 const styles = StyleSheet.create({
   backgroundImage: {
@@ -296,7 +284,6 @@ const styles = StyleSheet.create({
   innerContainer: {
     flex: 1,
     width: '100%',
-    maxWidth: MAX_APP_WIDTH,
     overflow: 'hidden',
   },
 });
