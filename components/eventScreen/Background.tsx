@@ -1,4 +1,5 @@
-import { View, StyleSheet, StatusBar } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { tabBackgrounds } from '../../lib/layout';
 
 interface BackgroundProps {
   children: React.ReactNode
@@ -7,8 +8,7 @@ interface BackgroundProps {
 export default function Background({ children }: BackgroundProps) {
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" />
-        {children}
+      {children}
     </View>
   );
 }
@@ -16,6 +16,6 @@ export default function Background({ children }: BackgroundProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#6c6c6cff',
+    backgroundColor: tabBackgrounds.Event,
   },
 });

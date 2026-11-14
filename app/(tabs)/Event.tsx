@@ -5,12 +5,10 @@ import {
   StyleSheet,
   ActivityIndicator,
   RefreshControl,
-  Dimensions,
   Pressable,
   TouchableOpacity,
-  Animated,
+  FlatList,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // --- Components ---
@@ -32,6 +30,7 @@ import { useMentorProfiles } from '../../lib/fetchMentorProfiles';
 import { Event } from '../../types';
 import { useStaffShifts } from '../../lib/fetchStaffShifts';
 import * as SecureStore from 'expo-secure-store';
+import { layoutStyles } from '../../lib/layout';
 
 import { useLocalSearchParams, useRouter } from "expo-router";
 
@@ -51,20 +50,15 @@ type MentorshipSession = {
 };
 
 // --- Constants ---
-const { height } = Dimensions.get('window');
-const HEADER_HEIGHT_EXPANDED = 145; 
-const TABS_HEIGHT = 60;
 
 
 
 export default function EventScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ focusEvent?: string; focusEventId?: string; focusRequestId?: string }>();
-  const insets = useSafeAreaInsets();
   const [scheduleMode, setScheduleMode] = useState<ScheduleMode>('events');
   
   // Animation Values
-  const scrollY = useRef(new Animated.Value(0)).current;
   const flatListRef = useRef<any>(null);
 
   // --- Data Hooks ---
@@ -121,7 +115,6 @@ export default function EventScreen() {
   useEffect(() => {
     if (flatListRef.current) {
       flatListRef.current.scrollToOffset({ offset: 0, animated: false });
-      scrollY.setValue(0);
     }
   }, [selectedDay, selectedSave, scheduleMode]);
 
@@ -428,23 +421,7 @@ export default function EventScreen() {
     );
   };
 
-  const tabsTranslateY = scrollY.interpolate({
-    inputRange: [0, 80],
-    outputRange: [0, -TABS_HEIGHT],
-    extrapolate: "clamp",
-  });
 
-  const tabsOpacity = scrollY.interpolate({
-    inputRange: [0, 40],
-    outputRange: [1, 0],
-    extrapolate: "clamp",
-  });
-
-  const headerTranslateY = scrollY.interpolate({
-    inputRange: [0, 80],
-    outputRange: [0, -TABS_HEIGHT],
-    extrapolate: "clamp",
-  });
 
   // --- Loading/Error/Empty States ---
   const isLoading = (eventsLoading && scheduleMode === 'events') || (mentorsLoading && scheduleMode === 'mentorship') || (shiftsLoading && scheduleMode === 'shifts');
@@ -452,157 +429,123 @@ export default function EventScreen() {
 
   return (
     <Background>
-      <View style={[styles.container, { paddingTop: insets.top + 55 }]}>
-        {/* --- Sticky Header Section --- */}
-        <View style={[styles.stickyHeaderContainer, { top: insets.top + 45 }]}>
-          <Animated.View style={{
-            opacity: tabsOpacity,
-            transform: [{ translateY: tabsTranslateY }],
-          }}>
-              <EventTabs
-                activeTab={scheduleMode}
-                onTabPress={(mode) => {
-                  setScheduleMode(mode as ScheduleMode);
-                  setSaveValue(false);
-                  setSelectedDay(null);
-                }}
-                showShifts={isStaff}
-              />
-          </Animated.View>
-
-          <Animated.View style={{
-            transform: [{ translateY: headerTranslateY}],
-          }}>
-              <EventHeader
-                  eventDays={eventDays}
-                  selectedDay={selectedDay}
-                  setSelectedDay={setSelectedDay}
-                  selectedSave={selectedSave}
-                  setSaveValue={setSaveValue}
-                  scheduleMode={scheduleMode}
-              />
-          </Animated.View>
-        </View>
-
-        {/* --- Render Content Logic --- */}
-        {isRefreshing ? (
-             <View style={{ marginTop: 300 }}>
+      <FlatList
+        ref={flatListRef}
+        data={isRefreshing || isError ? [] : filteredItems}
+        renderItem={renderEvent}
+        keyExtractor={(item) => "eventId" in item? item.eventId : item.id}
+        contentContainerStyle={[ layoutStyles.column, styles.listContent ]}
+        showsVerticalScrollIndicator={false}
+        onScrollToIndexFailed={handleScrollToIndexFailed}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={onRefresh}
+            tintColor="#00f0ff"
+          />
+        }
+        ListHeaderComponent={
+          <View style={styles.filters}>
+            <EventTabs
+              activeTab={scheduleMode}
+              onTabPress={(mode) => {
+                setScheduleMode(mode as ScheduleMode);
+                setSaveValue(false);
+                setSelectedDay(null);
+              }}
+              showShifts={isStaff}
+            />
+            <EventHeader
+                eventDays={eventDays}
+                selectedDay={selectedDay}
+                setSelectedDay={setSelectedDay}
+                selectedSave={selectedSave}
+                setSaveValue={setSaveValue}
+                scheduleMode={scheduleMode}
+            />
+          </View>
+        }
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            {isRefreshing || isLoading?(
+              <>
                 <ActivityIndicator size="large" color="#FFF" />
                 <Text style={styles.emptyText}>Loading...</Text>
-              </View>
-        ) : isLoading && filteredItems.length ===0 ? (
-             <View style={{ marginTop: 300 }}>
-                 <ActivityIndicator size="large" color="#FFF" />
-                 <Text style={styles.emptyText}>Loading...</Text>
-             </View>
-        ) : isError ? (
-             <View style={styles.emptyContainer}>
-                 <Text style={styles.emptyText}>Error fetching data</Text>
-                 <TouchableOpacity onPress={() => scheduleMode === 'events' ? refetchEvents() : scheduleMode === 'mentorship' ? refetchMentors() : refetchShifts()} style={styles.retryButton}>
-                    <Text style={styles.retryText}>Retry</Text>
-                 </TouchableOpacity>
-             </View>
-        ) : (
-            <Animated.FlatList
-                ref={flatListRef}
-                data={filteredItems}
-                renderItem={renderEvent}
-                keyExtractor={(item: any) => item.eventId || item.id || item.name + item.startTime}
-                onScrollToIndexFailed={handleScrollToIndexFailed}
-                contentContainerStyle={[
-                    styles.listContent,
-                    { paddingTop: HEADER_HEIGHT_EXPANDED }
-                ]}
-                showsVerticalScrollIndicator={false}
-                onScroll={Animated.event(
-                  [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-                  { useNativeDriver: true },
-                )}
-                scrollEventThrottle={16}
-                refreshControl={
-                    <RefreshControl
-                        refreshing={isRefreshing}
-                        onRefresh={onRefresh}
-                        tintColor="#00f0ff"
-                        progressViewOffset={HEADER_HEIGHT_EXPANDED}
-                    />
+              </>
+            ): isError ? (
+              <>
+                <Text style={styles.emptyText}>Error fetching data</Text>
+                <TouchableOpacity
+                  style={styles.retryButton}
+                  onPress={() =>{
+                    if (scheduleMode === 'events') return refetchEvents();
+                    if (scheduleMode === 'mentorship') return refetchMentors();
+                    return refetchShifts();
+                  }}
+                >
+                  <Text style={styles.retryText}>Retry</Text>
+                </TouchableOpacity>
+              </>
+            ): scheduleMode === 'mentorship' && mentorsGuest ? (
+              <>
+                <Text style={styles.emptyText}>Log in to see mentors</Text>
+                <TouchableOpacity
+                  onPress={()=>router.push('/AuthScreen')}
+                  style={styles.retryButton}
+                  activeOpacity={0.85}
+                >
+                  <Text style={styles.retryText}>Log in</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <Text style={styles.emptyText}>
+                {scheduleMode === 'mentorship'
+                  ? 'No mentors found'
+                  : scheduleMode === 'shifts'
+                    ? 'No Shifts assigned'
+                    : selectedSave
+                      ? 'No saved Events'
+                      : 'No events found'
                 }
-                
-                ListEmptyComponent={
-                  <View style={styles.emptyContainer}>
-                    {scheduleMode === "mentorship" && mentorsGuest ? (
-                      <>
-                        <Text style={styles.emptyText}>Log in to see mentors</Text>
-                        <TouchableOpacity
-                          onPress={() => router.push("/AuthScreen")}
-                          style={styles.retryButton}
-                          activeOpacity={0.85}
-                        >
-                          <Text style={styles.retryText}>Log in</Text>
-                        </TouchableOpacity>
-                      </>
-                    ) : (
-                      <Text style={styles.emptyText}>
-                        {scheduleMode === "mentorship"
-                          ? "No mentors found."
-                          : scheduleMode === "shifts"
-                            ? "No shifts assigned."
-                            : selectedSave
-                              ? "No saved events."
-                              : "No events found."}
-                      </Text>
-                    )}
-                  </View>
-                }
-            />
-        )}
-
-        {selectedEvent && (
-          <EventDetailModal
-            visible={modalVisible}
-            event={selectedEvent}
-            onClose={() => setModalVisible(false)}
-            handleSave={handleSave}
-            saved={savedEventIds.has(selectedEvent.eventId)}
-          />
-        )}
-
-        <MenuModal 
-            visible={menuModalVisible} 
-            event={selectedEventForMenu} 
-            onClose={() => setMenuModalVisible(false)} 
+              </Text>
+            )}
+          </View>
+        }
+      />
+      {selectedEvent && (
+        <EventDetailModal
+          visible={modalVisible}
+          event={selectedEvent}
+          onClose={() => setModalVisible(false)}
+          handleSave={handleSave}
+          saved={savedEventIds.has(selectedEvent.eventId)}
         />
+      )}
 
-        <MentorDetailModal
-          visible={mentorModalVisible}
-          session={selectedMentorSession}
-          guest={mentorsGuest}
-          onClose={() => setMentorModalVisible(false)}
-          onLoginPress={() => router.push("/AuthScreen")}
-        />
+      <MenuModal
+        visible={menuModalVisible}
+        event={selectedEventForMenu}
+        onClose={() => setMenuModalVisible(false)}
+      />
 
-      </View>
+      <MentorDetailModal
+        visible={mentorModalVisible}
+        session={selectedMentorSession}
+        guest={mentorsGuest}
+        onClose={() => setMentorModalVisible(false)}
+        onLoginPress={() => router.push('/AuthScreen')}
+      />
     </Background>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1,
-  },
-  
-  stickyHeaderContainer: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    zIndex: 100, 
-  },
-
   listContent: {
-    paddingBottom: 100, 
-    minHeight: 800,
+    paddingBottom: 24,
   },
-  
+  filters: {
+    marginBottom: 10,
+  },
   eventWrapper: {
     width: '100%',
     alignItems: 'center',
@@ -628,7 +571,7 @@ const styles = StyleSheet.create({
 
   // --- Mentor Card Styles ---
   mentorCard: {
-    width: '90%', 
+    width: '100%',
     borderRadius: 16,
     padding: 18,
     backgroundColor: 'rgba(135, 65, 134, 0.75)',
@@ -677,7 +620,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
-    marginTop: height / 5,
   },
   emptyText: {
     color: '#FFF',

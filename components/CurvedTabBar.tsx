@@ -25,7 +25,7 @@ export const CurvedTabBar = ({
 }: BottomTabBarProps) => {
   const insets = useSafeAreaInsets();
   return (
-    <View style={[styles.container, { height: BAR_HEIGHT + insets.bottom, paddingBottom: insets.bottom}]}>
+    <View style={[styles.container, { paddingBottom: insets.bottom }]}>
       {TAB_CONFIG.map(({name, Icon}) =>{
         const routeIndex = state.routes.findIndex(
           (route) => route.name === name
@@ -37,6 +37,9 @@ export const CurvedTabBar = ({
         return (
           <Pressable
             key={name}
+            accessibilityRole="tab"
+            accessibilityLabel={name === "Event" ? "Schedule tab" : `${name} tab`}
+            accessibilityState={{ selected: isFocused }}
             onPress={() => navigateToTab(state.routes[routeIndex].key)}
             style={styles.tab}>
               <View style={isFocused? styles.activeIcon : undefined}>

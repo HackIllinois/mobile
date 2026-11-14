@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, Pressable } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { ModalLayout } from '../layout/ModalLayout';
 import { Event } from '../../types';
 
 interface MenuModalProps {
@@ -13,77 +14,42 @@ export default function MenuModal({ visible, event, onClose }: MenuModalProps) {
   }
 
   return (
-    <Modal
+    <ModalLayout
       visible={visible}
-      transparent={true}
-      animationType="fade"
-      statusBarTranslucent
-      onRequestClose={onClose}
+      onClose={onClose}
+      header={(
+        <TouchableOpacity onPress={onClose} style={styles.closeButton} accessibilityLabel="Close menu">
+          <Text style={styles.closeText}>✕</Text>
+        </TouchableOpacity>
+      )}
     >
-      <View style={styles.backdrop}>
-        <Pressable style={styles.backdropPressable} onPress={onClose} />  
-        <View style={styles.cardWrapper}>
-            <View style={styles.mainCard}>
-                
-                <TouchableOpacity onPress={onClose} style={styles.closeButton} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
-                    <Text style={styles.closeText}>✕</Text>
-                </TouchableOpacity>
-
-                <View style={styles.headerSection}>
-                    <Text style={styles.title}>Menu</Text>
-                    <Text style={styles.subTitle}>{event.name}</Text>
-                </View>
-
-                <View style={styles.whiteContentBox}>
-                    <ScrollView 
-                        contentContainerStyle={styles.scrollContent}
-                        showsVerticalScrollIndicator={false}
-                    >
-                        {event.menu && event.menu.length > 0 ? (
-                            event.menu.map((item, index) => (
-                                <View key={index} style={styles.menuItemPlaceholder}>
-                                    <Text style={styles.itemTitle}>• {item}</Text>
-                                </View>
-                            ))
-                        ) : (
-                            <Text style={styles.placeholderText}>
-                                Menu details will appear here ~10 minutes prior to the start time.
-                            </Text>
-                        )}
-                    </ScrollView>
-                </View>
-            </View>
-        </View>
+      <View style={styles.headerSection}>
+        <Text style={styles.title}>Menu</Text>
+        <Text style={styles.subTitle}>{event.name}</Text>
       </View>
-    </Modal>
+
+      <View style={styles.whiteContentBox}>
+        {event.menu && event.menu.length > 0 ? (
+          event.menu.map((item, index) => (
+            <View key={index} style={styles.menuItemPlaceholder}>
+              <Text style={styles.itemTitle}>• {item}</Text>
+            </View>
+          ))
+        ) : (
+          <Text style={styles.placeholderText}>
+            Menu details will appear here ~10 minutes prior to the start time.
+          </Text>
+        )}
+      </View>
+    </ModalLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  backdropPressable: {
-    ...StyleSheet.absoluteFill,
-  },
-  cardWrapper: {
-    width: '85%',
-    height: '60%', 
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  mainCard: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: '#e3e3e3',
-    borderRadius: 20,
-    padding: 24,
-  },
   closeButton: {
-    paddingBottom: 10,
+    minHeight: 44,
+    minWidth: 44,
+    justifyContent: 'center',
     alignSelf: 'flex-start',
   },
   closeText: {
@@ -109,15 +75,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   whiteContentBox: {
-    flex: 1,
     backgroundColor: '#FFFFFF',
     borderRadius: 15,
     marginTop: 5,
-    overflow: 'hidden',
-    marginBottom: 10
-  },
-  scrollContent: {
-    padding: 20,
+    padding: 16,
   },
   placeholderText: {
     fontSize: 16,

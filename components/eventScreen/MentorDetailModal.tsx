@@ -3,10 +3,8 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Modal,
-  Pressable,
-  ScrollView,
 } from "react-native";
+import { ModalLayout } from "../layout/ModalLayout";
 
 export type MentorshipSession = {
   id: string;
@@ -73,120 +71,74 @@ export default function MentorDetailModal({
   };
 
   return (
-    <Modal
+    <ModalLayout
       visible={visible}
-      transparent
-      animationType="fade"
-      statusBarTranslucent
-      onRequestClose={onClose}
+      onClose={onClose}
+      panelStyle={styles.panel}
+      header={(
+        <TouchableOpacity onPress={onClose} style={styles.closeButton} accessibilityLabel="Close mentorship details">
+          <Text style={styles.closeText}>✕</Text>
+        </TouchableOpacity>
+      )}
     >
-      <View style={styles.backdrop}>
-        <Pressable style={styles.backdropPressable} onPress={onClose} />
+      {showGuestPrompt ? (
+        <>
+          <Text style={styles.title}>Mentorship</Text>
+          <Text style={styles.bodyText}>Log in to view mentors and mentorship sessions.</Text>
+          <TouchableOpacity style={styles.loginButton} activeOpacity={0.85} onPress={handleLogin}>
+            <Text style={styles.loginButtonText}>Log in to see mentors</Text>
+          </TouchableOpacity>
+        </>
+      ) : session ? (
+        <>
+          <Text style={styles.title}>{session.mentorName}</Text>
 
-        <View style={styles.cardWrapper}>
-          <View style={styles.mainCard}>
-            <TouchableOpacity
-              onPress={onClose}
-              style={styles.closeButton}
-              hitSlop={{ top: 30, bottom: 30, right: 30, left: 30 }}
-            >
-              <Text style={styles.closeText}>✕</Text>
-            </TouchableOpacity>
-
-            {/* ✅ Guest prompt (instead of "no mentors found") */}
-            {showGuestPrompt ? (
-              <View style={styles.guestContainer}>
-                <Text style={styles.title}>Mentorship</Text>
-                <Text style={styles.bodyText}>
-                  Log in to view mentors and mentorship sessions.
-                </Text>
-
-                <TouchableOpacity
-                  style={styles.loginButton}
-                  activeOpacity={0.85}
-                  onPress={handleLogin}
-                >
-                  <Text style={styles.loginButtonText}>Log in to see mentors</Text>
-                </TouchableOpacity>
-              </View>
-            ) : session ? (
-              <ScrollView showsVerticalScrollIndicator={false}>
-                <Text style={styles.title}>{session.mentorName}</Text>
-
-                <View style={styles.pillRow}>
-                  <View style={styles.trackPill}>
-                    <Text style={styles.trackText}>{track}</Text>
-                  </View>
-                </View>
-
-                <Text style={styles.infoText}>
-                  {formatTime(session.startTime)} - {formatTime(session.endTime)}
-                </Text>
-                <Text style={styles.infoText}>{session.location}</Text>
-
-                <Text style={styles.sectionHeader}>About</Text>
-                <Text style={styles.bodyText}>{bio}</Text>
-
-                <Text style={styles.sectionHeader}>Topics</Text>
-                {topics.length > 0 ? (
-                  <View style={styles.topicsWrap}>
-                    {topics.map((t) => (
-                      <View key={t} style={styles.topicChip}>
-                        <Text style={styles.topicChipText}>{t}</Text>
-                      </View>
-                    ))}
-                  </View>
-                ) : (
-                  <Text style={styles.bodyText}>No topics listed yet.</Text>
-                )}
-
-                <Text style={styles.sectionHeader}>Contact</Text>
-                <Text style={styles.bodyText}>{contact}</Text>
-              </ScrollView>
-            ) : null}
+          <View style={styles.pillRow}>
+            <View style={styles.trackPill}>
+              <Text style={styles.trackText}>{track}</Text>
+            </View>
           </View>
-        </View>
-      </View>
-    </Modal>
+
+          <Text style={styles.infoText}>
+            {formatTime(session.startTime)} - {formatTime(session.endTime)}
+          </Text>
+          <Text style={styles.infoText}>{session.location}</Text>
+
+          <Text style={styles.sectionHeader}>About</Text>
+          <Text style={styles.bodyText}>{bio}</Text>
+
+          <Text style={styles.sectionHeader}>Topics</Text>
+          {topics.length > 0 ? (
+            <View style={styles.topicsWrap}>
+              {topics.map((topic) => (
+                <View key={topic} style={styles.topicChip}>
+                  <Text style={styles.topicChipText}>{topic}</Text>
+                </View>
+              ))}
+            </View>
+          ) : (
+            <Text style={styles.bodyText}>No topics listed yet.</Text>
+          )}
+
+          <Text style={styles.sectionHeader}>Contact</Text>
+          <Text style={styles.bodyText}>{contact}</Text>
+        </>
+      ) : null}
+    </ModalLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  backdropPressable: {
-    ...StyleSheet.absoluteFill,
-  },
-  cardWrapper: {
-    width: "85%",
-    height: "70%",
-    position: "relative",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  mainCard: {
-    width: "100%",
-    height: "80%",
+  panel: {
     backgroundColor: "#D9D9D9",
-    borderRadius: 20,
-    padding: 24,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4.65,
-    elevation: 8,
   },
   closeButton: {
-    paddingBottom: 10,
+    minHeight: 44,
+    minWidth: 44,
+    justifyContent: "center",
     alignSelf: "flex-start",
   },
   closeText: { fontSize: 24, fontWeight: "bold", color: "#000", opacity: 0.5 },
-
-  guestContainer: { marginTop: 36 },
 
   loginButton: {
     marginTop: 18,
@@ -205,6 +157,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 999,
+    flexShrink: 1,
     backgroundColor: "#eddbff",
   },
   trackText: { fontSize: 12, fontWeight: "900", color: "#222" },

@@ -1,9 +1,9 @@
 import React, { useEffect, useState} from 'react';
-import { View, TouchableOpacity, Pressable, Modal, ActivityIndicator, useWindowDimensions, Text } from 'react-native';
-import { MAX_APP_WIDTH } from '../../lib/layout';
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ModalLayout } from '../layout/ModalLayout';
+import { ResponsiveQRCode } from '../layout/ResponsiveQRCode';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import QRCode from 'react-native-qrcode-svg';
 import RefreshButtonSvg from '../../assets/profile/qr-screen/refresh-button.svg';
 
 interface QRCodeModalProps {
@@ -29,8 +29,6 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
   cooldownStartedAt,
   qrError
 }) => {
-  const { width: windowWidth, height } = useWindowDimensions();
-  const width = Math.min(windowWidth, MAX_APP_WIDTH);
   const [remainingTime, setRemainingTime] = useState(0);
 
   useEffect(() =>{
@@ -49,16 +47,6 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
     return () => clearInterval(timer);
   }, [visible, cooldownStartedAt, refreshCooldown])
 
-  const figmaWidth = 393;
-  const figmaHeight = 852;
-  const scaleWidth = (size: number) => (width / figmaWidth) * size;
-  const scaleHeight = (size: number) => (height / figmaHeight) * size;
-  const scaleFontSize = (size: number) => Math.min(scaleWidth(size), scaleHeight(size));
-
-  const QR_SIZE = scaleWidth(200);
-  const MODAL_WIDTH = scaleWidth(300);
-  const MODAL_HEIGHT = scaleWidth(310);
-
   const handleClose = () => {
     Haptics.selectionAsync();
     onClose();
@@ -70,121 +58,91 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
   }
 
   return (
-    <Modal
+    <ModalLayout
       visible={visible}
-      transparent={true}
-      animationType="fade"
-      onRequestClose={handleClose}
+      onClose={handleClose}
+      panelStyle={styles.panel}
+      backdropColor="rgba(255, 255, 255, 0.85)"
+      header={(
+        <TouchableOpacity
+          style={styles.closeButton}
+          onPress={handleClose}
+          accessibilityLabel="Close QR code"
+        >
+          <Ionicons name="close" size={28} color="#333" />
+        </TouchableOpacity>
+      )}
     >
-      <Pressable
-        style={{
-          flex: 1,
-          backgroundColor: 'rgba(255, 255, 255, 0.85)',
-          justifyContent: 'flex-start',
-          alignItems: 'center',
-          paddingTop: scaleHeight(130),
-        }}
-        onPress={onClose}
-      >
-        <Pressable onPress={(e) => e.stopPropagation()} style={{
-          backgroundColor: 'rgba(109, 106, 106, 0.82)',
-          borderRadius: scaleWidth(30),
-          width: MODAL_WIDTH,
-          height: MODAL_HEIGHT,
-          alignItems: 'center',
-          justifyContent: 'center',
-          position: 'relative',
-        }}>
-          {/* Close Button - moved to left where reload was */}
-          <TouchableOpacity
-            style={{
-              position: 'absolute',
-              top: scaleHeight(10),
-              left: scaleWidth(9),
-              zIndex: 1,
-              width: scaleWidth(31.19),
-              height: scaleWidth(31.19),
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}
-            onPress={handleClose}
-          >
-            <Ionicons name="close" size={scaleFontSize(28)} color="#333" />
-          </TouchableOpacity>
-
-          <View style={{
-            width: QR_SIZE,
-            height: QR_SIZE,
-            justifyContent: 'center',
-            alignItems: 'center',
-            marginTop: scaleWidth(16),
-          }}>
-            {qrCode ? (
-              <QRCode
-                value={qrCode}
-                size={QR_SIZE}
-                backgroundColor="#FFEAFE"
-                color="#000000"
-              />
-            ) : qrLoading? (
-                <ActivityIndicator size="large" color="#888" />
+      <View style={styles.content}>
+        {qrCode ? (
+          <ResponsiveQRCode value={qrCode} backgroundColor="#FFEAFE" />
+        ) : (
+          <View style={styles.codeContainer}>
+            {qrLoading ? (
+              <ActivityIndicator size="large" color="#888" />
             ) : (
-              <Text style={{ color: '#333', textAlign: 'center' }}>
-                QR code unavailable
-              </Text>
+              <Text style={styles.message}>QR code unavailable</Text>
             )}
           </View>
+        )}
 
-          {/* Refresh Button */}
-          {(() => {
-            const btnW = scaleWidth(200);
-            const btnH = scaleWidth(200 * 47 / 261); 
-            const btnRx = btnH / 2; 
-            return (
-              <TouchableOpacity
-                style={{ marginTop: scaleWidth(10) }}
-                onPress={handleRefresh}
-                disabled={qrLoading || refreshCooldown}
-              >
-                <View style={{
-                  width: btnW,
-                  height: btnH,
-                  overflow: 'hidden',
-                  borderRadius: btnRx,
-                }}>
-                  <RefreshButtonSvg
-                    width={btnW}
-                    height={btnH}
-                    opacity={qrLoading || refreshCooldown ? 0.5 : 1}
-                  />
-                </View>
-              </TouchableOpacity>
-            );
-          })()}
-          {refreshCooldown && remainingTime > 0 && (
-            <View style={{ alignItems: "center"}}>
-              <Text style={{ fontSize: 14, color: '#333' }}>
-                Please wait {remainingTime} seconds before refreshing.
-              </Text>
-            </View>
-          )}
-          {qrError && (
-            <Text
-              style={{
-                color: '#FFFFFF',
-                fontSize: 14,
-                marginTop: 8,
-                textAlign: 'center',
-              }}
-            >
-              {qrError}
-              {qrCode
-                ? ' The displayed code may have expired.'
-                : ''}
-            </Text>
-          )}
-        </Pressable>
-      </Pressable>
-    </Modal>
+        <TouchableOpacity
+          style={styles.refreshButton}
+          onPress={handleRefresh}
+          disabled={qrLoading || refreshCooldown}
+          accessibilityLabel="Refresh QR code"
+        >
+          <RefreshButtonSvg width="100%" height="100%" opacity={qrLoading || refreshCooldown ? 0.5 : 1} />
+        </TouchableOpacity>
+
+        {refreshCooldown && remainingTime > 0 && (
+          <Text style={styles.message}>Please wait {remainingTime} seconds before refreshing.</Text>
+        )}
+        {qrError && (
+          <Text style={styles.errorText}>
+            {qrError}
+            {qrCode ? ' The displayed code may have expired.' : ''}
+          </Text>
+        )}
+      </View>
+    </ModalLayout>
   );
 };
+
+const styles = StyleSheet.create({
+  panel: {
+    maxWidth: 360,
+    backgroundColor: 'rgba(109, 106, 106, 0.82)',
+  },
+  content: {
+    alignItems: 'center',
+    gap: 10,
+  },
+  closeButton: {
+    width: 44,
+    height: 44,
+    alignSelf: 'flex-start',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  codeContainer: {
+    width: '100%',
+    maxWidth: 200,
+    aspectRatio: 1,
+    justifyContent: 'center',
+  },
+  refreshButton: {
+    width: '100%',
+    maxWidth: 200,
+    height: 44,
+  },
+  message: {
+    color: '#333',
+    textAlign: 'center',
+  },
+  errorText: {
+    color: '#FFF',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+});

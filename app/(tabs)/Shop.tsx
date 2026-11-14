@@ -21,13 +21,15 @@ import {
   Animated,
   Text,
   ActivityIndicator,
-  FlatList
+  FlatList,
+  ScrollView,
 } from "react-native";
 import ShopItemCard from "../../components/point shop/ShopItemCard";
 import CartButton from "../../components/point shop/CartButton";
 import Points from "../../components/point shop/Points";
 import CartModal from "../../components/point shop/CartModal";
 import { useFocusEffect } from "expo-router/react-navigation";
+import { layoutStyles } from "../../lib/layout";
 
 export default function PointShop() {
   const { shopItems, loading: shopLoading } = useShopItems();
@@ -135,30 +137,27 @@ export default function PointShop() {
 
   return (
     <View style={styles.container}>
-      {/* Temporary, arbitrary placements while we strip it */}
-      <View style={{marginTop: 100}}>
-        <Points points={userPoints} />
-      </View>
+      <ScrollView contentContainerStyle={[layoutStyles.column, styles.scrollContent]}>
+        <Points points={userPoints}/>
 
-      {/* Top Row - Merch */}
-      <View style={styles.itemList}>
-       <FlatList
-          data={nonRaffleItems}
-          keyExtractor={(shopItem)=>shopItem.itemId}
-          renderItem={(currItemInfo) => renderShopItem(currItemInfo.item)}
-          horizontal={true}
-       />
-      </View>
-
-      {/* Bottom Row - Raffle */}
-      <View style={ styles.itemList }>
+        {/* Top Row - Merch */}
         <FlatList
-          data = {raffleItems}
-          keyExtractor = {(shopItem)=> shopItem.itemId}
-          renderItem = {(currItemInfo)=> renderShopItem(currItemInfo.item)}
-          horizontal={true}
+          style={styles.itemList}
+          data={nonRaffleItems}
+          horizontal
+          keyExtractor={(item)=> item.itemId}
+          renderItem={({ item })=> renderShopItem(item)}
         />
-      </View>
+
+        {/* Bottom Row - Raffle */}
+        <FlatList
+          style={styles.itemList}
+          data={raffleItems}
+          horizontal
+          keyExtractor={(item)=> item.itemId}
+          renderItem={({ item })=> renderShopItem(item)}
+        />
+      </ScrollView>
 
 
       <CartButton
@@ -183,7 +182,7 @@ export default function PointShop() {
             fetchCartItems();
         }}
       />
-          <Text style={styles.text}>{errorMessage}</Text>
+      <Text style={styles.text}>{errorMessage}</Text>
     </View>
   );
 }
@@ -192,11 +191,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  itemList: {
-    height : 100,
-    justifyContent: 'center',
+  scrollContent: {
+    paddingTop: 10,
+    paddingBottom: 80,
   },
-
+  itemList: {
+    height: 100,
+  },
   text: {
     color: "#000000ff"
   }

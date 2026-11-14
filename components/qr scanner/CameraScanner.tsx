@@ -1,15 +1,13 @@
-import React, { useState, useRef, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Dimensions, Modal, Alert, PanResponder } from 'react-native';
+import React, { useState, useRef, useCallback } from 'react';
+import { View, Text, StyleSheet, Pressable, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { CameraView, BarcodeScanningResult, scanFromURLAsync } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
-import { Ionicons } from '@expo/vector-icons';
 import ChooseImageButton from '../../assets/qr-scanner/choose-image-button.svg';
 import { ScanResult, ScanResultOverlay } from './ScanModals';
 import * as Haptics from 'expo-haptics';
-import { getConstrainedWidth } from '../../lib/layout';
-
-const { height } = Dimensions.get('window');
-const width = getConstrainedWidth();
+import { layoutStyles } from '../../lib/layout';
+import { ModalWindow } from '../layout/ModalLayout';
+import { ScannerLayout } from './ScannerLayout';
 
 interface CameraScannerViewProps {
   visible: boolean;
@@ -100,80 +98,51 @@ function CameraScannerView({
   }, []);
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={onClose}
-    >
+    <ModalWindow visible={visible} animationType="slide" transparent onClose={onClose}>
       <View style={styles.container}>
-        {/* Backdrop - tap to dismiss */}
-        <TouchableOpacity
-          style={styles.backdrop}
-          activeOpacity={1}
-          onPress={onClose}
-        />
-        {/* Modal overlay with camera inside */}
-        <View style={styles.modalContainer}>
-          <CameraView
-            onBarcodeScanned={isScanned ? undefined : stableBarcodeHandler}
-            barcodeScannerSettings={barcodeScannerSettings}
-            style={StyleSheet.absoluteFill}
-          />
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessible={false} />
+        <View style={[layoutStyles.column, styles.scanner]}>
+          <ScannerLayout
+            reason={scanModeLabel}
+            onClose={onClose}
+            camera={(
+              <CameraView
+                onBarcodeScanned={isScanned ? undefined : stableBarcodeHandler}
+                barcodeScannerSettings={barcodeScannerSettings}
+                style={StyleSheet.absoluteFill}
+              />
+            )}
+            footer={(
+              <>
+                <Text style={styles.orText}>OR</Text>
+                <TouchableOpacity
+                  style={styles.chooseImageButton}
+                  onPress={handleChooseImage}
+                  disabled={isLoading || isProcessingImage}
+                  accessibilityLabel="Choose QR image"
+                  accessibilityRole="button"
+                >
+                  <ChooseImageButton width="100%" height="100%" />
+                </TouchableOpacity>
+              </>
+            )}
+          >
+            {(isLoading || isProcessingImage) && (
+              <View style={styles.loadingOverlay}>
+                <ActivityIndicator size="large" color="#ffffff" />
+                <Text style={styles.loadingText}>
+                  {isProcessingImage ? 'Processing Image...' : 'Verifying...'}
+                </Text>
+              </View>
+            )}
 
-          <View style={styles.topSection}>
-            <View style={styles.headerRow}>
-              <TouchableOpacity style={styles.exitButton} onPress={onClose}>
-                <Ionicons name="arrow-back" size={28} color="#FFF" />
-              </TouchableOpacity>
-            </View>
-            <View style={styles.titleContainer}>
-              <Text style={styles.scanTitleText}>Scan QR Code</Text>
-              {scanModeLabel && (
-                <Text style={styles.scanReasonText}>{scanModeLabel}</Text>
-              )}
-              <Text style={styles.instructionText}>Place QR inside the frame to scan</Text>
-            </View>
-          </View>
-
-          <View style={styles.middleSection}>
-            <View style={styles.maskSide} />
-            <View style={styles.qrBox}>
-              {/* Corner brackets - replace with vector */}
-              <View style={[styles.corner, styles.cornerTopLeft]} />
-              <View style={[styles.corner, styles.cornerTopRight]} />
-              <View style={[styles.corner, styles.cornerBottomLeft]} />
-              <View style={[styles.corner, styles.cornerBottomRight]} />
-            </View>
-            <View style={styles.maskSide} />
-          </View>
-
-          <View style={styles.bottomSection}>
-            <Text style={styles.orText}>OR</Text>
-            <TouchableOpacity
-              style={styles.chooseImageButton}
-              onPress={handleChooseImage}
-              disabled={isLoading || isProcessingImage}
-            >
-              <ChooseImageButton width={width * 0.501} height={48} />
-            </TouchableOpacity>
-          </View>
-
-          {(isLoading || isProcessingImage) && (
-            <View style={styles.loadingOverlay}>
-              <ActivityIndicator size="large" color="#ffffff" />
-              <Text style={styles.loadingText}>
-                {isProcessingImage ? 'Processing Image...' : 'Verifying...'}
-              </Text>
-            </View>
-          )}
-
-          {scanResult && onResultClose && (
-            <ScanResultOverlay result={scanResult} onClose={onResultClose} />
-          )}
+            {scanResult && onResultClose && (
+              <ScanResultOverlay result={scanResult} onClose={onResultClose} />
+            )}
+          </ScannerLayout>
         </View>
       </View>
-    </Modal>
+    </ModalWindow>
   );
 }
 
@@ -187,15 +156,15 @@ export default React.memo(CameraScannerView);
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'transparent',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
   },
-  backdrop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: height * 0.12,
-    backgroundColor: 'transparent',
+  scanner: {
+    paddingHorizontal: 0,
+    height: '92%',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    overflow: 'hidden',
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFill,
@@ -205,136 +174,18 @@ const styles = StyleSheet.create({
     zIndex: 20,
   },
   loadingText: {
-    color: '#ffffff',
+    color: '#fff',
     marginTop: 10,
     fontSize: 16,
   },
-  modalContainer: {
-    position: 'absolute',
-    top: height * 0.12,
-    width: width,
-    height: height * 0.88,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    overflow: 'hidden',
-    backgroundColor: 'black',
-  },
-  topSection: {
-    height: 220,
-    backgroundColor: 'rgba(64, 26, 121, 0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingBottom: 20,
-  },
-  headerRow: {
-    position: 'absolute',
-    top: 35,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 25,
-  },
-  exitButton: {
-    position: 'absolute',
-    left: 15,
-    width: 41,
-    height: 45,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  titleContainer: {
-    alignItems: 'center',
-    marginTop: 28,
-  },
-  scanTitleText: {
-    fontSize: 32,
-    fontWeight: '600',
-    color: '#FFF',
-    fontFamily: 'Montserrat-Bold',
-    textAlign: 'center',
-  },
-  scanReasonText: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#FFF',
-    fontFamily: 'Montserrat',
-    textAlign: 'center',
-    marginTop: 4,
-  },
-  instructionText: {
-    fontSize: 14,
-    fontWeight: '400',
-    color: '#E9E9E9',
-    fontFamily: 'Montserrat',
-    textAlign: 'center',
-    marginTop: 18,
-  },
-  middleSection: {
-    height: width * 0.7,
-    flexDirection: 'row',
-  },
-  maskSide: {
-    flex: 1,
-    backgroundColor: 'rgba(64, 26, 121, 0.7)',
-  },
-  qrBox: {
-    width: width * 0.7,
-    height: width * 0.7,
-    backgroundColor: 'transparent',
-    position: 'relative',
-    overflow: 'visible',
-  },
-  corner: {
-    position: 'absolute',
-    width: 50,
-    height: 50,
-    borderColor: '#FFF',
-    borderWidth: 3,
-    zIndex: 10,
-  },
-  cornerTopLeft: {
-    top: -15,
-    left: -15,
-    borderRightWidth: 0,
-    borderBottomWidth: 0,
-  },
-  cornerTopRight: {
-    top: -15,
-    right: -15,
-    borderLeftWidth: 0,
-    borderBottomWidth: 0,
-  },
-  cornerBottomLeft: {
-    bottom: -15,
-    left: -15,
-    borderRightWidth: 0,
-    borderTopWidth: 0,
-  },
-  cornerBottomRight: {
-    bottom: -15,
-    right: -15,
-    borderLeftWidth: 0,
-    borderTopWidth: 0,
-  },
-  bottomSection: {
-    flex: 1,
-    backgroundColor: 'rgba(64, 26, 121, 0.7)',
-    alignItems: 'center',
-    paddingTop: 60,
-  },
   orText: {
+    color: '#fff',
     fontSize: 16,
     fontWeight: '700',
-    color: '#FFF',
-    fontFamily: 'Montserrat',
-    marginBottom: 25,
   },
   chooseImageButton: {
-    width: width * 0.501,
+    width: '100%',
+    maxWidth: 200,
     height: 48,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
 });

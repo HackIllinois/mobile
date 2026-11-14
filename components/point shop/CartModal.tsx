@@ -1,14 +1,12 @@
 import {
-  Modal,
   View,
   StyleSheet,
   TouchableOpacity,
   Text,
-  ScrollView,
   Alert,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import QRCode from "react-native-qrcode-svg";
+import { ModalLayout } from "../layout/ModalLayout";
+import { ResponsiveQRCode } from "../layout/ResponsiveQRCode";
 import { useEffect, useRef, useState } from "react";
 import * as Brightness from "expo-brightness";
 import { ShopItem } from "../../types";
@@ -121,127 +119,95 @@ export default function CartModal({
   };
 
   return (
-    <Modal
+    <ModalLayout
       visible={visible}
+      onClose={onClose}
+      bottom
       animationType="slide"
-      transparent={true}
-      onRequestClose={onClose}
-    >
-      <View style={styles.overlay}>
-        <TouchableOpacity
-          style={styles.backdrop}
-          activeOpacity={1}
-          onPress={onClose}
-        />
-        <SafeAreaView style={styles.modalContainer} edges={["bottom"]}>
-          <TouchableOpacity style={styles.closeButton} onPress={() => { onClose(); }}>
+      backdropColor="transparent"
+      panelStyle={styles.modalContainer}
+      header={(
+        <View style={styles.header}>
+          <Text style={styles.title}>{qrCodeData ? 'SCAN QR CODE' : 'IN YOUR CART'}</Text>
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={onClose}
+            accessibilityLabel="Close cart"
+          >
             <Text style={styles.closeButtonText}>✕</Text>
           </TouchableOpacity>
-
-          {qrCodeData ? (
-            <View style={styles.qrContainer}>
-              <Text style={styles.title}>SCAN QR CODE</Text>
-              <View style={styles.qrCodeWrapper}>
-                <QRCode value={qrCodeData} size={200} />
-              </View>
-              <Text style={styles.qrInstruction}>
-                Show this to a shopkeeper to collect your items.
-              </Text>
-              <TouchableOpacity
-                style={styles.backToCartButton}
-                onPress={handleBackToCart}
-              >
-                <Text style={styles.backToCartButtonText}>← BACK TO CART</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <>
-              <Text style={styles.title}>IN YOUR CART</Text>
-
-              <ScrollView
-                style={styles.body}
-                contentContainerStyle={styles.bodyContent}
-                showsVerticalScrollIndicator={false}
-              >
-                {isEmpty ? (
-                  <Text style={styles.emptyMessage}>
-                    YOUR CART IS CURRENTLY EMPTY
-                  </Text>
-                ) : (
-                  cartItems.map(({ item, quantity }) => (
-                    <CartItem
-                      key={item.itemId}
-                      item={item}
-                      quantity={quantity}
-                      onIncrement={async () => {
-                        const result = await onAddItem(item.itemId);
-                        if (!result.success && result.errorMessage) {
-                          onError(result.errorMessage);
-                        }
-                        return result.success;
-                      }}
-                      onDecrement={async () => {
-                        const result = await onRemoveItem(item.itemId);
-                        if (!result.success && result.errorMessage) {
-                          onError(result.errorMessage);
-                        }
-                        return result.success;
-                      }}
-                    />
-                  ))
-                )}
-              </ScrollView>
-
-              <View style={styles.footer}>
-                <View style={styles.totalRow}>
-                  <Text style={styles.totalLabel}>Total</Text>
-                  <Text style={styles.totalValue}>{totalPoints}</Text>
-                </View>
-                <TouchableOpacity
-                  style={[
-                    styles.purchaseButton,
-                    isEmpty && styles.purchaseButtonDisabled,
-                  ]}
-                  disabled={isEmpty}
-                  onPress={handlePurchasePress}
-                >
-                  <Text style={styles.purchaseButtonText}>
-                    COMPLETE PURCHASE
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </>
-          )}
-        </SafeAreaView>
-      </View>
-    </Modal>
+        </View>
+      )}
+      footer={qrCodeData ? undefined : (
+        <View style={styles.footer}>
+          <View style={styles.totalRow}>
+            <Text style={styles.totalLabel}>Total</Text>
+            <Text style={styles.totalValue}>{totalPoints}</Text>
+          </View>
+          <TouchableOpacity
+            style={[styles.purchaseButton, isEmpty && styles.purchaseButtonDisabled]}
+            disabled={isEmpty}
+            onPress={handlePurchasePress}
+          >
+            <Text style={styles.purchaseButtonText}>COMPLETE PURCHASE</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+    >
+      {qrCodeData ? (
+        <View style={styles.qrContainer}>
+          <View style={styles.qrCodeWrapper}>
+            <ResponsiveQRCode value={qrCodeData} />
+          </View>
+          <Text style={styles.qrInstruction}>Show this to a shopkeeper to collect your items.</Text>
+          <TouchableOpacity style={styles.backToCartButton} onPress={handleBackToCart}>
+            <Text style={styles.backToCartButtonText}>← BACK TO CART</Text>
+          </TouchableOpacity>
+        </View>
+      ) : isEmpty ? (
+        <Text style={styles.emptyMessage}>YOUR CART IS CURRENTLY EMPTY</Text>
+      ) : (
+        cartItems.map(({ item, quantity }) => (
+          <CartItem
+            key={item.itemId}
+            item={item}
+            quantity={quantity}
+            onIncrement={async () => {
+              const result = await onAddItem(item.itemId);
+              if (!result.success && result.errorMessage) {
+                onError(result.errorMessage);
+              }
+              return result.success;
+            }}
+            onDecrement={async () => {
+              const result = await onRemoveItem(item.itemId);
+              if (!result.success && result.errorMessage) {
+                onError(result.errorMessage);
+              }
+              return result.success;
+            }}
+          />
+        ))
+      )}
+    </ModalLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    justifyContent: "flex-end",
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFill,
-  },
   modalContainer: {
     backgroundColor: "#3d2f52",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    height: "75%",
-    padding: 20,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
   },
   closeButton: {
-    position: "absolute",
-    top: 20,
-    right: 20,
-    width: 32,
-    height: 32,
+    width: 44,
+    height: 44,
     alignItems: "center",
     justifyContent: "center",
-    zIndex: 10,
   },
   closeButtonText: {
     fontSize: 24,
@@ -251,16 +217,8 @@ const styles = StyleSheet.create({
     fontFamily: "Tsukimi Rounded",
     fontSize: 20,
     color: "#e8dff0",
-    marginBottom: 20,
+    flexShrink: 1,
     letterSpacing: 1,
-  },
-  body: {
-    flex: 1,
-    height: "100%",
-  },
-  bodyContent: {
-    flexGrow: 1,
-    justifyContent: "flex-start",
   },
   emptyMessage: {
     fontSize: 16,
@@ -312,12 +270,12 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   qrContainer: {
-    flex: 1,
     alignItems: "center",
-    justifyContent: "center",
     gap: 20,
   },
   qrCodeWrapper: {
+    width: "100%",
+    maxWidth: 240,
     padding: 20,
     backgroundColor: "white",
     borderRadius: 20,

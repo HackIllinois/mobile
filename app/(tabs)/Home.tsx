@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { View, Text, StyleSheet, Dimensions} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { layoutStyles, tabBackgrounds } from "../../lib/layout";
 import { useRouter } from "expo-router";
 
 import EventItem from "../../components/home/EventItem";
@@ -16,8 +16,9 @@ const ShowcasePng = require("../../assets/home/event_active-png.png");
 const ClosingPng = require("../../assets/home/event_active-png.png");
 
 
-const window = Dimensions.get("window");
-const height = window.height;
+const ROADMAP_WIDTH = 393;
+const ROADMAP_HEIGHT = 578;
+const ROADMAP_ITEM_WIDTH = 128;
 
 export type StageKey =
   | "checkin"
@@ -30,12 +31,14 @@ export type StageKey =
 const STAGE_ORDER: StageKey[] = ["checkin", "scavenger", "opening", "hacking", "showcase", "closing"];
 const stageIndex = (s: StageKey) => STAGE_ORDER.indexOf(s);
 
-interface Event {
-  eventKey: StageKey;
-  size: number;
-  x: number;
-  y:number;
-}
+const ROADMAP_ITEMS: { eventKey: StageKey; x: number; y: number }[] = [
+  { eventKey: "closing", x: 145, y: 0 },
+  { eventKey: "showcase", x: 35, y: 90 },
+  { eventKey: "hacking", x: 225, y: 180 },
+  { eventKey: "opening", x: 60, y: 270 },
+  { eventKey: "scavenger", x: 225, y: 360 },
+  { eventKey: "checkin", x: 145, y: 450 },
+];
 
 type HomeEventConfig = {
   title: string;
@@ -201,16 +204,6 @@ export default function HomeScreen() {
     return () => clearInterval(id);
   }, [SCHEDULE]);
 
-  //fixed locations for the raodmap for now
-  const items: Event[] = useMemo(() => [
-    { eventKey: "closing", size: 80, x: 145, y: 120 },
-    { eventKey: "showcase", size: 80, x: 35, y: 210 },
-    { eventKey: "hacking", size: 80, x: 225, y: 300 },
-    { eventKey: "opening", size: 80, x: 60, y: 390 },
-    { eventKey: "scavenger", size: 80, x: 225, y: 480 },
-    { eventKey: "checkin", size: 80, x: 145, y: 570 },
-  ], []);
-
   const currentIdx = stageIndex(currentStage);
 
   const getVariantFor = (eventKey: StageKey): "normal" | "finished" => {
@@ -306,35 +299,32 @@ export default function HomeScreen() {
     event ? { focusEventId: event.focusEventId, focusEvent: event.focusEventName } : null;
 
   return (
-    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-
-      {/* Timer */}
-      <View style={styles.headerOverlay} pointerEvents="none">
-        <Text style={styles.timerLabel}>{activePhase.label}</Text>
+    <View style={styles.container}>
+      <ScrollView contentContainerStyle={[layoutStyles.column, styles.scrollContent]}>
+        <View style={styles.timer}>
+          <Text style={styles.timerLabel}>{activePhase.label}</Text>
           <View style={styles.timerBox}>
             <Text style={styles.timerText}>
               {formatTime(timeLeft.days)}:{formatTime(timeLeft.hours)}:
               {formatTime(timeLeft.minutes)}:{formatTime(timeLeft.seconds)}
             </Text>
           </View>
-      </View>
+        </View>
 
-
-      {/* Events */}
-      {items.map((item) => {
-        return (
-          <EventItem
-            key={item.eventKey}
-            eventKey={item.eventKey}
-            x= {item.x}
-            y= {item.y}
-            size={item.size}
-            variant={getVariantFor(item.eventKey)}
-            onPress={handleEventPress}
-          />
-        );
-      })}
-
+        <View style={styles.roadmap}>
+          {ROADMAP_ITEMS.map(({ eventKey, x, y }) => (
+            <EventItem
+              key={eventKey}
+              eventKey={eventKey}
+              left={`${(x / ROADMAP_WIDTH) * 100}%`}
+              top={`${(y / ROADMAP_HEIGHT) * 100}%`}
+              width={`${(ROADMAP_ITEM_WIDTH / ROADMAP_WIDTH) * 100}%`}
+              variant={getVariantFor(eventKey)}
+              onPress={handleEventPress}
+            />
+          ))}
+        </View>
+      </ScrollView>
 
       <EventInfoModal
         visible={modalVisible}
@@ -357,18 +347,25 @@ export default function HomeScreen() {
           setSelectedEvent(null);
         }}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f5f5" },
-  headerOverlay: {
-    alignSelf: "center",
+  container: { flex: 1, backgroundColor: tabBackgrounds.Home },
+  scrollContent: {
     alignItems: "center",
-    position: 'absolute',
-    top: (height * 0.04) + 26, 
-    zIndex: 50,
+    paddingTop: 8,
+    paddingBottom: 12,
+  },
+  roadmap: {
+    width: "100%",
+    maxWidth: ROADMAP_WIDTH,
+    aspectRatio: ROADMAP_WIDTH / ROADMAP_HEIGHT,
+  },
+  timer: {
+    alignItems: "center",
+    marginBottom: 12,
   },
   timerLabel: {
     color: "#000000ff",

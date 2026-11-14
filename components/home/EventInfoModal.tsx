@@ -1,12 +1,12 @@
 import {
   Image,
   ImageSourcePropType,
-  Modal,
   Pressable,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+import { ModalLayout } from "../layout/ModalLayout";
 
 export type EventModalStatus = "upcoming" | "live" | "closing" | "ended";
 
@@ -60,89 +60,81 @@ export default function EventInfoModal({ visible, event, onClose, onViewDetails 
   })}`;
 
   return (
-    <Modal 
+    <ModalLayout
       visible={visible}
-      transparent={true}
-      animationType="fade"
-      statusBarTranslucent
-      onRequestClose={onClose}
+      onClose={onClose}
+      bottom
+      backdropColor="transparent"
+      panelStyle={styles.sheet}
+      header={(
+        <Pressable onPress={onClose} style={styles.closeBtn} accessibilityLabel="Close event details">
+          <Text style={styles.closeText}>✕</Text>
+        </Pressable>
+      )}
     >
-      <View style={styles.root}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose}/>
-        <View style={styles.sheetWrap}>
-          <View style={styles.sheet}>
-            <View style={styles.headerRow}>
-              <View>
-                <Image source={event.image} style={styles.icon} resizeMode="contain" />
-              </View>
-              <View style={styles.headerText}>
-                <Text style={styles.title}>{event.title}</Text>
-                <View style={styles.statusPill}>
-                  <View style={[styles.statusDot, event.status === "live" ? styles.statusLive : styles.statusMuted]} />
-                  <Text style={styles.statusText}>{statusLabel}</Text>
-                </View>
-              </View>
-            </View>
-
-            <Pressable onPress={onClose} style={styles.closeBtn} accessibilityLabel="Close event details">
-              <Text style={styles.closeText}>✕</Text>
-            </Pressable>
-
-            <Text style={styles.description}>{event.description || "Details coming soon"}</Text>
-
-            <View style={styles.metaBlock}>
-              <Text style={styles.metaLabel}>Time</Text>
-              <Text style={styles.metaValue}>{timeText}</Text>
-              <Text style={styles.metaLabel}>Location</Text>
-              <Text style={styles.metaValue}>{event.location}</Text>
-              <Text style={styles.metaLabel}>Format</Text>
-              <Text style={styles.metaValue}>{event.format}</Text>
-            </View>
-
-            {!!event.tags?.length && (
-              <View style={styles.tagsRow}>
-                {event.tags.map((tag) => (
-                  <View key={tag} style={styles.tagPill}>
-                    <Text style={styles.tagText}>{tag}</Text>
-                  </View>
-                ))}
-              </View>
-            )}
-
-            {showPrimaryAction && (
-              <View style={styles.footer}>
-                <Pressable
-                  disabled={primaryDisabled}
-                  style={[
-                    styles.primaryBtn,
-                    {
-                      backgroundColor: primaryDisabled ? "#565A72" : "#776EFF",
-                      opacity: primaryDisabled ? 0.8 : 1,
-                    },
-                  ]}
-                  onPress={() => {
-                    if (!onViewDetails) return;
-                    onClose();
-                    onViewDetails(event);
-                  }}
-                >
-
-                    <Text style={styles.primaryBtnText}>
-                      {event.status === "ended" ? "Event Ended" : "View Details"}
-                    </Text>
-                </Pressable>
-              </View>
-            )}
+      <View style={styles.headerRow}>
+        <View>
+          <Image source={event.image} style={styles.icon} resizeMode="contain" />
+        </View>
+        <View style={styles.headerText}>
+          <Text style={styles.title}>{event.title}</Text>
+          <View style={styles.statusPill}>
+            <View style={[styles.statusDot, event.status === "live" ? styles.statusLive : styles.statusMuted]} />
+            <Text style={styles.statusText}>{statusLabel}</Text>
           </View>
         </View>
       </View>
-    </Modal>
+
+      <Text style={styles.description}>{event.description || "Details coming soon"}</Text>
+
+      <View style={styles.metaBlock}>
+        <Text style={styles.metaLabel}>Time</Text>
+        <Text style={styles.metaValue}>{timeText}</Text>
+        <Text style={styles.metaLabel}>Location</Text>
+        <Text style={styles.metaValue}>{event.location}</Text>
+        <Text style={styles.metaLabel}>Format</Text>
+        <Text style={styles.metaValue}>{event.format}</Text>
+      </View>
+
+      {!!event.tags?.length && (
+        <View style={styles.tagsRow}>
+          {event.tags.map((tag) => (
+            <View key={tag} style={styles.tagPill}>
+              <Text style={styles.tagText}>{tag}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {showPrimaryAction && (
+        <View style={styles.footer}>
+          <Pressable
+            disabled={primaryDisabled}
+            style={[
+              styles.primaryBtn,
+              {
+                backgroundColor: primaryDisabled ? "#565A72" : "#776EFF",
+                opacity: primaryDisabled ? 0.8 : 1,
+              },
+            ]}
+            onPress={() => {
+              if (!onViewDetails) return;
+              onClose();
+              onViewDetails(event);
+            }}
+          >
+
+              <Text style={styles.primaryBtnText}>
+                {event.status === "ended" ? "Event Ended" : "View Details"}
+              </Text>
+          </Pressable>
+        </View>
+      )}
+    </ModalLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, justifyContent: "flex-end" },
-  sheetWrap: { paddingHorizontal: 14, paddingBottom: 12 },
   sheet: {
     backgroundColor: "#353838ff",
     borderRadius: 24,
@@ -150,7 +142,6 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     paddingBottom: 16,
     borderWidth: 1,
-    minHeight: 360,
   },
   headerRow: { flexDirection: "row", alignItems: "flex-start" },
   icon: { width: 60, height: 60 },
@@ -173,12 +164,10 @@ const styles = StyleSheet.create({
   statusMuted: { backgroundColor: "#B0A9D8" },
   statusText: { color: "#EFEAFF", fontSize: 12, fontWeight: "600" },
   closeBtn: {
-    position: "absolute",
-    top: 12,
-    right: 12,
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    alignSelf: "flex-end",
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "rgba(255,255,255,0.07)",

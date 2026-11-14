@@ -5,7 +5,7 @@
     "slug": "hackillinois",
     "owner": "hackillinois",
     "version": "2026.0.8",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/logo.png",
     "userInterfaceStyle": "light",
     "ios": {

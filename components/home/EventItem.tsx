@@ -1,4 +1,4 @@
-import { Image, Pressable } from "react-native";
+import { Image, Pressable, StyleSheet, type ViewStyle } from "react-native";
 
 const CheckInPng = require("../../assets/home/event_active-png.png");
 const ScavengerPng = require("../../assets/home/event_active-png.png");
@@ -15,9 +15,9 @@ const ShowcaseFinishedPng = require("../../assets/home/event_finished-png.png");
 const ClosingFinishedPng = require("../../assets/home/event_finished-png.png");
 
 interface EventItemProps {
-  x: number,
-  y: number,
-  size?: number;
+  left: ViewStyle["left"];
+  top: ViewStyle["top"];
+  width: ViewStyle["width"];
   eventKey?: "checkin" | "scavenger" | "opening" | "showcase" | "hacking" | "closing";
   dimmed?: boolean;
   variant?: "normal" | "finished";
@@ -25,16 +25,13 @@ interface EventItemProps {
 }
 
 export default function EventItem({
-  x,
-  y,
-  size = 60,
+  left,
+  top,
+  width,
   eventKey = "closing",
   variant = "normal",
   onPress,
 }: EventItemProps) {
-
-
-  const containerSize = size * 1.6;
 
   const eventSrc =
     variant === "finished"
@@ -68,17 +65,13 @@ export default function EventItem({
     <Pressable
       onPress={handlePress}
       hitSlop={22}
-      style={{ position: "absolute", width: containerSize, height: containerSize, left:x, top:y}}
+      style={{ position: "absolute", left, top, width, aspectRatio: 1 }}
     >
-        <Image
-          source={eventSrc}
-          style={{
-            width: containerSize,
-            height: containerSize,
-            opacity: 1,
-          }}
-          resizeMode="contain"
-        />
+      <Image source={eventSrc} style={styles.image} resizeMode="contain" />
     </Pressable>
   );
 }
+
+const styles = StyleSheet.create({
+  image: { width: "100%", height: "100%" },
+});
